@@ -1,15 +1,24 @@
 import asyncio
+from devices.drt_sft import controller as sft_controller
+from devices.utilities import loop_monitor
 
 
-class MessageRouter:
+class RootController:
     def __init__(self, q2v, q2c):
         self._q2v = q2v
         self._q2c = q2c
-
         self._route_messages = True
+        self.loop_monitor = loop_monitor.LoopMonitor()
+        # Devices
+        self._devices = {'sft': sft_controller.SFTController(q2c)}
 
     async def run(self):
-        asyncio.create_task(self._monitor_main2c())
+        for d in self._devices:
+            asyncio.create_task(self._devices[d].update())
+
+        asyncio.create_task(self.loop_monitor.run_asyncio())
+
+        await asyncio.create_task(self._monitor_main2c())
 
     async def _monitor_main2c(self):
         while self._route_messages:

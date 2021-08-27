@@ -90,6 +90,7 @@ class MainWindow:
                 pass
 
     def _close_event(self):
+        print("closing...")
         self._q2c.put("exit")
         sleep(.05)
         self._win.destroy()
