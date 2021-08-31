@@ -9,7 +9,7 @@ from view_widgets.key_logger import KeyFlagger
 from view_widgets.note_logger import NoteTaker
 from view_widgets.information import InfoDisplay
 
-from devices.drt_sft import view as view_drt_sft
+from devices.DRT_SFT.View import sft_view as view_drt_sft
 
 
 class MainWindow:
@@ -39,7 +39,7 @@ class MainWindow:
         self._monitor_q2v()
 
         # Devices
-        self._devices = {'drt_sft': view_drt_sft.SFTUserInterface(self._win, q2v)}
+        self._devices = {'DRT_SFT': view_drt_sft.SFTMainWindow(self._win, q2v)}
 
         # Tkinter loop
         self._win.protocol("WM_DELETE_WINDOW", self._close_event)

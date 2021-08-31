@@ -1,5 +1,3 @@
-import asyncio
-
 from serial.tools.list_ports import comports
 from asyncio import Event, sleep, get_running_loop
 import serial
@@ -7,8 +5,10 @@ from serial import SerialException
 
 
 class ConnectionManager:
-    def __init__(self):
-        self._device_info = {'DRT_SFT':   {'PID': '9800', 'VID': 'F055'}}
+    def __init__(self, name, vid, pid):
+        self._name = name
+        self._vid = vid
+        self._pid = pid
         self._old_ports = list()
         self._known_rs_devices = dict()
 
@@ -18,7 +18,7 @@ class ConnectionManager:
         self.port_event = Event()
 
     async def update(self):
-        while True:
+        while 1:
             loop = get_running_loop()
             new_ports = await loop.run_in_executor(None, comports)
             len_diff = len(new_ports) - len(self._old_ports)
@@ -37,10 +37,9 @@ class ConnectionManager:
     def _identify_rs_devices(self, ports):
         self._known_rs_devices.clear()
         for p in ports:
-            for d in self._device_info:
-                if self._device_info[d]['VID'] in p[2]:
-                    device_name = [d, self._device_info[d]['PID'], self._device_info[d]['VID']]
-                    self._known_rs_devices[p[0]] = device_name
+            if self._vid in p[2]:
+                device_name = [self._name, self._vid, self._pid]
+                self._known_rs_devices[p[0]] = device_name
 
     def _connect_device(self):
         to_add = {k: self._known_rs_devices[k] for k in set(self._known_rs_devices) - set(self.paired_devices)}

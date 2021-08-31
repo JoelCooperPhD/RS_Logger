@@ -19,13 +19,13 @@ class Main:
         self.t.start()
 
         # View Thread - This is the main thread where a tkinter loop is used
-        self.view_main = view_main.MainWindow(self.q2v, self.q2c)
+        self.view_main = view_main.MainWindow(self.q2c, self.q2v)
 
     def async_controller_thread(self):
         asyncio.run(self.run_main_async())
 
     async def run_main_async(self):
-        main_controller = controller.RootController(self.q2v, self.q2c)
+        main_controller = controller.RootController(self.q2c, self.q2v)
         await asyncio.create_task(main_controller.run())
 
 
