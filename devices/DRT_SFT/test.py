@@ -20,7 +20,7 @@ class Main:
 
         # Main thread Control
         self.v = drtView.DRTMainWindow(self.win, self.ctrl_qs)
-        # Async Thread Control & Model
+        # Async Thread Control & HardwareInterface
         self.t = Thread(target=self.controller_thread, daemon=True, args=(self.ctrl_qs, ))
         self.t.start()
 

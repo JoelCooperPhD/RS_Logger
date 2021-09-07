@@ -9,7 +9,7 @@ from view_widgets.key_logger import KeyFlagger
 from view_widgets.note_logger import NoteTaker
 from view_widgets.information import InfoDisplay
 
-from devices.DRT_SFT.View import sft_view as view_drt_sft
+from devices.DRT_SFT.UserInterface import SFT_UIView as view_drt_sft
 
 
 class MainWindow:

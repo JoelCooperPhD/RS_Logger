@@ -1,5 +1,5 @@
 import asyncio
-from devices.DRT_SFT.Model import mController as sft_controller
+from devices.DRT_SFT.HardwareInterface import SFT_Controller as sft_controller
 from devices.utilities import loop_monitor
 
 

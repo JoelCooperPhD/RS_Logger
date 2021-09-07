@@ -1,17 +1,21 @@
 from tkinter.ttk import LabelFrame, Label, Button, Checkbutton
-from tkinter import BOTH, StringVar, IntVar, Tk, LEFT
+from tkinter import BOTH, StringVar, IntVar, LEFT
 from tkinter.ttk import Frame, Notebook
 
+from devices.DRT_SFT.UserInterface import SFT_UIPlotter, SFT_UIConfigWindow
+
+
 class SFTMainWindow:
-    def __init__(self, win, queues):
+    def __init__(self, win, q2v):
         pass
 
-        '''
+
         self._win = win
         self._frame = Frame(win)
-
+        self._frame.pack(fill=BOTH)
 
         # Notebook - Tabs
+
         self._NB = Notebook(self._frame, width=160)
         self._NB.grid(row=0, column=1, sticky='NEWS')
 
@@ -21,16 +25,15 @@ class SFTMainWindow:
         # Window params
         self._row = 2
 
-        self._DRT2v = ctrl_qs['DRT2v']
-        self._DRT2c = ctrl_qs['DRT2c']
+        self._q2v = q2v
 
         # Plot Controls
-        self._plot = drtPlotter.Plotter(self._frame)
-        self._plot.add_rt_plot("Detection Response Task", "RT-Seconds")
+        self._plot = SFT_UIPlotter.Plotter(self._frame)
+        self._plot.add_rt_plot("SFT Detection Response Task", "RT-Seconds")
         self._plot.add_state_plot("Stimulus")
 
         # Config Window
-        self._config_w = drtConfigWin.DRTConfigWin(self._DRT2c)
+        self._config_w = SFT_UIConfigWindow.SFTConfigWin(self._q2v)
 
         # Events
         self._events = {
@@ -49,7 +52,7 @@ class SFTMainWindow:
             "plt.clear": self._clear_plot,
 
             # DRT Commands
-            "cfg": self._config_w.update_fields,
+            "cfg": None,
             "trl": self._update_live_trial_n,
             "rt": self._update_live_rt,
             "clicks": self._update_live_clicks
@@ -57,8 +60,8 @@ class SFTMainWindow:
         self._event_dispatcher()
 
     def _event_dispatcher(self):
-        while not self._DRT2v.empty():
-            msg = self._DRT2v.get()
+        while not self._q2v.empty():
+            msg = self._q2v.get()
             try:
                 if len(msg):
                     msg_l = msg.split(">")
@@ -68,7 +71,7 @@ class SFTMainWindow:
         self._win.after(10, self._event_dispatcher)
 
     ################################
-    # Parent View overrides
+    # Parent UserInterface overrides
     def _build_tab(self, port) -> dict:
         model = dict()
 
@@ -209,15 +212,15 @@ class SFTMainWindow:
 
     def _configure_clicked_cb(self):
         com = self._NB.tab(self._NB.select(), 'text')
-        self._DRT2c.put(f"config>{com}")
+        self._q2v.put(f"config>{com}")
         self._config_w.show(com)
-        drtConfigWin.DRTConfigWin(self._DRT2c)
+        SFT_UIConfigWindow.SFTConfigWin(self._q2v)
 
     def _stimulus_on_cb(self):
-        self._DRT2c.put(f"stm_on>{self._NB.tab(self._NB.select(), 'text')}")
+        self._q2v.put(f"stm_on>{self._NB.tab(self._NB.select(), 'text')}")
 
     def _stimulus_off_cb(self):
-        self._DRT2c.put(f"stm_off>{self._NB.tab(self._NB.select(), 'text')}")
+        self._q2v.put(f"stm_off>{self._NB.tab(self._NB.select(), 'text')}")
 
     def _stimulus_state_cb(self):
         com = self._NB.tab(self._NB.select(), 'text')
@@ -247,4 +250,3 @@ class SFTMainWindow:
 
     def _hide(self, arg):
         self._frame.pack_forget()
-'''

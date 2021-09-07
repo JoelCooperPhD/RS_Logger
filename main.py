@@ -18,7 +18,7 @@ class Main:
         self.t = Thread(target=self.async_controller_thread, daemon=True)
         self.t.start()
 
-        # View Thread - This is the main thread where a tkinter loop is used
+        # UserInterface Thread - This is the main thread where a tkinter loop is used
         self.view_main = view_main.MainWindow(self.q2c, self.q2v)
 
     def async_controller_thread(self):

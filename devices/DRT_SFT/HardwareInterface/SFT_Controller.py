@@ -1,6 +1,6 @@
 from asyncio import create_task
 from devices.utilities.Model import mUSBConnect, mResults
-from devices.DRT_SFT.Model import mHardwareInterface
+from devices.DRT_SFT.HardwareInterface import SFT_HIDeviceInterface
 import asyncio
 from queue import SimpleQueue
 
@@ -11,7 +11,7 @@ class SFTController:
         self.q2v = q2v
 
         self._connection_manager = mUSBConnect.ConnectionManager(name='DRT_SFT', vid='F055', pid='9800')
-        self._hwi = mHardwareInterface.SFTModel()
+        self._hwi = SFT_HIDeviceInterface.SFTModel()
         self._results_writer = mResults.ResultsWriter('DRT_SFT')
 
         self._connected_sft_devices = None
@@ -21,8 +21,8 @@ class SFTController:
         self.msg_port = None
         self._run = True
 
-        # DRT Model
-        self._drt_m = mHardwareInterface.SFTModel()
+        # DRT HardwareInterface
+        self._drt_m = SFT_HIDeviceInterface.SFTModel()
 
     async def update(self):
         create_task(self._connection_manager.update())
