@@ -9,13 +9,14 @@ from view_widgets.key_logger import KeyFlagger
 from view_widgets.note_logger import NoteTaker
 from view_widgets.information import InfoDisplay
 
-from devices.DRT_SFT.UserInterface import SFT_UIView as view_drt_sft
+from devices.DRT_SFT.UserInterface import SFT_UIController
 
 
 class MainWindow:
-    def __init__(self, q2v, q2c):
-        self._q2v: SimpleQueue = q2v
-        self._q2c: SimpleQueue = q2c
+    def __init__(self, hardware_interface_qs, user_interface_qs):
+
+        self._HI_queues = hardware_interface_qs
+        self._UI_queues = user_interface_qs
 
         self._win: Tk = Tk()
 
@@ -31,29 +32,33 @@ class MainWindow:
         self._widget_frame.pack(fill=BOTH)
         self._widget_frame.columnconfigure(4, weight=1)
 
-        self._widgets = {'control': ExpControls(self._widget_frame, self._q2v),
+        self._widgets = {'control': ExpControls(self._widget_frame, self._UI_queues['root']),
                          'key_flag': KeyFlagger(self._win, self._widget_frame),
-                         'note': NoteTaker(self._widget_frame, self._q2v),
-                         'info': InfoDisplay(self._widget_frame, self._q2v)}
+                         'note': NoteTaker(self._widget_frame, self._UI_queues['root']),
+                         'info': InfoDisplay(self._widget_frame, self._UI_queues['root'])}
 
         self._monitor_q2v()
 
         # Devices
-        self._devices = {'DRT_SFT': view_drt_sft.SFTMainWindow(self._win, q2v)}
+        self._devices = {'DRT_SFT': SFT_UIController.SFTUIController(self._win,
+                                                                     self._HI_queues['sft'],
+                                                                     self._UI_queues['sft'])}
 
         # Tkinter loop
         self._win.protocol("WM_DELETE_WINDOW", self._close_event)
         self._win.mainloop()
 
     def _monitor_q2v(self):
-        while not self._q2v.empty():
-            msg = self._q2v.get()
+        while not self._UI_queues['root'].empty():
+            msg = self._UI_queues['root'].get()
             kv = msg.split(">")
 
             if kv[0] == 'fpath':
                 self._update_file_paths(kv[1])
             elif 'cmd' in msg:
                 self._handle_new_logger_command(msg)
+            elif 'sft' in msg:
+                self._q2_sft_ui.put(msg)
             else:
                 print(f"view: {msg} event not handled")
 
@@ -74,7 +79,7 @@ class MainWindow:
         '''
 
     def _handle_new_logger_command(self, msg):
-        self._q2c.put(msg)
+        self._HI_queues.put(msg)
         time_stamp = msg.split(">")[1]
         for w in self._widgets:
             try:
@@ -91,7 +96,7 @@ class MainWindow:
 
     def _close_event(self):
         print("closing...")
-        self._q2c.put("exit")
+        self._HI_queues['root'].put("exit")
         sleep(.05)
         self._win.destroy()
         exit()

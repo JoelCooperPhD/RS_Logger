@@ -1,20 +1,20 @@
 import asyncio
-from devices.DRT_SFT.HardwareInterface import SFT_Controller as sft_controller
+from devices.DRT_SFT.HardwareInterface import SFT_HIController as sft_controller
 from devices.utilities import loop_monitor
 
 
-class RootController:
-    def __init__(self, q2v, q2c):
-        self._q2v = q2v
-        self._q2c = q2c
+class HardwareInterface:
+    def __init__(self, hardware_interface_qs, user_interface_qs):
+        self._HI_queues = hardware_interface_qs
+        self._UI_queues = user_interface_qs
         self._route_messages = True
         self.loop_monitor = loop_monitor.LoopMonitor()
         # Devices
-        self._devices = {'DRT_SFT': sft_controller.SFTController(q2c, q2v)}
+        self._devices = {'SFT': sft_controller.SFTController(self._HI_queues['sft'], self._UI_queues['sft'])}
 
     async def run(self):
         for d in self._devices:
-            asyncio.create_task(self._devices[d].update())
+            self._devices[d].update()
 
         # asyncio.create_task(self.loop_monitor.run_asyncio())
 
@@ -22,8 +22,8 @@ class RootController:
 
     async def _monitor_main2c(self):
         while self._route_messages:
-            while not self._q2c.empty():
-                msg = self._q2c.get()
+            while not self._HI_queues['root'].empty():
+                msg = self._HI_queues['root'].get()
                 kv = msg.split(">")
 
                 if 'ctrl' in kv:
@@ -36,5 +36,6 @@ class RootController:
                 else:
                     print(f"controller_main: {msg} message not routed")
 
-            await asyncio.sleep(.01)
+            print("checking")
+            await asyncio.sleep(1)
 

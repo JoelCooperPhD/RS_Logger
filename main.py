@@ -2,8 +2,8 @@ import asyncio
 from threading import Thread
 from queue import SimpleQueue
 from multiprocessing import freeze_support
-import view as view_main
-import rootcontroller as controller
+import user_interface as view_main
+import hardware_interface as controller
 
 
 class Main:
@@ -11,21 +11,23 @@ class Main:
         self.run = True
 
         # Queues to communicate with the view and controller between threads
-        self.q2v = SimpleQueue()
-        self.q2c = SimpleQueue()
+        self.user_interface_queues = {'root': SimpleQueue(), 'sft': SimpleQueue()}
+        self.hardware_interface_queues = {'root': SimpleQueue(), 'sft': SimpleQueue()}
 
         # Controller Thread - This is a newly spawned thread where an asyncio loop is used
         self.t = Thread(target=self.async_controller_thread, daemon=True)
         self.t.start()
 
         # UserInterface Thread - This is the main thread where a tkinter loop is used
-        self.view_main = view_main.MainWindow(self.q2c, self.q2v)
+        self.view_main = view_main.MainWindow(self.hardware_interface_queues,
+                                              self.user_interface_queues)
 
     def async_controller_thread(self):
         asyncio.run(self.run_main_async())
 
     async def run_main_async(self):
-        main_controller = controller.RootController(self.q2c, self.q2v)
+        main_controller = controller.HardwareInterface(self.hardware_interface_queues,
+                                                       self.user_interface_queues)
         await asyncio.create_task(main_controller.run())
 
 

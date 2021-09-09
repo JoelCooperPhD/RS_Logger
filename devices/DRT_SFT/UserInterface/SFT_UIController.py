@@ -1,118 +1,201 @@
-from tkinter.ttk import LabelFrame, Label, Button,  Separator, Entry
-from tkinter import Toplevel, StringVar
 from queue import SimpleQueue
-from math import ceil
-from os import path
+from tkinter import Tk, TclError
+from devices.DRT_SFT.UserInterface import SFT_UIView, SFT_UIConfig
 
-class DRTConfigWin:
-    def __init__(self, to_ctrl: SimpleQueue):
-        self._to_drt_c = to_ctrl
-        self._var = {"name": StringVar(), "lowerISI": StringVar(),
-                    "upperISI": StringVar(), "stimDur": StringVar(),
-                    "intensity": StringVar()}
-        self.com = None
 
-    def show(self, com):
-        self.com = com
+class SFTUIController:
+    def __init__(self, win, hardware_interface_q_sft, user_interface_q_sft):
+        self._win: Tk = win
+        self._q2_sft_hi: SimpleQueue = hardware_interface_q_sft
+        self._q2_sft_ui: SimpleQueue = user_interface_q_sft
 
-        win = Toplevel()
-        win.grab_set()
-        win.title(com)
+        # Events
+        self._events = {
+            # Main Controller Events
+            "init": self._log_init,
+            "close": self._log_close,
+            "record": self._data_record,
+            "pause": self._data_pause,
 
-        icon_path = path.abspath(path.join(path.dirname(__file__), '../../../img/rs_icon.ico'))
-        win.iconbitmap(icon_path)
+            # Tab Events
+            "devices": self._update_devices,
+            "remove": self._remove_tab,
 
-        win.focus_force()
-        win.resizable(False, False)
+            # Plot Commands
+            "clear": self._clear_plot,
 
-        lf = LabelFrame(win, text="Configuration")
-        lf.grid(row=0, column=0, sticky="NEWS", pady=2, padx=2)
-        lf.grid_columnconfigure(1, weight=1)
+            # Messages from wDRT unit
+            "cfg": self._update_configuration,
+            "stm": self._update_stim_state,
+            "dta": self._update_stim_data,
+            "bty": self._update_battery_soc,
+            "rt":  self._update_rt,
+            "clk": self._update_clicks,
 
-        # Current Configuration
-        Label(lf, text="Name: sDRT").grid(row=0, column=0, sticky="NEWS")
-        # Label(lf, textvariable=self.var['name']).grid(row=0, column=1, sticky="W", columnspan=2)
+        }
+        self._handle_messages_from_sft_hardware_interface()
 
-        # Separator
-        Separator(lf).grid(row=1, column=0, columnspan=3, sticky="NEWS", pady=5)
+        self.devices = dict()
 
-        # Open Duration
-        Label(lf, text="Upper ISI (ms):").grid(row=2, column=0, sticky="NEWS")
-        Entry(lf, textvariable=self._var['upperISI'], width=7).grid(row=2, column=2, sticky="W")
+        # Experiment
+        self._running = False
 
-        # Close Duration
-        Label(lf, text="Lower ISI (ms):").grid(row=3, column=0, sticky="NEWS")
-        Entry(lf, textvariable=self._var['lowerISI'], width=7).grid(row=3, column=2, sticky="W")
+        # View
+        self._win.bind("<<NotebookTabChanged>>", self._tab_changed_cb)
+        self._v = SFT_UIView.SFTTabbedControls(self._win)
+        self._v.register_stim_on_cb(self._stim_on_button_cb)
+        self._v.register_stim_off_cb(self._stim_off_button_cb)
+        self._v.register_configure_clicked_cb(self._configure_button_cb)
 
-        # Stimulus Duration Duration
-        Label(lf, text="Stimulus Duration (ms):").grid(row=4, column=0, sticky="NEWS")
-        Entry(lf, textvariable=self._var['stimDur'], width=7).grid(row=4, column=2, sticky="W")
+        self._active_tab = None
 
-        # Stimulus Intensity
-        Label(lf, text="Stimulus Intensity (%):").grid(row=5, column=0, sticky="NEWS")
-        Entry(lf, textvariable=self._var['intensity'], width=7).grid(row=5, column=2, sticky="W")
+        # Configure Window
+        self._cnf_win = SFT_UIConfig.SFTConfigWin(self._q2_sft_ui)
+        self._cnf_win.register_custom_cb(self._custom_button_cb)
+        self._cnf_win.register_iso_cb(self._iso_button_cb)
 
-        # Separator
-        Separator(lf).grid(row=6, column=0, columnspan=3, sticky="NEWS", pady=5)
+    def _handle_messages_from_sft_hardware_interface(self):
+        while not self._q2_sft_ui.empty():
+            msg = self._q2_sft_ui.get()
+            try:
+                kvals = msg.split(">")
+                if len(kvals[1]):
+                    self._events[kvals[0]](kvals[1:])
+                else:
+                    self._events[kvals[0]]()
+            except Exception as e:
+                print(f"vController: {e}")
 
-        # Upload Custom
-        button_upload = Button(lf, text="Upload to Device", command=self._upload_to_device_cb)
-        button_upload.grid(row=7, column=0, columnspan=3, pady=5, padx=20, sticky="NEWS")
+        self._win.after(1, self._handle_messages_from_sft_hardware_interface)
 
-        # -----------------------------
-        # Upload Standard Configuration
-        lf2 = LabelFrame(win, text="Upload Standard Configuration")
-        lf2.grid(row=1, column=0, sticky="NEWS", pady=(10, 0), padx=2)
-        lf2.grid_columnconfigure(0, weight=1)
-
-        # ISO
-        button_iso = Button(lf2, text="ISO", command=self._set_iso_cb)
-        button_iso.grid(row=0, column=0, pady=5, padx=20, sticky="NEWS")
-
-    @staticmethod
-    def _filter_entry(val, default_value,  lower, upper):
-        if val.isnumeric():
-            val = int(val)
-            if val < lower or val > upper:
-                val = default_value
+    def _update_devices(self, devices=None):
+        units = list()
+        if devices:
+            units = devices[0].split(",")
+            self._v.show()
         else:
-            return default_value
-        return val
+            self._v.hide()
 
-    def _upload_to_device_cb(self):
-        low = self._filter_entry(self._var['lowerISI'].get(), 3000, 0, 65535)
-        self._to_drt_c.put(f"lisi>{self.com} {low}")
+        to_add = set(units) - set(self.devices)
+        if to_add:
+            self._add_tab(to_add)
+        to_remove = set(self.devices) - set(units)
+        if to_remove:
+            self._remove_tab(to_remove)
 
-        high = self._filter_entry(self._var['upperISI'].get(), 5000, low, 65535)
-        self._to_drt_c.put(f"uisi>{self.com} {high}")
+    def _add_tab(self, dev_ids):
+        for id_ in dev_ids:
+            if id_ not in self.devices:
+                self.devices[id_] = self._v.build_tab(id_)
+                pass
 
-        intensity = ceil(self._filter_entry(self._var['intensity'].get(), 100, 0, 100) * 2.55)
-        self._to_drt_c.put(f"inty>{self.com} {intensity}")
+    def _remove_tab(self, dev_ids):
+        for id_ in dev_ids:
+            if id_ in self.devices.keys():
+                self.devices.pop(id_)
+                self._v.NB.forget(self._v.NB.children[id_.lower()])
 
-        duration = self._filter_entry(self._var['stimDur'].get(), 1000, 0, 65535)
-        self._to_drt_c.put(f"dur>{self.com} {duration}")
+    # View Parent
+    def _log_init(self):
+        for d in self.devices:
+            self.devices[d]['refresh'].config(state='disabled')
 
-        self._clear_settings()
+    def _log_close(self):
+        for d in self.devices:
+            self.devices[d]['refresh'].config(state='active')
 
-    def _set_iso_cb(self):
-        self._to_drt_c.put(f"iso>{self.com}")
-        self._clear_settings()
+    def _data_record(self):
+        self._running = True
+        self.devices[self._active_tab]['plot'].run = True
+        self.devices[self._active_tab]['plot'].clear_all()
 
-    def _clear_settings(self):
-        self._var['lowerISI'].set("")
-        self._var['upperISI'].set("")
-        self._var['intensity'].set("")
-        self._var['stimDur'].set("")
+    def _data_pause(self):
+        self._running = False
+        self.devices[self._active_tab]['plot'].run = False
 
-    def update_fields(self, msg):
-        msg = msg.strip("cfg>")
-        msg = msg.split(",")
-        for i in msg:
-            kv = i.split(":")
-            k_new = kv[0].strip()
-            for k in self._var:
-                if k == k_new:
-                    if k == "intensity":
-                        self._var[k].set(str(int(int(kv[1]) / 2.55)))
-                    else:
-                        self._var[k].set(kv[1])
+    # Registered Callbacks with wDRT View
+    def _tab_changed_cb(self, e):
+        if self.devices:
+            try:
+                # Clean up old tab and device
+                self._q2_sft_hi.put(f"vrb_off>{self._active_tab}")
+                if self._running:
+                    self.devices[self._active_tab]['plot'].run = False
+                    self.devices[self._active_tab]['plot'].clear_all()
+                # Start new tab and device
+                self._active_tab = self._v.NB.tab(self._v.NB.select(), "text")
+                self._q2_sft_hi.put(f"vrb_on>{self._active_tab}")
+                self._q2_sft_hi.put(f"get_bat>{self._active_tab}")
+                if self._running:
+                    self.devices[self._active_tab]['plot'].run = True
+                    self.devices[self._active_tab]['plot'].clear_all()
+            except Exception as e:
+                print(f"vController _tab_changed_cb: {e}")
+
+    def _stim_on_button_cb(self):
+        self._q2_sft_hi.put(f"stm_on>{self._active_tab}")
+
+    def _stim_off_button_cb(self):
+        self._q2_sft_hi.put(f"stm_off>{self._active_tab}")
+
+    def _configure_button_cb(self):
+        self._cnf_win.show(self._active_tab)
+        self._q2_sft_hi.put(f"get_cfg>{self._active_tab}")
+
+    # Plotter
+    def _update_stim_state(self, arg):
+        if self._running:
+            self.devices[arg[1]]['plot'].state_update(arg[1], arg[0])
+
+    def _update_stim_data(self, arg):
+        if self._running:
+            unit_id, ts, trial_n, rt, clicks, dev_utc, bty = arg[0].strip().split(',')
+            if unit_id == self._active_tab:
+                if rt == "-1":
+                    self.devices[unit_id]['plot'].rt_update(unit_id, -.0001)
+                self.devices[unit_id]['rt'].set(-1)
+                self.devices[unit_id]['trl_n'].set(trial_n)
+                self.devices[unit_id]['clicks'].set(0)
+                self._update_battery_soc(bty, unit_id)
+
+    def _update_rt(self, arg):
+        if self._running:
+            unit_id, rt = arg[0].split(',')
+            rt = round((int(rt) / 1000000), 2)
+            self.devices[unit_id]['rt'].set(rt)
+            self.devices[unit_id]['plot'].rt_update(unit_id, rt)
+
+    def _update_clicks(self, arg):
+        if self._running:
+            unit_id, clicks = arg[0].split(',')
+            self.devices[unit_id]['clicks'].set(clicks)
+
+    def _update_battery_soc(self, arg, unit_id=None):
+        soc = arg
+        if isinstance(arg, list):
+            unit_id, soc = arg[0].strip().split(',')
+
+        p = int(soc) // 10
+        for i in range(10):
+            color = 'white'
+            if p >= i + 1:
+                color = 'black' if p > 2 else 'red'
+            self.devices[unit_id][f'b_{i}'].config(bg=color)
+
+    def _stop_plotter(self):
+        self.devices[self._active_tab]['plot'].run = False
+
+    def _clear_plot(self):
+        self.devices[self._active_tab]['plot'].clear_all()
+
+    # Configuration Window
+    # ---- Registered Callbacks
+    def _custom_button_cb(self, msg):
+        self._q2_sft_hi.put(f"set_cfg>{msg}>{self._active_tab}")
+
+    def _iso_button_cb(self):
+        self._q2_sft_hi.put(f"set_iso>{self._active_tab}")
+
+    # ---- msg from wDRT unit
+    def _update_configuration(self, args):
+        self._cnf_win.parse_config(args)
