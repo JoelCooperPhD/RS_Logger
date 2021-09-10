@@ -51,15 +51,12 @@ class LEDVib:
         for i in range(100, -1, -1):
             self._stm.pulse_width_percent(i)
             sleep_ms(35)
-    
-    def pulse(self, times=6):
-        for i in range(times):
-            self._all_on()
-            sleep_ms(125)
-            self._all_off()
-            sleep_ms(50)
 
-        
+    def toggle(self):
+        if self._stm_on:
+            self.set_off()
+        else:
+            self.set_on()
 
 
 class AuditoryStimulus:
@@ -128,4 +125,10 @@ class AuditoryStimulus:
             return True
         else:
             return False
+
+    def toggle(self):
+        if self._stm_on:
+            self.set_off()
+        else:
+            self.set_on()
 

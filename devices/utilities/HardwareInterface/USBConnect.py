@@ -1,3 +1,5 @@
+import asyncio
+
 from serial.tools.list_ports import comports
 from asyncio import Event, sleep, get_running_loop
 import serial
@@ -25,11 +27,13 @@ class ConnectionManager:
 
             if len_diff != 0:
                 self._identify_rs_devices(new_ports)
-                self.port_event.set()
+                await asyncio.sleep(.2)
                 if len_diff > 0:
                     self._connect_device()
                 else:
                     self._disconnect_device()
+
+                self.port_event.set()
 
             self._old_ports = new_ports
             await sleep(.25)

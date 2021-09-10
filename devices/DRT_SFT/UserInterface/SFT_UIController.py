@@ -33,7 +33,6 @@ class SFTUIController:
             "clk": self._update_clicks,
 
         }
-        self._handle_messages_from_sft_hardware_interface()
 
         self.devices = dict()
 
@@ -42,15 +41,12 @@ class SFTUIController:
 
         # View
         self._win.bind("<<NotebookTabChanged>>", self._tab_changed_cb)
-        self._v = SFT_UIView.SFTTabbedControls(self._win)
-        self._v.register_vib_on_cb(self._vib_on_button_cb)
-        self._v.register_vib_off_cb(self._vib_off_button_cb)
-        self._v.register_led_on_cb(self._led_on_button_cb)
-        self._v.register_led_off_cb(self._led_off_button_cb)
-        self._v.register_aud_on_cb(self._aud_on_button_cb)
-        self._v.register_aud_off_cb(self._aud_off_button_cb)
+        self._UIView = SFT_UIView.SFTTabbedControls(self._win)
+        self._UIView.register_vib_cb(self._vib_button_cb)
+        self._UIView.register_led_cb(self._led_button_cb)
+        self._UIView.register_aud_cb(self._aud_button_cb)
 
-        self._v.register_configure_clicked_cb(self._configure_button_cb)
+        self._UIView.register_configure_clicked_cb(self._configure_button_cb)
 
         self._active_tab = None
 
@@ -58,6 +54,8 @@ class SFTUIController:
         self._cnf_win = SFT_UIConfig.SFTConfigWin(self._q2_sft_ui)
         self._cnf_win.register_custom_cb(self._custom_button_cb)
         self._cnf_win.register_iso_cb(self._iso_button_cb)
+
+        self._handle_messages_from_sft_hardware_interface()
 
     def _handle_messages_from_sft_hardware_interface(self):
         while not self._q2_sft_ui.empty():
@@ -69,7 +67,7 @@ class SFTUIController:
                 else:
                     self._events[kvals[0]]()
             except Exception as e:
-                print(f"vController: {e}")
+                print(f"SFT_UIController : {e}")
 
         self._win.after(1, self._handle_messages_from_sft_hardware_interface)
 
@@ -77,9 +75,9 @@ class SFTUIController:
         units = list()
         if devices:
             units = devices[0].split(",")
-            self._v.show()
+            self._UIView.show()
         else:
-            self._v.hide()
+            self._UIView.hide()
 
         to_add = set(units) - set(self.devices)
         if to_add:
@@ -91,14 +89,14 @@ class SFTUIController:
     def _add_tab(self, dev_ids):
         for id_ in dev_ids:
             if id_ not in self.devices:
-                self.devices[id_] = self._v.build_tab(id_)
+                self.devices[id_] = self._UIView.build_tab(id_)
                 pass
 
     def _remove_tab(self, dev_ids):
         for id_ in dev_ids:
             if id_ in self.devices.keys():
                 self.devices.pop(id_)
-                self._v.NB.forget(self._v.NB.children[id_.lower()])
+                self._UIView.NB.forget(self._UIView.NB.children[id_.lower()])
 
     # View Parent
     def _log_init(self):
@@ -123,41 +121,30 @@ class SFTUIController:
         if self.devices:
             try:
                 # Clean up old tab and device
-                self._q2_sft_hi.put(f"vrb_off>{self._active_tab}")
                 if self._running:
                     self.devices[self._active_tab]['plot'].run = False
                     self.devices[self._active_tab]['plot'].clear_all()
                 # Start new tab and device
-                self._active_tab = self._v.NB.tab(self._v.NB.select(), "text")
-                self._q2_sft_hi.put(f"vrb_on>{self._active_tab}")
-                self._q2_sft_hi.put(f"get_bat>{self._active_tab}")
+                self._active_tab = self._UIView.NB.tab(self._UIView.NB.select(), "text")
+
                 if self._running:
                     self.devices[self._active_tab]['plot'].run = True
                     self.devices[self._active_tab]['plot'].clear_all()
             except Exception as e:
                 print(f"vController _tab_changed_cb: {e}")
 
-    def _vib_on_button_cb(self):
-        self._q2_sft_hi.put(f"vib_on>{self._active_tab}")
+    def _vib_button_cb(self):
+        self._q2_sft_hi.put(f"{self._active_tab}>vib>toggle")
 
-    def _vib_off_button_cb(self):
-        self._q2_sft_hi.put(f"vib_off>{self._active_tab}")
+    def _led_button_cb(self):
+        self._q2_sft_hi.put(f"{self._active_tab}>led>toggle")
 
-    def _led_on_button_cb(self):
-        self._q2_sft_hi.put(f"led_on>{self._active_tab}")
-
-    def _led_off_button_cb(self):
-        self._q2_sft_hi.put(f"led_off>{self._active_tab}")
-
-    def _aud_on_button_cb(self):
-        self._q2_sft_hi.put(f"aud_on>{self._active_tab}")
-
-    def _aud_off_button_cb(self):
-        self._q2_sft_hi.put(f"aud_off>{self._active_tab}")
+    def _aud_button_cb(self):
+        self._q2_sft_hi.put(f"{self._active_tab}>aud>toggle")
 
     def _configure_button_cb(self):
         self._cnf_win.show(self._active_tab)
-        self._q2_sft_hi.put(f"get_cfg>{self._active_tab}")
+        self._q2_sft_hi.put(f"{self._active_tab}>cfg>get")
 
     # Plotter
     def _update_stim_state(self, arg):

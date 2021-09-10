@@ -36,6 +36,5 @@ class HardwareInterface:
                 else:
                     print(f"controller_main: {msg} message not routed")
 
-            print("checking")
-            await asyncio.sleep(1)
+            await asyncio.sleep(.01)
 
