@@ -35,7 +35,7 @@ class SFTTabbedControls:
         self._tab_add_main_frame(dev_id)
         self._tab_embed_main_frame_in_nb(dev_id)
         self._tab_add_plot(dev_id)
-        self._tab_add_stim_controls()
+        self._tab_add_manual_controls()
         self._tab_add_results()
         self._tab_add_configure()
 
@@ -54,19 +54,44 @@ class SFTTabbedControls:
         self._tab_f['plot'] = SFT_UIPlotter.Plotter(self._tab_f['frame'])
         self._tab_f['plot'].set_rt_and_state_lines(dev_id)
 
-    def _tab_add_stim_controls(self):
-        lf = LabelFrame(self._tab_f['frame'], text="Stimulus")
+    def _tab_add_manual_controls(self):
+        lf = LabelFrame(self._tab_f['frame'], text="Manual Stimulus Control")
         lf.grid(row=1, column=1, sticky='NEWS')
+        lf.grid_columnconfigure(0, weight=1)
 
-        self._tab_f['on'] = Button(lf, text="On", command=self._stim_on_cb)
-        self._tab_f['on'].grid(row=0, column=0)
+        # Vibration Motor Controls
+        self._tab_f['vib'] = Label(lf, text="VIB---")
+        self._tab_f['vib'].grid(row=0, column=0)
 
-        self._tab_f['off'] = Button(lf, text="Off", command=self._stim_off_cb)
-        self._tab_f['off'].grid(row=0, column=1)
+        self._tab_f['on_vib'] = Button(lf, text="On", command=self._stim_on_cb)
+        self._tab_f['on_vib'].grid(row=0, column=1)
+
+        self._tab_f['off_vib'] = Button(lf, text="Off", command=self._stim_off_cb)
+        self._tab_f['off_vib'].grid(row=0, column=2)
+
+        # LED controls
+        self._tab_f['led'] = Label(lf, text="LED---")
+        self._tab_f['led'].grid(row=1, column=0)
+
+        self._tab_f['on_led'] = Button(lf, text="On", command=self._stim_on_cb)
+        self._tab_f['on_led'].grid(row=1, column=1)
+
+        self._tab_f['off_led'] = Button(lf, text="Off", command=self._stim_off_cb)
+        self._tab_f['off_led'].grid(row=1, column=2)
+
+        # Auditory controls
+        self._tab_f['aud'] = Label(lf, text="AUD---")
+        self._tab_f['aud'].grid(row=2, column=0)
+
+        self._tab_f['on_aud'] = Button(lf, text="On", command=self._stim_on_cb)
+        self._tab_f['on_aud'].grid(row=2, column=1)
+
+        self._tab_f['off_aud'] = Button(lf, text="Off", command=self._stim_off_cb)
+        self._tab_f['off_aud'].grid(row=2, column=2)
 
     def _tab_add_results(self):
         lf = LabelFrame(self._tab_f['frame'], text="Results")
-        lf.grid(row=2, column=1, sticky='NEWS')
+        lf.grid(row=4, column=1, sticky='NEWS')
         lf.grid_columnconfigure(1, weight=1)
 
         self._tab_f['trl_n'] = StringVar()
@@ -86,14 +111,11 @@ class SFTTabbedControls:
 
     def _tab_add_configure(self):
         f = Frame(self._tab_f['frame'])
-        f.grid(row=4, column=1, sticky="NEWS")
+        f.grid(row=5, column=1, sticky="NEWS")
         f.grid_columnconfigure(0, weight=1)
 
         self._tab_f['configure'] = Button(f, text="Configure Unit", command=self._configure_clicked_cb)
         self._tab_f['configure'].grid(row=0, column=0, sticky='NEWS')
-
-        self._tab_f['refresh'] = Button(f, text="Rescan Network", command=self._rescan_network_cb)
-        self._tab_f['refresh'].grid(row=1, column=0, sticky='NEWS')
 
     # Events and Callbacks
     def register_rt_checkbox_cb(self, cb):
