@@ -43,8 +43,13 @@ class SFTUIController:
         # View
         self._win.bind("<<NotebookTabChanged>>", self._tab_changed_cb)
         self._v = SFT_UIView.SFTTabbedControls(self._win)
-        self._v.register_stim_on_cb(self._stim_on_button_cb)
-        self._v.register_stim_off_cb(self._stim_off_button_cb)
+        self._v.register_vib_on_cb(self._vib_on_button_cb)
+        self._v.register_vib_off_cb(self._vib_off_button_cb)
+        self._v.register_led_on_cb(self._led_on_button_cb)
+        self._v.register_led_off_cb(self._led_off_button_cb)
+        self._v.register_aud_on_cb(self._aud_on_button_cb)
+        self._v.register_aud_off_cb(self._aud_off_button_cb)
+
         self._v.register_configure_clicked_cb(self._configure_button_cb)
 
         self._active_tab = None
@@ -132,11 +137,23 @@ class SFTUIController:
             except Exception as e:
                 print(f"vController _tab_changed_cb: {e}")
 
-    def _stim_on_button_cb(self):
-        self._q2_sft_hi.put(f"stm_on>{self._active_tab}")
+    def _vib_on_button_cb(self):
+        self._q2_sft_hi.put(f"vib_on>{self._active_tab}")
 
-    def _stim_off_button_cb(self):
-        self._q2_sft_hi.put(f"stm_off>{self._active_tab}")
+    def _vib_off_button_cb(self):
+        self._q2_sft_hi.put(f"vib_off>{self._active_tab}")
+
+    def _led_on_button_cb(self):
+        self._q2_sft_hi.put(f"led_on>{self._active_tab}")
+
+    def _led_off_button_cb(self):
+        self._q2_sft_hi.put(f"led_off>{self._active_tab}")
+
+    def _aud_on_button_cb(self):
+        self._q2_sft_hi.put(f"aud_on>{self._active_tab}")
+
+    def _aud_off_button_cb(self):
+        self._q2_sft_hi.put(f"aud_off>{self._active_tab}")
 
     def _configure_button_cb(self):
         self._cnf_win.show(self._active_tab)

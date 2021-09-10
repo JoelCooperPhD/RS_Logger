@@ -23,8 +23,12 @@ class SFTTabbedControls:
         # Callbacks
         self._rt_checkbox_cb = None
         self._state_checkbox_cb = None
-        self._stim_on_cb = None
-        self._stim_off_cb = None
+        self._vib_on_cb = None
+        self._vib_off_cb = None
+        self._led_on_cb = None
+        self._led_off_cb = None
+        self._aud_on_cb = None
+        self._aud_off_cb = None
         self._configure_clicked_cb = None
         self._rescan_network_cb = None
 
@@ -63,30 +67,30 @@ class SFTTabbedControls:
         self._tab_f['vib'] = Label(lf, text="VIB---")
         self._tab_f['vib'].grid(row=0, column=0)
 
-        self._tab_f['on_vib'] = Button(lf, text="On", command=self._stim_on_cb)
+        self._tab_f['on_vib'] = Button(lf, text="On", command=self._vib_on_cb)
         self._tab_f['on_vib'].grid(row=0, column=1)
 
-        self._tab_f['off_vib'] = Button(lf, text="Off", command=self._stim_off_cb)
+        self._tab_f['off_vib'] = Button(lf, text="Off", command=self._vib_off_cb)
         self._tab_f['off_vib'].grid(row=0, column=2)
 
         # LED controls
         self._tab_f['led'] = Label(lf, text="LED---")
         self._tab_f['led'].grid(row=1, column=0)
 
-        self._tab_f['on_led'] = Button(lf, text="On", command=self._stim_on_cb)
+        self._tab_f['on_led'] = Button(lf, text="On", command=self._led_on_cb)
         self._tab_f['on_led'].grid(row=1, column=1)
 
-        self._tab_f['off_led'] = Button(lf, text="Off", command=self._stim_off_cb)
+        self._tab_f['off_led'] = Button(lf, text="Off", command=self._led_off_cb)
         self._tab_f['off_led'].grid(row=1, column=2)
 
         # Auditory controls
         self._tab_f['aud'] = Label(lf, text="AUD---")
         self._tab_f['aud'].grid(row=2, column=0)
 
-        self._tab_f['on_aud'] = Button(lf, text="On", command=self._stim_on_cb)
+        self._tab_f['on_aud'] = Button(lf, text="On", command=self._aud_on_cb)
         self._tab_f['on_aud'].grid(row=2, column=1)
 
-        self._tab_f['off_aud'] = Button(lf, text="Off", command=self._stim_off_cb)
+        self._tab_f['off_aud'] = Button(lf, text="Off", command=self._aud_off_cb)
         self._tab_f['off_aud'].grid(row=2, column=2)
 
     def _tab_add_results(self):
@@ -124,11 +128,23 @@ class SFTTabbedControls:
     def register_state_checkbox_cb(self, cb):
         self._state_checkbox_cb = cb
 
-    def register_stim_on_cb(self, cb):
-        self._stim_on_cb = cb
+    def register_vib_on_cb(self, cb):
+        self._vib_on_cb = cb
 
-    def register_stim_off_cb(self, cb):
-        self._stim_off_cb = cb
+    def register_vib_off_cb(self, cb):
+        self._vib_off_cb = cb
+
+    def register_led_on_cb(self, cb):
+        self._vib_on_cb = cb
+
+    def register_led_off_cb(self, cb):
+        self._vib_off_cb = cb
+
+    def register_aud_on_cb(self, cb):
+        self._vib_on_cb = cb
+
+    def register_aud_off_cb(self, cb):
+        self._vib_off_cb = cb
 
     def register_configure_clicked_cb(self, cb):
         self._configure_clicked_cb = cb
