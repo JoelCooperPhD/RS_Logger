@@ -59,14 +59,13 @@ class SFTUIController:
     def _handle_messages_from_sft_hardware_interface(self):
         while not self._q2_sft_ui.empty():
             msg = self._q2_sft_ui.get()
-            try:
-                kvals = msg.split(">")
-                if len(kvals[1]):
-                    self._events[kvals[0]](kvals[1:])
-                else:
-                    self._events[kvals[0]]()
-            except Exception as e:
-                print(f"SFT_UIController : {e}")
+
+            kvals = msg.split(">")
+            if len(kvals[1]):
+                self._events[kvals[0]](kvals[1:])
+            else:
+                self._events[kvals[0]]()
+
 
         self._win.after(1, self._handle_messages_from_sft_hardware_interface)
 
@@ -133,17 +132,17 @@ class SFTUIController:
                 print(f"vController _tab_changed_cb: {e}")
 
     def _vib_button_cb(self):
-        self._q2_sft_hi.put(f"{self._active_tab}>vib>toggle")
+        self._q2_sft_hi.put(f"{self._active_tab}>vib")
 
     def _led_button_cb(self):
-        self._q2_sft_hi.put(f"{self._active_tab}>led>toggle")
+        self._q2_sft_hi.put(f"{self._active_tab}>led")
 
     def _aud_button_cb(self):
-        self._q2_sft_hi.put(f"{self._active_tab}>aud>toggle")
+        self._q2_sft_hi.put(f"{self._active_tab}>aud")
 
     def _configure_button_cb(self):
         self._cnf_win.show(self._active_tab)
-        self._q2_sft_hi.put(f"{self._active_tab}>cfg>get")
+        self._q2_sft_hi.put(f"{self._active_tab}>config")
 
     # Plotter
     def _update_stim_state(self, arg):
@@ -195,9 +194,6 @@ class SFTUIController:
     # ---- Registered Callbacks
     def _custom_button_cb(self, msg):
         self._q2_sft_hi.put(f"set_cfg>{msg}>{self._active_tab}")
-
-    def _iso_button_cb(self):
-        self._q2_sft_hi.put(f"set_iso>{self._active_tab}")
 
     # ---- msg from wDRT unit
     def _update_configuration(self, args):

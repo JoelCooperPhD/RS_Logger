@@ -45,17 +45,13 @@ class SFTController:
         while 1:
             if self._connected_sft_devices:
                 for port in self._connected_sft_devices:
-                    try:
-                        if self._connected_sft_devices[port].inWaiting():
+                    if self._connected_sft_devices[port].inWaiting():
+                        loop = asyncio.get_running_loop()
+                        msg = await loop.run_in_executor(None, read_bytes, self._connected_sft_devices[port])
+                        msg = str(msg, 'utf-8').strip()
 
-                            msg = await asyncio.get_running_loop().\
-                                run_in_executor(None, read_bytes(self._connected_sft_devices[port]))
-                            msg = str(msg, 'utf-8').strip()
+                        self._q2_sft_ui.put(f'cfg>{msg}')
 
-                            self._q2_sft_ui.put(msg)
-                    except Exception as e:
-                        pass
-                        # print(f"HIController: {e}")
 
             await asyncio.sleep(.001)
 
@@ -64,13 +60,15 @@ class SFTController:
             if self._connected_sft_devices:
                 while not self._q2_sft_hi.empty():
                     msg = self._q2_sft_hi.get()
-                    port, cmd, arg = msg.split(">")
+                    msg = msg.split(">")
+                    to_send = ','.join(msg[1:])
+                    port = msg[0]
 
-                    if cmd in ['data_record', 'data_pause']:
+                    if msg[0] in ['data_record', 'data_pause']:
                         for d in self._connected_sft_devices:
-                            asyncio.create_task(self._message_device(self._connected_sft_devices[d], f'{cmd},{arg}'))
+                            asyncio.create_task(self._message_device(self._connected_sft_devices[d], to_send))
                     else:
-                        asyncio.create_task(self._message_device(self._connected_sft_devices[port], f'{cmd},{arg}'))
+                        asyncio.create_task(self._message_device(self._connected_sft_devices[port], to_send))
             await asyncio.sleep(.001)
 
 
@@ -81,7 +79,6 @@ class SFTController:
         else:
             msg = str.encode(f'{cmd}\n')
         serial_conn.write(msg)
-        print(f"sending{msg}")
 
     def _exit_async_loop(self):
         self._run = False

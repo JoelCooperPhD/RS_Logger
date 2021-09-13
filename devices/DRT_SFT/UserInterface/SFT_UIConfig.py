@@ -29,10 +29,9 @@ class SFTConfigWin:
                      'AUD:L': StringVar(),
                      'AUD:H': StringVar(),
 
-                     "lowerISI": StringVar(),
-                     "upperISI": StringVar(),
-                     "stimDur": StringVar(),
-                     "intensity": StringVar()
+                     "ISI:L": StringVar(),
+                     "ISI:H": StringVar(),
+                     "STM:DUR": StringVar()
                      }
         self.com = None
         self.uid = None
@@ -117,15 +116,15 @@ class SFTConfigWin:
         drt_lf.grid_columnconfigure(0, weight=1)
 
         Label(drt_lf, text="Upper ISI (ms):").grid(row=0, column=0, sticky="NEWS", pady=1)
-        Entry(drt_lf, textvariable=self._var['upperISI'], width=7).grid(row=0, column=1, sticky="W", pady=1)
+        Entry(drt_lf, textvariable=self._var['ISI:H'], width=7).grid(row=0, column=1, sticky="W", pady=1)
 
         # Lower Duration
         Label(drt_lf, text="Lower ISI (ms):").grid(row=1, column=0, sticky="NEWS", pady=1)
-        Entry(drt_lf, textvariable=self._var['lowerISI'], width=7).grid(row=1, column=1, sticky="W", pady=1)
+        Entry(drt_lf, textvariable=self._var['ISI:L'], width=7).grid(row=1, column=1, sticky="W", pady=1)
 
         # Stimulus Duration Duration
         Label(drt_lf, text="Stimulus Duration (ms):").grid(row=2, column=0, sticky="NEWS", pady=1)
-        Entry(drt_lf, textvariable=self._var['stimDur'], width=7).grid(row=2, column=1, sticky="W", pady=1)
+        Entry(drt_lf, textvariable=self._var['STM:DUR'], width=7).grid(row=2, column=1, sticky="W", pady=1)
 
         # Upload
         button_upload = Button(win, text="Upload Configuration", command=self._upload_clicked)
@@ -146,23 +145,18 @@ class SFTConfigWin:
             self._var[i].set("")
 
     def parse_config(self, vals):
-        def recode_config(key):
-            return {
-                'ONTM': 'stimDur',
-                'ISIH': 'upperISI',
-                'ISIL': 'lowerISI',
-                'DBNC': 'debounce',
-                'SPCT': 'intensity'
-            }[key]
-
-        vals = vals[0].split(",")
+        vals = vals[0].strip('{').strip('}')
+        vals = vals.split(",")
         for kv in vals:
-            kv = kv.split(":")
+            kv = kv.split("=")
             if len(kv) == 2:
-                new_key = recode_config(kv[0].strip(' '))
-                fnc = self._var.get(new_key, None)
+                key = kv[0].strip('"').strip()
+                val = float(kv[1].strip('"').strip())
+                fnc = self._var.get(key, None)
                 if fnc:
-                    fnc.set(int(kv[1]))
+                    fnc.set(val)
+                else:
+                    print(f'{key}, {len(key)}')
 
     # Custom upload
     def _upload_clicked(self):
