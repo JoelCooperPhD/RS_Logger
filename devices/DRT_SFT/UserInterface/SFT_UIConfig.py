@@ -1,5 +1,5 @@
 from tkinter.ttk import LabelFrame, Label, Button, Entry
-from tkinter import Toplevel, StringVar, messagebox
+from tkinter import Toplevel, StringVar, messagebox, BOTH
 from queue import SimpleQueue
 from math import ceil
 from PIL import Image, ImageTk
@@ -9,15 +9,33 @@ from os import path
 class SFTConfigWin:
     def __init__(self, to_ctrl: SimpleQueue):
         self._wDRT2c = to_ctrl
-        self._var = {"name": StringVar(), "lowerISI": StringVar(),
-                     "upperISI": StringVar(), "stimDur": StringVar(),
-                     "debounce": StringVar(), "intensity": StringVar(),
-                     "xb_DL": StringVar(), "xb_MY": StringVar()}
+        self._var = {'HMS:0': StringVar(),
+                     'HMS:1': StringVar(),
+                     'HMS:2': StringVar(),
+                     'HMS:3': StringVar(),
+
+                     'WS:LED': StringVar(),
+                     'WS:VIB': StringVar(),
+                     'WS:AUD': StringVar(),
+
+                     'HS:LED': StringVar(),
+                     'HS:VIB': StringVar(),
+                     'HS:AUD': StringVar(),
+
+                     'LED:L': StringVar(),
+                     'LED:H': StringVar(),
+                     'VIB:L': StringVar(),
+                     'VIB:H': StringVar(),
+                     'AUD:L': StringVar(),
+                     'AUD:H': StringVar(),
+
+                     "lowerISI": StringVar(),
+                     "upperISI": StringVar(),
+                     "stimDur": StringVar(),
+                     "intensity": StringVar()
+                     }
         self.com = None
         self.uid = None
-
-        qmark_path = path.abspath(path.join(path.dirname(__file__), '../../../img/questionmark_15.png'))
-        self._qmark_img = ImageTk.PhotoImage(Image.open(qmark_path))
 
         # Callbacks
         self._iso_cb = None
@@ -35,33 +53,83 @@ class SFTConfigWin:
         win.resizable(False, False)
         win.grid_columnconfigure(0, weight=1)
 
-        lf = LabelFrame(win, text="Runtime Parameters")
-        lf.grid(row=0, column=0, sticky="NEWS", pady=1, padx=2)
-        lf.grid_columnconfigure(1, weight=1)
 
-        # Open Duration
-        Label(lf, text="Upper ISI (ms):").grid(row=5, column=0, sticky="NEWS", pady=1)
-        Entry(lf, textvariable=self._var['upperISI'], width=7).grid(row=5, column=2, sticky="W", pady=1)
+        # How Many Stimuli
+        hms_lf = LabelFrame(win, text="Count Probabilities")
+        hms_lf.pack(padx=3)
 
-        # Close Duration
-        Label(lf, text="Lower ISI (ms):").grid(row=6, column=0, sticky="NEWS", pady=1)
-        Entry(lf, textvariable=self._var['lowerISI'], width=7).grid(row=6, column=2, sticky="W", pady=1)
+        Label(hms_lf, text='HMS:0').grid(row=0, column=0)
+        Label(hms_lf, text='HMS:1').grid(row=0, column=1)
+        Label(hms_lf, text='HMS:2').grid(row=0, column=2)
+        Label(hms_lf, text='HMS:3').grid(row=0, column=3)
+
+        Entry(hms_lf, textvariable=self._var['HMS:0'], width=7).grid(row=1, column=0, sticky="W", padx=2)
+        Entry(hms_lf, textvariable=self._var['HMS:1'], width=7).grid(row=1, column=1, sticky="W", padx=2)
+        Entry(hms_lf, textvariable=self._var['HMS:2'], width=7).grid(row=1, column=2, sticky="W", padx=2)
+        Entry(hms_lf, textvariable=self._var['HMS:3'], width=7).grid(row=1, column=3, sticky="W", padx=2)
+
+        # Which Stimuli
+        ws_lf = LabelFrame(win, text="Selection Probabilities")
+        ws_lf.pack(expand=True, fill=BOTH, pady=5, padx=3)
+
+        Label(ws_lf, text="WS:LED").grid(row=0, column=0)
+        Label(ws_lf, text="WS:VIB").grid(row=0, column=1)
+        Label(ws_lf, text="WS:AUD").grid(row=0, column=2)
+
+        Entry(ws_lf, textvariable=self._var['WS:LED'], width=7).grid(row=1, column=0, sticky="W", padx=2)
+        Entry(ws_lf, textvariable=self._var['WS:VIB'], width=7).grid(row=1, column=1, sticky="W", padx=2)
+        Entry(ws_lf, textvariable=self._var['WS:AUD'], width=7).grid(row=1, column=2, sticky="W", padx=2)
+
+        # How Salient
+        hs_lf = LabelFrame(win, text="Salience Probabilities")
+        hs_lf.pack(expand=True, fill=BOTH, pady=5, padx=3)
+
+        Label(hs_lf, text="HS:LED").grid(row=0, column=0)
+        Label(hs_lf, text="HS:VIB").grid(row=0, column=1)
+        Label(hs_lf, text="HS:AUD").grid(row=0, column=2)
+
+        Entry(hs_lf, textvariable=self._var['HS:LED'], width=7).grid(row=1, column=0, sticky="W", padx=2)
+        Entry(hs_lf, textvariable=self._var['HS:VIB'], width=7).grid(row=1, column=1, sticky="W", padx=2)
+        Entry(hs_lf, textvariable=self._var['HS:AUD'], width=7).grid(row=1, column=2, sticky="W", padx=2)
+
+        # Salience Definitions
+        sd_lf = LabelFrame(win, text="High / Low Salience Percentages")
+        sd_lf.pack(expand=True, fill=BOTH, pady=5, padx=3)
+        sd_lf.grid_columnconfigure(0, weight=1)
+
+        Label(sd_lf, text="LOW").grid(row=0, column=1)
+        Label(sd_lf, text="HIGH").grid(row=0, column=2)
+
+        Label(sd_lf, text="LED - Light").grid(row=1, column=0, sticky='W')
+        Label(sd_lf, text="VIB - Vibration").grid(row=2, column=0, sticky='W')
+        Label(sd_lf, text="AUD - Sound").grid(row=3, column=0, sticky='W')
+
+        Entry(sd_lf, textvariable=self._var['LED:L'], width=7).grid(row=1, column=1, sticky='W', padx=2, pady=2)
+        Entry(sd_lf, textvariable=self._var['LED:H'], width=7).grid(row=1, column=2, sticky='W', padx=2, pady=2)
+        Entry(sd_lf, textvariable=self._var['VIB:L'], width=7).grid(row=2, column=1, sticky='W', padx=2, pady=2)
+        Entry(sd_lf, textvariable=self._var['VIB:H'], width=7).grid(row=2, column=2, sticky='W', padx=2, pady=2)
+        Entry(sd_lf, textvariable=self._var['AUD:L'], width=7).grid(row=3, column=1, sticky='W', padx=2, pady=2)
+        Entry(sd_lf, textvariable=self._var['AUD:H'], width=7).grid(row=3, column=2, sticky='W', padx=2, pady=2)
+
+        # Standard DRT parameters
+        drt_lf = LabelFrame(win, text="DRT Experiment Parameters")
+        drt_lf.pack(expand=True, fill=BOTH, pady=5, padx=3)
+        drt_lf.grid_columnconfigure(0, weight=1)
+
+        Label(drt_lf, text="Upper ISI (ms):").grid(row=0, column=0, sticky="NEWS", pady=1)
+        Entry(drt_lf, textvariable=self._var['upperISI'], width=7).grid(row=0, column=1, sticky="W", pady=1)
+
+        # Lower Duration
+        Label(drt_lf, text="Lower ISI (ms):").grid(row=1, column=0, sticky="NEWS", pady=1)
+        Entry(drt_lf, textvariable=self._var['lowerISI'], width=7).grid(row=1, column=1, sticky="W", pady=1)
 
         # Stimulus Duration Duration
-        Label(lf, text="Stimulus Duration (ms):").grid(row=7, column=0, sticky="NEWS", pady=1)
-        Entry(lf, textvariable=self._var['stimDur'], width=7).grid(row=7, column=2, sticky="W", pady=1)
+        Label(drt_lf, text="Stimulus Duration (ms):").grid(row=2, column=0, sticky="NEWS", pady=1)
+        Entry(drt_lf, textvariable=self._var['stimDur'], width=7).grid(row=2, column=1, sticky="W", pady=1)
 
-        # Stimulus Intensity
-        Label(lf, text="Stimulus Intensity (%):").grid(row=8, column=0, sticky="NEWS", pady=1)
-        Entry(lf, textvariable=self._var['intensity'], width=7).grid(row=8, column=2, sticky="W", pady=1)
-
-        # Upload Custom
-        button_upload = Button(lf, text="Upload Custom", command=self._custom_clicked)
-        button_upload.grid(row=10, column=0, columnspan=3, pady=(4, 0), padx=2, sticky="NEWS")
-
-        # ISO
-        button_iso = Button(lf, text="Upload ISO", command=self._iso_clicked)
-        button_iso.grid(row=11, column=0, columnspan=3, pady=(0, 5), padx=2, sticky="NEWS")
+        # Upload
+        button_upload = Button(win, text="Upload Configuration", command=self._upload_clicked)
+        button_upload.pack(expand=True, fill=BOTH, pady=5, padx=3)
 
     @staticmethod
     def _filter_entry(val, default_value,  lower, upper):
@@ -74,11 +142,8 @@ class SFTConfigWin:
         return val
 
     def _clear_fields(self):
-        self._var['stimDur'].set("")
-        self._var['lowerISI'].set("")
-        self._var['upperISI'].set("")
-        self._var['debounce'].set("")
-        self._var['intensity'].set("")
+        for i in self._var:
+            self._var[i].set("")
 
     def parse_config(self, vals):
         def recode_config(key):
@@ -100,7 +165,7 @@ class SFTConfigWin:
                     fnc.set(int(kv[1]))
 
     # Custom upload
-    def _custom_clicked(self):
+    def _upload_clicked(self):
         low = self._filter_entry(self._var['lowerISI'].get(), 3000, 0, 65535)
         high = self._filter_entry(self._var['upperISI'].get(), 5000, low, 65535)
         intensity = ceil(self._filter_entry(self._var['intensity'].get(), 100, 0, 100))
@@ -111,14 +176,7 @@ class SFTConfigWin:
         self._clear_fields()
         self._custom_cb(msg)
 
-    def register_custom_cb(self, cb):
+    def register_upload_cb(self, cb):
         self._custom_cb = cb
 
-    # ISO upload
-    def _iso_clicked(self):
-        self._clear_fields()
-        self._iso_cb()
-
-    def register_iso_cb(self, cb):
-        self._iso_cb = cb
 

@@ -52,8 +52,7 @@ class SFTUIController:
 
         # Configure Window
         self._cnf_win = SFT_UIConfig.SFTConfigWin(self._q2_sft_ui)
-        self._cnf_win.register_custom_cb(self._custom_button_cb)
-        self._cnf_win.register_iso_cb(self._iso_button_cb)
+        self._cnf_win.register_upload_cb(self._custom_button_cb)
 
         self._handle_messages_from_sft_hardware_interface()
 
