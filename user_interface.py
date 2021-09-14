@@ -55,7 +55,7 @@ class MainWindow:
 
             if kv[0] == 'fpath':
                 self._update_file_paths(kv[1])
-            elif msg in ['init', 'close', 'start', 'stop']:
+            elif kv[0] in ['init', 'close', 'start', 'stop']:
                 self._handle_new_logger_command(msg)
             else:
                 for d in self._UI_queues:
@@ -87,9 +87,9 @@ class MainWindow:
                     self._widgets[w].handle_log_init(time_stamp)
                 elif 'close' in msg:
                     self._widgets[w].handle_log_close(time_stamp)
-                elif 'record' in msg:
+                elif 'start' in msg:
                     self._widgets[w].handle_data_record(time_stamp)
-                elif 'pause' in msg:
+                elif 'stop' in msg:
                     self._widgets[w].handle_data_pause(time_stamp)
             except AttributeError:
                 pass

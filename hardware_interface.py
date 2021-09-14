@@ -24,18 +24,12 @@ class HardwareInterface:
         while self._route_messages:
             while not self._HI_queues['root'].empty():
                 msg = self._HI_queues['root'].get()
-
-                if 'cmd' in msg:
+                if 'exit' in msg:
+                    self._route_messages = False
+                else:
                     for d in self._HI_queues:
                         if d != 'root':
                             self._HI_queues[d].put(msg)
-                    pass
-
-                elif 'exit' in msg:
-                    self._route_messages = False
-
-                else:
-                    print(f"HI Root: {msg} message not routed")
 
             await asyncio.sleep(.01)
 

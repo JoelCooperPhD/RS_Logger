@@ -26,13 +26,13 @@ class SFTController:
         asyncio.create_task(self._connection_manager.update())
         asyncio.create_task(self._connect_event())
         asyncio.create_task(self._handle_messages_from_sft_devices())
-        asyncio.create_task(self._handle_messages_for_sft_hardware_interface())
+        asyncio.create_task(self._handle_incoming_messages())
 
     async def _connect_event(self):
         while True:
             self._connected_sft_devices = await self._connection_manager.new_connection()
             self._connected_sft_ports = ','.join(list(self._connected_sft_devices.keys()))
-            msg = f'devices>{self._connected_sft_ports}'
+            msg = f'cfg>devices>{self._connected_sft_ports}'
             self._q2_sft_ui.put(msg)
 
             if self._connected_sft_devices:
@@ -60,22 +60,18 @@ class SFTController:
 
             await asyncio.sleep(.001)
 
-    async def _handle_messages_for_sft_hardware_interface(self):
+    async def _handle_incoming_messages(self):
         while 1:
             if self._connected_sft_devices:
                 while not self._q2_sft_hi.empty():
                     msg = self._q2_sft_hi.get()
-                    msg = msg.split(">")
-                    to_send = ','.join(msg[1:])
-                    port = msg[0]
+                    split = msg.split(">")
 
-                    if msg[0] in ['init', 'close']:
-                        pass
-                    elif msg[0] in ['start', 'stop']:
+                    if 'ALL' in split[0]:
                         for d in self._connected_sft_devices:
-                            asyncio.create_task(self._message_device(self._connected_sft_devices[d], to_send))
+                            asyncio.create_task(self._message_device(self._connected_sft_devices[d], split[1]))
                     else:
-                        asyncio.create_task(self._message_device(self._connected_sft_devices[port], to_send))
+                        asyncio.create_task(self._message_device(self._connected_sft_devices[split[0]], split[1:]))
             await asyncio.sleep(.001)
 
 

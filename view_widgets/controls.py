@@ -37,6 +37,7 @@ class ExpControls:
 
         self._record_button = Button(self._widget_lf, image=self._record_img, command=self._record_button_cb)
         self._record_button.grid(row=0, column=2, pady=0, padx=2, sticky='NEWS')
+        self._record_button.config(state="disabled")
 
         # Trial Name Entry
         Label(self._widget_lf, text="Label:", anchor='w') \
@@ -47,7 +48,8 @@ class ExpControls:
 
     def handle_log_init(self, timestamp):
         self._log_running = True
-        self._log_button.config(text="\nClose\n")
+        self._record_button['state']="normal"
+        self._log_button['text']="\nClose\n"
         self._log_controls('initialize', timestamp)
 
     def handle_log_close(self, timestamp):
@@ -55,7 +57,8 @@ class ExpControls:
             self.handle_data_pause(timestamp)
 
         self._log_running = False
-        self._log_button.config(text="\nInitialize\n")
+        self._record_button['state'] = 'disabled'
+        self._log_button['text']="\nInitialize\n"
         self._log_controls('close', timestamp)
 
     def handle_data_record(self, timestamp):
@@ -64,6 +67,7 @@ class ExpControls:
 
         if self._file_path:
             self._record_running = True
+            self._log_button['state'] = 'disabled'
             self.entry['state'] = 'disabled'
             self._record_button.config(image=self._pause_img)
             self._log_controls('record', timestamp)
@@ -71,6 +75,7 @@ class ExpControls:
     def handle_data_pause(self, timestamp):
         self._record_running = False
         self.entry['state'] = 'normal'
+        self._log_button['state'] = 'normal'
         self._record_button.config(image=self._record_img)
         self._log_controls('pause', timestamp)
 
@@ -90,20 +95,22 @@ class ExpControls:
             self._ask_file_dialog()
             if self._file_path:
                 self.handle_log_init(timestamp)
-                self._q2v.put(f'init>{timestamp}')
+                self._q2v.put(f'ALL>init>{timestamp}')
 
         else:
             self.handle_log_close(timestamp)
-            self._q2v.put(f'close>{timestamp}')
+            self._q2v.put(f'ALL>close>{timestamp}')
 
     def _record_button_cb(self):
         timestamp = time()
         if not self._record_running:
+            self._q2v.put(f'ALL>start>{timestamp}')
             self.handle_data_record(timestamp)
-            self._q2v.put(f'record>{timestamp}')
+
         else:
+            self._q2v.put(f'ALL>stop>{timestamp}')
             self.handle_data_pause(timestamp)
-            self._q2v.put(f'pause>{timestamp}')
+
 
     def _log_controls(self, state, timestamp):
         def _write(_path, _results):
