@@ -1,6 +1,9 @@
+import serial.serialutil
+
 from devices.utilities.HardwareInterface import USBConnect, Results
 import asyncio
 from queue import SimpleQueue
+from serial.serialutil import SerialException
 
 
 class SFTController:
@@ -23,7 +26,7 @@ class SFTController:
         asyncio.create_task(self._connection_manager.update())
         asyncio.create_task(self._connect_event())
         asyncio.create_task(self._handle_messages_from_sft_devices())
-        asyncio.create_task(self._handle_messages_from_sft_user_interface())
+        asyncio.create_task(self._handle_messages_for_sft_hardware_interface())
 
     async def _connect_event(self):
         while True:
@@ -45,17 +48,19 @@ class SFTController:
         while 1:
             if self._connected_sft_devices:
                 for port in self._connected_sft_devices:
-                    if self._connected_sft_devices[port].inWaiting():
-                        loop = asyncio.get_running_loop()
-                        msg = await loop.run_in_executor(None, read_bytes, self._connected_sft_devices[port])
-                        msg = str(msg, 'utf-8').strip()
+                    try:
+                        if self._connected_sft_devices[port].inWaiting():
+                            loop = asyncio.get_running_loop()
+                            msg = await loop.run_in_executor(None, read_bytes, self._connected_sft_devices[port])
+                            msg = str(msg, 'utf-8').strip()
 
-                        self._q2_sft_ui.put(f'cfg>{msg}')
-
+                            self._q2_sft_ui.put(f'cfg>{msg}')
+                    except SerialException:
+                        pass
 
             await asyncio.sleep(.001)
 
-    async def _handle_messages_from_sft_user_interface(self):
+    async def _handle_messages_for_sft_hardware_interface(self):
         while 1:
             if self._connected_sft_devices:
                 while not self._q2_sft_hi.empty():
@@ -64,7 +69,9 @@ class SFTController:
                     to_send = ','.join(msg[1:])
                     port = msg[0]
 
-                    if msg[0] in ['data_record', 'data_pause']:
+                    if msg[0] in ['init', 'close']:
+                        pass
+                    elif msg[0] in ['start', 'stop']:
                         for d in self._connected_sft_devices:
                             asyncio.create_task(self._message_device(self._connected_sft_devices[d], to_send))
                     else:

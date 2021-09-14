@@ -24,17 +24,18 @@ class HardwareInterface:
         while self._route_messages:
             while not self._HI_queues['root'].empty():
                 msg = self._HI_queues['root'].get()
-                kv = msg.split(">")
 
-                if 'ctrl' in kv:
-                    # Send to all device controllers
+                if 'cmd' in msg:
+                    for d in self._HI_queues:
+                        if d != 'root':
+                            self._HI_queues[d].put(msg)
                     pass
 
-                elif kv[0] == 'exit':
+                elif 'exit' in msg:
                     self._route_messages = False
 
                 else:
-                    print(f"controller_main: {msg} message not routed")
+                    print(f"HI Root: {msg} message not routed")
 
             await asyncio.sleep(.01)
 

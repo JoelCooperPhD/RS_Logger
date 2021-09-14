@@ -4,10 +4,10 @@ from queue import SimpleQueue
 from os import path
 from time import sleep
 
-from view_widgets.controls_logger import ExpControls
+from view_widgets.controls import ExpControls
 from view_widgets.key_logger import KeyFlagger
 from view_widgets.note_logger import NoteTaker
-from view_widgets.information import InfoDisplay
+from view_widgets.log_timers import InfoDisplay
 
 from devices.DRT_SFT.UserInterface import SFT_UIController
 
@@ -55,12 +55,12 @@ class MainWindow:
 
             if kv[0] == 'fpath':
                 self._update_file_paths(kv[1])
-            elif 'cmd' in msg:
+            elif msg in ['init', 'close', 'start', 'stop']:
                 self._handle_new_logger_command(msg)
-            elif 'sft' in msg:
-                self._q2_sft_ui.put(msg)
             else:
-                print(f"view: {msg} event not handled")
+                for d in self._UI_queues:
+                    if d != 'root':
+                        self._UI_queues[d].put(msg)
 
         self._win.after(100, self._monitor_q2v)
 
@@ -79,7 +79,7 @@ class MainWindow:
         '''
 
     def _handle_new_logger_command(self, msg):
-        self._HI_queues.put(msg)
+        self._HI_queues['root'].put(msg)
         time_stamp = msg.split(">")[1]
         for w in self._widgets:
             try:

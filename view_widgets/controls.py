@@ -89,18 +89,23 @@ class ExpControls:
         if not self._log_running:
             self._ask_file_dialog()
             if self._file_path:
-                self._q2v.put(f'cmd.init>{timestamp}')
+                self.handle_log_init(timestamp)
+                self._q2v.put(f'init>{timestamp}')
+
         else:
-            self._q2v.put(f'cmd.close>{timestamp}')
+            self.handle_log_close(timestamp)
+            self._q2v.put(f'close>{timestamp}')
 
     def _record_button_cb(self):
         timestamp = time()
         if not self._record_running:
-            self._q2v.put(f'cmd.record>{timestamp}')
+            self.handle_data_record(timestamp)
+            self._q2v.put(f'record>{timestamp}')
         else:
-            self._q2v.put(f'cmd.pause>{timestamp}')
+            self.handle_data_pause(timestamp)
+            self._q2v.put(f'pause>{timestamp}')
 
-    def _log_controls(self,state, timestamp):
+    def _log_controls(self, state, timestamp):
         def _write(_path, _results):
             try:
                 with open(_path, 'a') as writer:

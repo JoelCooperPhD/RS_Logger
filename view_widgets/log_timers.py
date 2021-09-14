@@ -13,7 +13,7 @@ class InfoDisplay:
         self._data_recording = False
 
         # Main widget label frame
-        self._widget_lf = LabelFrame(widget_frame, text='Key Logger')
+        self._widget_lf = LabelFrame(widget_frame, text='Log Timers')
         self._widget_lf.pack(side=LEFT, fill='y', padx=2)
 
         self._log_init_t = datetime.now()

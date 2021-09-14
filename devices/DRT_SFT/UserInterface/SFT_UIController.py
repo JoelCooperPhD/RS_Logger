@@ -64,7 +64,6 @@ class SFTUIController:
             else:
                 self._events[kvals[0]]()
 
-
         self._win.after(1, self._handle_messages_from_sft_hardware_interface)
 
     def _update_devices(self, devices=None):
@@ -95,20 +94,24 @@ class SFTUIController:
                 self._UIView.NB.forget(self._UIView.NB.children[id_.lower()])
 
     # View Parent
-    def _log_init(self):
-        for d in self.devices:
-            self.devices[d]['refresh'].config(state='disabled')
+    def _log_init(self, time_stamp=None):
+        pass
+        # refresh and disable charts
+        # for d in self.devices:
+        #     self.devices[d]['refresh'].config(state='disabled')
 
-    def _log_close(self):
-        for d in self.devices:
-            self.devices[d]['refresh'].config(state='active')
+    def _log_close(self, time_stamp=None):
+        pass
+        # refresh and enable charts
+        # for d in self.devices:
+        #     self.devices[d]['refresh'].config(state='active')
 
-    def _data_record(self):
+    def _data_record(self, time_stamp=None):
         self._running = True
         self.devices[self._active_tab]['plot'].run = True
         self.devices[self._active_tab]['plot'].clear_all()
 
-    def _data_pause(self):
+    def _data_pause(self, time_stamp=None):
         self._running = False
         self.devices[self._active_tab]['plot'].run = False
 
