@@ -28,7 +28,6 @@ class SFTUIController:
             "cfg": self._update_configuration,
             "stm": self._update_stim_state,
             "dta": self._update_stim_data,
-            "bty": self._update_battery_soc,
             "rt":  self._update_rt,
             "clk": self._update_clicks,
 
@@ -51,8 +50,7 @@ class SFTUIController:
         self._active_tab = None
 
         # Configure Window
-        self._cnf_win = SFT_UIConfig.SFTConfigWin(self._q2_sft_ui)
-        self._cnf_win.register_upload_cb(self._custom_button_cb)
+        self._cnf_win = SFT_UIConfig.SFTConfigWin(self._q2_sft_hi)
 
         self._handle_messages_from_sft_hardware_interface()
 
@@ -158,7 +156,6 @@ class SFTUIController:
                 self.devices[unit_id]['rt'].set(-1)
                 self.devices[unit_id]['trl_n'].set(trial_n)
                 self.devices[unit_id]['clicks'].set(0)
-                self._update_battery_soc(bty, unit_id)
 
     def _update_rt(self, arg):
         if self._running:
@@ -172,18 +169,6 @@ class SFTUIController:
             unit_id, clicks = arg[0].split(',')
             self.devices[unit_id]['clicks'].set(clicks)
 
-    def _update_battery_soc(self, arg, unit_id=None):
-        soc = arg
-        if isinstance(arg, list):
-            unit_id, soc = arg[0].strip().split(',')
-
-        p = int(soc) // 10
-        for i in range(10):
-            color = 'white'
-            if p >= i + 1:
-                color = 'black' if p > 2 else 'red'
-            self.devices[unit_id][f'b_{i}'].config(bg=color)
-
     def _stop_plotter(self):
         self.devices[self._active_tab]['plot'].run = False
 
@@ -192,8 +177,6 @@ class SFTUIController:
 
     # Configuration Window
     # ---- Registered Callbacks
-    def _custom_button_cb(self, msg):
-        self._q2_sft_hi.put(f"set_cfg>{msg}>{self._active_tab}")
 
     # ---- msg from wDRT unit
     def _update_configuration(self, args):

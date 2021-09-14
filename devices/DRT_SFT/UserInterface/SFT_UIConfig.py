@@ -1,47 +1,46 @@
+import asyncio
 from tkinter.ttk import LabelFrame, Label, Button, Entry
 from tkinter import Toplevel, StringVar, messagebox, BOTH
 from queue import SimpleQueue
 from math import ceil
 from PIL import Image, ImageTk
 from os import path
+from time import sleep
 
 
 class SFTConfigWin:
     def __init__(self, to_ctrl: SimpleQueue):
-        self._wDRT2c = to_ctrl
-        self._var = {'HMS:0': StringVar(),
-                     'HMS:1': StringVar(),
-                     'HMS:2': StringVar(),
-                     'HMS:3': StringVar(),
+        self._q2_sft_hi = to_ctrl
+        
+        keys = ['HMS:0', 'HMS:1', 'HMS:2', 'HMS:3',
+                'WS:LED', 'WS:VIB', 'WS:AUD',
+                'HS:LED', 'HS:VIB', 'HS:AUD',
+                'LED:L', 'LED:H',
+                'VIB:L', 'VIB:H',
+                'AUD:L', 'AUD:H',
+                'ISI:L', 'ISI:H',
+                'STM:DUR']
 
-                     'WS:LED': StringVar(),
-                     'WS:VIB': StringVar(),
-                     'WS:AUD': StringVar(),
+        values = [StringVar(), StringVar(), StringVar(), StringVar(),
+                  StringVar(), StringVar(), StringVar(),
+                  StringVar(), StringVar(), StringVar(),
+                  StringVar(), StringVar(),
+                  StringVar(), StringVar(),
+                  StringVar(), StringVar(),
+                  StringVar(), StringVar(),
+                  StringVar()]
 
-                     'HS:LED': StringVar(),
-                     'HS:VIB': StringVar(),
-                     'HS:AUD': StringVar(),
+        self.UI_settings = dict(zip(keys, values))
+        self.HW_settings = dict.fromkeys(keys, str())
 
-                     'LED:L': StringVar(),
-                     'LED:H': StringVar(),
-                     'VIB:L': StringVar(),
-                     'VIB:H': StringVar(),
-                     'AUD:L': StringVar(),
-                     'AUD:H': StringVar(),
-
-                     "ISI:L": StringVar(),
-                     "ISI:H": StringVar(),
-                     "STM:DUR": StringVar()
-                     }
-        self.com = None
-        self.uid = None
+        self._port = None
 
         # Callbacks
         self._iso_cb = None
         self._custom_cb = None
 
     def show(self, uid):
-        self.uid = uid
+        self._port = uid
 
         win = Toplevel()
         win.grab_set()
@@ -62,10 +61,10 @@ class SFTConfigWin:
         Label(hms_lf, text='HMS:2').grid(row=0, column=2)
         Label(hms_lf, text='HMS:3').grid(row=0, column=3)
 
-        Entry(hms_lf, textvariable=self._var['HMS:0'], width=7).grid(row=1, column=0, sticky="W", padx=2)
-        Entry(hms_lf, textvariable=self._var['HMS:1'], width=7).grid(row=1, column=1, sticky="W", padx=2)
-        Entry(hms_lf, textvariable=self._var['HMS:2'], width=7).grid(row=1, column=2, sticky="W", padx=2)
-        Entry(hms_lf, textvariable=self._var['HMS:3'], width=7).grid(row=1, column=3, sticky="W", padx=2)
+        Entry(hms_lf, textvariable=self.UI_settings['HMS:0'], width=7).grid(row=1, column=0, sticky="W", padx=2)
+        Entry(hms_lf, textvariable=self.UI_settings['HMS:1'], width=7).grid(row=1, column=1, sticky="W", padx=2)
+        Entry(hms_lf, textvariable=self.UI_settings['HMS:2'], width=7).grid(row=1, column=2, sticky="W", padx=2)
+        Entry(hms_lf, textvariable=self.UI_settings['HMS:3'], width=7).grid(row=1, column=3, sticky="W", padx=2)
 
         # Which Stimuli
         ws_lf = LabelFrame(win, text="Selection Probabilities")
@@ -75,9 +74,9 @@ class SFTConfigWin:
         Label(ws_lf, text="WS:VIB").grid(row=0, column=1)
         Label(ws_lf, text="WS:AUD").grid(row=0, column=2)
 
-        Entry(ws_lf, textvariable=self._var['WS:LED'], width=7).grid(row=1, column=0, sticky="W", padx=2)
-        Entry(ws_lf, textvariable=self._var['WS:VIB'], width=7).grid(row=1, column=1, sticky="W", padx=2)
-        Entry(ws_lf, textvariable=self._var['WS:AUD'], width=7).grid(row=1, column=2, sticky="W", padx=2)
+        Entry(ws_lf, textvariable=self.UI_settings['WS:LED'], width=7).grid(row=1, column=0, sticky="W", padx=2)
+        Entry(ws_lf, textvariable=self.UI_settings['WS:VIB'], width=7).grid(row=1, column=1, sticky="W", padx=2)
+        Entry(ws_lf, textvariable=self.UI_settings['WS:AUD'], width=7).grid(row=1, column=2, sticky="W", padx=2)
 
         # How Salient
         hs_lf = LabelFrame(win, text="Salience Probabilities")
@@ -87,9 +86,9 @@ class SFTConfigWin:
         Label(hs_lf, text="HS:VIB").grid(row=0, column=1)
         Label(hs_lf, text="HS:AUD").grid(row=0, column=2)
 
-        Entry(hs_lf, textvariable=self._var['HS:LED'], width=7).grid(row=1, column=0, sticky="W", padx=2)
-        Entry(hs_lf, textvariable=self._var['HS:VIB'], width=7).grid(row=1, column=1, sticky="W", padx=2)
-        Entry(hs_lf, textvariable=self._var['HS:AUD'], width=7).grid(row=1, column=2, sticky="W", padx=2)
+        Entry(hs_lf, textvariable=self.UI_settings['HS:LED'], width=7).grid(row=1, column=0, sticky="W", padx=2)
+        Entry(hs_lf, textvariable=self.UI_settings['HS:VIB'], width=7).grid(row=1, column=1, sticky="W", padx=2)
+        Entry(hs_lf, textvariable=self.UI_settings['HS:AUD'], width=7).grid(row=1, column=2, sticky="W", padx=2)
 
         # Salience Definitions
         sd_lf = LabelFrame(win, text="High / Low Salience Percentages")
@@ -103,12 +102,12 @@ class SFTConfigWin:
         Label(sd_lf, text="VIB - Vibration").grid(row=2, column=0, sticky='W')
         Label(sd_lf, text="AUD - Sound").grid(row=3, column=0, sticky='W')
 
-        Entry(sd_lf, textvariable=self._var['LED:L'], width=7).grid(row=1, column=1, sticky='W', padx=2, pady=2)
-        Entry(sd_lf, textvariable=self._var['LED:H'], width=7).grid(row=1, column=2, sticky='W', padx=2, pady=2)
-        Entry(sd_lf, textvariable=self._var['VIB:L'], width=7).grid(row=2, column=1, sticky='W', padx=2, pady=2)
-        Entry(sd_lf, textvariable=self._var['VIB:H'], width=7).grid(row=2, column=2, sticky='W', padx=2, pady=2)
-        Entry(sd_lf, textvariable=self._var['AUD:L'], width=7).grid(row=3, column=1, sticky='W', padx=2, pady=2)
-        Entry(sd_lf, textvariable=self._var['AUD:H'], width=7).grid(row=3, column=2, sticky='W', padx=2, pady=2)
+        Entry(sd_lf, textvariable=self.UI_settings['LED:L'], width=7).grid(row=1, column=1, sticky='W', padx=2, pady=2)
+        Entry(sd_lf, textvariable=self.UI_settings['LED:H'], width=7).grid(row=1, column=2, sticky='W', padx=2, pady=2)
+        Entry(sd_lf, textvariable=self.UI_settings['VIB:L'], width=7).grid(row=2, column=1, sticky='W', padx=2, pady=2)
+        Entry(sd_lf, textvariable=self.UI_settings['VIB:H'], width=7).grid(row=2, column=2, sticky='W', padx=2, pady=2)
+        Entry(sd_lf, textvariable=self.UI_settings['AUD:L'], width=7).grid(row=3, column=1, sticky='W', padx=2, pady=2)
+        Entry(sd_lf, textvariable=self.UI_settings['AUD:H'], width=7).grid(row=3, column=2, sticky='W', padx=2, pady=2)
 
         # Standard DRT parameters
         drt_lf = LabelFrame(win, text="DRT Experiment Parameters")
@@ -116,15 +115,15 @@ class SFTConfigWin:
         drt_lf.grid_columnconfigure(0, weight=1)
 
         Label(drt_lf, text="Upper ISI (ms):").grid(row=0, column=0, sticky="NEWS", pady=1)
-        Entry(drt_lf, textvariable=self._var['ISI:H'], width=7).grid(row=0, column=1, sticky="W", pady=1)
+        Entry(drt_lf, textvariable=self.UI_settings['ISI:H'], width=7).grid(row=0, column=1, sticky="W", pady=1)
 
         # Lower Duration
         Label(drt_lf, text="Lower ISI (ms):").grid(row=1, column=0, sticky="NEWS", pady=1)
-        Entry(drt_lf, textvariable=self._var['ISI:L'], width=7).grid(row=1, column=1, sticky="W", pady=1)
+        Entry(drt_lf, textvariable=self.UI_settings['ISI:L'], width=7).grid(row=1, column=1, sticky="W", pady=1)
 
         # Stimulus Duration Duration
         Label(drt_lf, text="Stimulus Duration (ms):").grid(row=2, column=0, sticky="NEWS", pady=1)
-        Entry(drt_lf, textvariable=self._var['STM:DUR'], width=7).grid(row=2, column=1, sticky="W", pady=1)
+        Entry(drt_lf, textvariable=self.UI_settings['STM:DUR'], width=7).grid(row=2, column=1, sticky="W", pady=1)
 
         # Upload
         button_upload = Button(win, text="Upload Configuration", command=self._upload_clicked)
@@ -141,8 +140,8 @@ class SFTConfigWin:
         return val
 
     def _clear_fields(self):
-        for i in self._var:
-            self._var[i].set("")
+        for i in self.UI_settings:
+            self.UI_settings[i].set("")
 
     def parse_config(self, vals):
         vals = vals[0].strip('{').strip('}')
@@ -152,23 +151,27 @@ class SFTConfigWin:
             if len(kv) == 2:
                 key = kv[0].strip('"').strip()
                 val = float(kv[1].strip('"').strip())
-                fnc = self._var.get(key, None)
+                fnc = self.UI_settings.get(key, None)
                 if fnc:
                     fnc.set(val)
+                    self.HW_settings[key] = val
                 else:
                     print(f'{key}, {len(key)}')
 
+    def _send_changed_parameters(self):
+        for k in self.UI_settings:
+            try:
+                if float(self.UI_settings[k].get()) != float(self.HW_settings[k]):
+                    self._q2_sft_hi.put(f'{self._port}>{k},{self.UI_settings[k].get()}')
+                    sleep(.2)
+            except ValueError:
+                pass
+
     # Custom upload
     def _upload_clicked(self):
-        low = self._filter_entry(self._var['lowerISI'].get(), 3000, 0, 65535)
-        high = self._filter_entry(self._var['upperISI'].get(), 5000, low, 65535)
-        intensity = ceil(self._filter_entry(self._var['intensity'].get(), 100, 0, 100))
-        duration = self._filter_entry(self._var['stimDur'].get(), 1000, 0, 65535)
-
-        msg = f"ONTM:{duration},ISIL:{low},ISIH:{high},DBNC:{100},SPCT:{intensity}"
-
+        self._send_changed_parameters()
         self._clear_fields()
-        self._custom_cb(msg)
+        self._q2_sft_hi.put(f'{self._port}>config')
 
     def register_upload_cb(self, cb):
         self._custom_cb = cb
