@@ -7,9 +7,9 @@ from serial.serialutil import SerialException
 
 
 class SFTController:
-    def __init__(self, hardware_interface_q_sft, user_interface_q_sft):
-        self._q2_sft_hi: SimpleQueue = hardware_interface_q_sft
-        self._q2_sft_ui: SimpleQueue = user_interface_q_sft
+    def __init__(self, q_main, q_hi_sft):
+        self._q_out: SimpleQueue = q_main
+        self._q_in: SimpleQueue = q_hi_sft
 
         self._connection_manager = USBConnect.ConnectionManager(name='DRT_SFT', vid='F055', pid='9800')
         self._results_writer = Results.ResultsWriter('DRT_SFT')
@@ -23,17 +23,18 @@ class SFTController:
         self._run = True
 
     def update(self):
+
         asyncio.create_task(self._connection_manager.update())
         asyncio.create_task(self._connect_event())
         asyncio.create_task(self._handle_messages_from_sft_devices())
-        asyncio.create_task(self._handle_incoming_messages())
+        asyncio.create_task(self._queue_monitor())
 
     async def _connect_event(self):
         while True:
             self._connected_sft_devices = await self._connection_manager.new_connection()
             self._connected_sft_ports = ','.join(list(self._connected_sft_devices.keys()))
-            msg = f'cfg>devices>{self._connected_sft_ports}'
-            self._q2_sft_ui.put(msg)
+            msg = f'ui_sft>devices>{self._connected_sft_ports}'
+            self._q_out.put(msg)
 
             if self._connected_sft_devices:
                 self._listen_to_connected_sft = True
@@ -41,47 +42,37 @@ class SFTController:
                 self._listen_to_connected_sft = False
 
     async def _handle_messages_from_sft_devices(self):
-        def read_bytes(device_connection):
-            msg = device_connection.read_until(b'\r\n').strip()
-            return msg
-
         while 1:
             if self._connected_sft_devices:
                 for port in self._connected_sft_devices:
                     try:
                         if self._connected_sft_devices[port].inWaiting():
-                            loop = asyncio.get_running_loop()
-                            msg = await loop.run_in_executor(None, read_bytes, self._connected_sft_devices[port])
+                            msg = self._connected_sft_devices[port].read_until(b'\r\n').strip()
                             msg = str(msg, 'utf-8').strip()
-
-                            self._q2_sft_ui.put(f'cfg>{msg}')
+                            self._q_out.put(f'ui_sft>{msg}')
                     except SerialException:
                         pass
 
-            await asyncio.sleep(.001)
+            await asyncio.sleep(.01)
 
-    async def _handle_incoming_messages(self):
+    async def _queue_monitor(self):
         while 1:
             if self._connected_sft_devices:
-                while not self._q2_sft_hi.empty():
-                    msg = self._q2_sft_hi.get()
-                    split = msg.split(">")
+                while not self._q_in.empty():
+                    msg = self._q_in.get()
+                    address, key, val = msg.split(">")
 
-                    if 'ALL' in split[0]:
-                        for d in self._connected_sft_devices:
-                            asyncio.create_task(self._message_device(self._connected_sft_devices[d], split[1]))
+                    if val == 'ALL':
+                        for val in self._connected_sft_devices:
+                            asyncio.create_task(self._message_device(self._connected_sft_devices[val], key))
                     else:
-                        asyncio.create_task(self._message_device(self._connected_sft_devices[split[0]], split[1:]))
-            await asyncio.sleep(.001)
-
+                        asyncio.create_task(self._message_device(self._connected_sft_devices[val], key))
+            await asyncio.sleep(.01)
 
     @staticmethod
-    async def _message_device(serial_conn, cmd, value=None):
-        if value:
-            msg = str.encode(f'{cmd},{value}\n')
-        else:
-            msg = str.encode(f'{cmd}\n')
-        serial_conn.write(msg)
+    async def _message_device(serial_conn, cmd):
+        serial_conn.write(str.encode(f'{cmd}\n'))
+        print(f'{cmd}\n')
 
     def _exit_async_loop(self):
         self._run = False

@@ -9,8 +9,8 @@ from time import sleep
 
 
 class SFTConfigWin:
-    def __init__(self, to_ctrl: SimpleQueue):
-        self._q2_sft_hi = to_ctrl
+    def __init__(self, q_out: SimpleQueue):
+        self._q_out = q_out
         
         keys = ['HMS:0', 'HMS:1', 'HMS:2', 'HMS:3',
                 'WS:LED', 'WS:VIB', 'WS:AUD',
@@ -144,7 +144,6 @@ class SFTConfigWin:
             self.UI_settings[i].set("")
 
     def parse_config(self, vals):
-        vals = vals[0].strip('{').strip('}')
         vals = vals.split(",")
         for kv in vals:
             kv = kv.split("=")
@@ -162,7 +161,7 @@ class SFTConfigWin:
         for k in self.UI_settings:
             try:
                 if float(self.UI_settings[k].get()) != float(self.HW_settings[k]):
-                    self._q2_sft_hi.put(f'{self._port}>{k},{self.UI_settings[k].get()}')
+                    self._q_out.put(f'hi_sft>{self._port}>{k},{self.UI_settings[k].get()}')
                     sleep(.2)
             except ValueError:
                 pass
@@ -171,7 +170,7 @@ class SFTConfigWin:
     def _upload_clicked(self):
         self._send_changed_parameters()
         self._clear_fields()
-        self._q2_sft_hi.put(f'{self._port}>config')
+        self._q_out.put(f'hi_sft>{self._port}>config')
 
     def register_upload_cb(self, cb):
         self._custom_cb = cb

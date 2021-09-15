@@ -4,32 +4,29 @@ from devices.utilities import loop_monitor
 
 
 class HardwareInterface:
-    def __init__(self, hardware_interface_qs, user_interface_qs):
-        self._HI_queues = hardware_interface_qs
-        self._UI_queues = user_interface_qs
+    def __init__(self, queues):
+        self._queues = queues
+        self._q_in = queues['hi_root']
+        self._q_out = queues['main']
+
         self._route_messages = True
-        self.loop_monitor = loop_monitor.LoopMonitor()
+        self._loop_monitor = loop_monitor.LoopMonitor()
         # Devices
-        self._devices = {'SFT': sft_controller.SFTController(self._HI_queues['sft'], self._UI_queues['sft'])}
+        self._devices = {'SFT': sft_controller.SFTController(self._q_out, self._queues['hi_sft'])}
 
     async def run(self):
         for d in self._devices:
             self._devices[d].update()
 
-        # asyncio.create_task(self.loop_monitor.run_asyncio())
+        await asyncio.create_task(self._queue_monitor())
 
-        await asyncio.create_task(self._monitor_main2c())
-
-    async def _monitor_main2c(self):
+    async def _queue_monitor(self):
         while self._route_messages:
-            while not self._HI_queues['root'].empty():
-                msg = self._HI_queues['root'].get()
-                if 'exit' in msg:
+            while not self._q_in.empty():
+                msg = self._q_in.get()
+                address, key, val = msg.split('>')
+                if key == 'exit':
                     self._route_messages = False
-                else:
-                    for d in self._HI_queues:
-                        if d != 'root':
-                            self._HI_queues[d].put(msg)
 
             await asyncio.sleep(.01)
 

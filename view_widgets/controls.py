@@ -8,9 +8,9 @@ from threading import Thread
 
 
 class ExpControls:
-    def __init__(self, widget_frame, q2v: SimpleQueue):
+    def __init__(self, widget_frame, q_out: SimpleQueue):
 
-        self._q2v = q2v
+        self._q_out = q_out
         self._file_path = None
 
         # Main widget label frame
@@ -84,7 +84,7 @@ class ExpControls:
         file_path = filedialog.askdirectory()
         if file_path:
             self._file_path = file_path
-            self._q2v.put(f'fpath>{file_path}')
+            self._q_out.put(f'ui_sft>fpath>{file_path}')
         else:
             self._file_path = None
 
@@ -95,20 +95,21 @@ class ExpControls:
             self._ask_file_dialog()
             if self._file_path:
                 self.handle_log_init(timestamp)
-                self._q2v.put(f'ALL>init>{timestamp}')
+                self._q_out.put(f'main>init>ALL')
 
         else:
             self.handle_log_close(timestamp)
-            self._q2v.put(f'ALL>close>{timestamp}')
+            self._q_out.put(f'main>close>ALL')
 
     def _record_button_cb(self):
         timestamp = time()
         if not self._record_running:
-            self._q2v.put(f'ALL>start>{timestamp}')
             self.handle_data_record(timestamp)
+            self._q_out.put(f'main>start>ALL')
+
 
         else:
-            self._q2v.put(f'ALL>stop>{timestamp}')
+            self._q_out.put(f'main>stop>ALL')
             self.handle_data_pause(timestamp)
 
 

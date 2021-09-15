@@ -13,10 +13,10 @@ from devices.DRT_SFT.UserInterface import SFT_UIController
 
 
 class MainWindow:
-    def __init__(self, hardware_interface_qs, user_interface_qs):
-
-        self._HI_queues = hardware_interface_qs
-        self._UI_queues = user_interface_qs
+    def __init__(self, queues):
+        self._queues = queues
+        self._q_in = queues['ui_root']
+        self._q_out = queues['main']
 
         self._win: Tk = Tk()
 
@@ -32,37 +32,33 @@ class MainWindow:
         self._widget_frame.pack(fill=BOTH)
         self._widget_frame.columnconfigure(4, weight=1)
 
-        self._widgets = {'control': ExpControls(self._widget_frame, self._UI_queues['root']),
+        self._widgets = {'control': ExpControls(self._widget_frame, self._q_out),
                          'key_flag': KeyFlagger(self._win, self._widget_frame),
-                         'note': NoteTaker(self._widget_frame, self._UI_queues['root']),
-                         'info': InfoDisplay(self._widget_frame, self._UI_queues['root'])}
+                         'note': NoteTaker(self._widget_frame, self._q_out),
+                         'info': InfoDisplay(self._widget_frame, self._q_out)}
 
-        self._monitor_q2v()
+        self._queue_monitor()
 
         # Devices
         self._devices = {'DRT_SFT': SFT_UIController.SFTUIController(self._win,
-                                                                     self._HI_queues['sft'],
-                                                                     self._UI_queues['sft'])}
+                                                                     self._q_out,
+                                                                     self._queues['ui_sft'])}
 
         # Tkinter loop
         self._win.protocol("WM_DELETE_WINDOW", self._close_event)
         self._win.mainloop()
 
-    def _monitor_q2v(self):
-        while not self._UI_queues['root'].empty():
-            msg = self._UI_queues['root'].get()
-            kv = msg.split(">")
+    def _queue_monitor(self):
+        while not self._q_in.empty():
+            msg = self._q_in.get()
+            address, key, val = msg.split(">")
+            if key == 'fpath':
+                self._update_file_paths(val)
 
-            if kv[0] == 'fpath':
-                self._update_file_paths(kv[1])
-            elif kv[0] in ['init', 'close', 'start', 'stop']:
-                self._handle_new_logger_command(msg)
-            else:
-                for d in self._UI_queues:
-                    if d != 'root':
-                        self._UI_queues[d].put(msg)
+            elif key in ['init', 'close', 'start', 'stop']:
+                self._handle_new_logger_command(key, val)
 
-        self._win.after(100, self._monitor_q2v)
+        self._win.after(100, self._queue_monitor)
 
     def _update_file_paths(self, file_path):
         for w in self._widgets:
@@ -78,25 +74,23 @@ class MainWindow:
                 pass
         '''
 
-    def _handle_new_logger_command(self, msg):
-        self._HI_queues['root'].put(msg)
-        time_stamp = msg.split(">")[1]
+    def _handle_new_logger_command(self, key, val):
         for w in self._widgets:
             try:
-                if 'init' in msg:
-                    self._widgets[w].handle_log_init(time_stamp)
-                elif 'close' in msg:
-                    self._widgets[w].handle_log_close(time_stamp)
-                elif 'start' in msg:
-                    self._widgets[w].handle_data_record(time_stamp)
-                elif 'stop' in msg:
-                    self._widgets[w].handle_data_pause(time_stamp)
+                if key == 'init':
+                    self._widgets[w].handle_log_init(val)
+                elif key == 'close':
+                    self._widgets[w].handle_log_close(val)
+                elif key == 'start':
+                    self._widgets[w].handle_data_record(val)
+                elif key == 'stop':
+                    self._widgets[w].handle_data_pause(val)
             except AttributeError:
                 pass
 
     def _close_event(self):
         print("closing...")
-        self._HI_queues['root'].put("exit")
+        self._q_out.put("exit")
         sleep(.05)
         self._win.destroy()
         exit()

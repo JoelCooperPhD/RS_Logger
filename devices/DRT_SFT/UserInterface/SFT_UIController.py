@@ -4,10 +4,10 @@ from devices.DRT_SFT.UserInterface import SFT_UIView, SFT_UIConfig
 
 
 class SFTUIController:
-    def __init__(self, win, hardware_interface_q_sft, user_interface_q_sft):
+    def __init__(self, win, q_out, q_in):
         self._win: Tk = win
-        self._q2_sft_hi: SimpleQueue = hardware_interface_q_sft
-        self._q2_sft_ui: SimpleQueue = user_interface_q_sft
+        self._q_out: SimpleQueue = q_out
+        self._q_in: SimpleQueue = q_in
 
         self.devices = dict()
 
@@ -26,17 +26,14 @@ class SFTUIController:
         self._active_tab = None
 
         # Configure Window
-        self._cnf_win = SFT_UIConfig.SFTConfigWin(self._q2_sft_hi)
+        self._cnf_win = SFT_UIConfig.SFTConfigWin(self._q_in)
 
-        self._handle_incoming_messages()
+        self._queue_monitor()
 
-    def _handle_incoming_messages(self):
-        while not self._q2_sft_ui.empty():
-            msg = self._q2_sft_ui.get()
-            port, key, val = msg.split('>')
-
-            if 'ALL' in msg:
-                self._q2_sft_hi.put(msg)
+    def _queue_monitor(self):
+        while not self._q_in.empty():
+            msg = self._q_in.get()
+            address, key, val = msg.split('>')
 
             # Main Controller Events
             if key == 'init':
@@ -53,7 +50,7 @@ class SFTUIController:
                 self._update_devices(val)
 
             # Messages from SFT hardware
-            elif key == 'cfg':
+            elif key == 'cnf':
                 self._update_configuration(val)
             elif key == 'stm':
                 self._update_stimulus_state(val)
@@ -66,7 +63,7 @@ class SFTUIController:
             elif key == 'clear':
                 self._clear_plot()
 
-        self._win.after(1, self._handle_incoming_messages)
+        self._win.after(1, self._queue_monitor)
 
     # Main Controller Events
     def _log_init(self, time_stamp=None):
@@ -94,7 +91,7 @@ class SFTUIController:
     def _update_devices(self, devices=None):
         units = list()
         if devices:
-            units = devices[0].split(",")
+            units = devices.split(",")
             self._UIView.show()
         else:
             self._UIView.hide()
@@ -158,15 +155,15 @@ class SFTUIController:
                 print(f"vController _tab_changed_cb: {e}")
 
     def _vib_button_cb(self):
-        self._q2_sft_hi.put(f"{self._active_tab}>vib")
+        self._q_out.put(f"hi_sft>vib>{self._active_tab}")
 
     def _led_button_cb(self):
-        self._q2_sft_hi.put(f"{self._active_tab}>led")
+        self._q_out.put(f"hi_sft>led>{self._active_tab}")
 
     def _aud_button_cb(self):
-        self._q2_sft_hi.put(f"{self._active_tab}>aud")
+        self._q_out.put(f"hi_sft>aud>{self._active_tab}")
 
     def _configure_button_cb(self):
         self._cnf_win.show(self._active_tab)
-        self._q2_sft_hi.put(f"{self._active_tab}>config")
+        self._q_out.put(f"hi_sft>config>{self._active_tab}")
 

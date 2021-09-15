@@ -11,24 +11,44 @@ class Main:
         self.run = True
 
         # Queues to communicate with the view and controller between threads
-        self.user_interface_queues = {'root': SimpleQueue(), 'sft': SimpleQueue()}
-        self.hardware_interface_queues = {'root': SimpleQueue(), 'sft': SimpleQueue()}
+        self.queues = {'main': SimpleQueue(),
+
+                       'hi_root': SimpleQueue(),
+                       'ui_root': SimpleQueue(),
+
+                       'hi_sft': SimpleQueue(),
+                       'ui_sft': SimpleQueue()}
 
         # Controller Thread - This is a newly spawned thread where an asyncio loop is used
         self.t = Thread(target=self.async_controller_thread, daemon=True)
         self.t.start()
 
         # UserInterface Thread - This is the main thread where a tkinter loop is used
-        self.view_main = view_main.MainWindow(self.hardware_interface_queues,
-                                              self.user_interface_queues)
+        self.view_main = view_main.MainWindow(self.queues)
 
     def async_controller_thread(self):
         asyncio.run(self.run_main_async())
 
     async def run_main_async(self):
-        main_controller = controller.HardwareInterface(self.hardware_interface_queues,
-                                                       self.user_interface_queues)
-        await asyncio.create_task(main_controller.run())
+        main_controller = controller.HardwareInterface(self.queues)
+        await asyncio.gather(main_controller.run(),
+                             self.main_message_router())
+
+    async def main_message_router(self):
+        while 1:
+            while not self.queues['main'].empty():
+                msg = self.queues['main'].get()
+                print(msg)
+                address, key, val = msg.split('>')
+                if address == 'main':
+                    if val == 'ALL':
+                        for q in self.queues:
+                            if q != 'main':
+                                self.queues[q].put(f'{q}>{key}>{val}')
+                else:
+                    self.queues[address].put(msg)
+
+            await asyncio.sleep(.01)
 
 
 if __name__ == "__main__":
