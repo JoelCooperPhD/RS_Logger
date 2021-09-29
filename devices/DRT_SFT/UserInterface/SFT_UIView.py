@@ -72,7 +72,6 @@ class SFTTabbedControls:
         self._tab_f['on_aud'] = Button(lf, text="AUD", command=self._aud_cb)
         self._tab_f['on_aud'].grid(row=2, column=0, sticky='NEWS')
 
-
     def _tab_add_results(self):
         lf = LabelFrame(self._tab_f['frame'], text="Results")
         lf.grid(row=4, column=1, sticky='NEWS')
@@ -98,7 +97,7 @@ class SFTTabbedControls:
         f.grid(row=5, column=1, sticky="NEWS")
         f.grid_columnconfigure(0, weight=1)
 
-        self._tab_f['configure'] = Button(f, text="Configure Unit", command=self._configure_clicked_cb)
+        self._tab_f['configure'] = Button(f, text="Configure Unit", command=self._configure_clicked_cb, width=25)
         self._tab_f['configure'].grid(row=0, column=0, sticky='NEWS')
 
     # Events and Callbacks

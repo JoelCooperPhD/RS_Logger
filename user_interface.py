@@ -1,6 +1,5 @@
 from tkinter import Tk, BOTH
 import tkinter.ttk as ttk
-from queue import SimpleQueue
 from os import path
 from time import sleep
 

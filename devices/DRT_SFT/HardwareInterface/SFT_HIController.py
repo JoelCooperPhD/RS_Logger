@@ -1,9 +1,10 @@
 import serial.serialutil
-
+from threading import Thread
 from devices.utilities.HardwareInterface import USBConnect, Results
 import asyncio
 from queue import SimpleQueue
 from serial.serialutil import SerialException
+from time import time
 
 
 class SFTController:
@@ -21,6 +22,8 @@ class SFTController:
         self.msg_time_stamp = None
         self.msg_port = None
         self._run = True
+
+        self._file_path = None
 
     def update(self):
 
@@ -49,7 +52,18 @@ class SFTController:
                         if self._connected_sft_devices[port].inWaiting():
                             msg = self._connected_sft_devices[port].read_until(b'\r\n').strip()
                             msg = str(msg, 'utf-8').strip()
-                            self._q_out.put(f'ui_sft>{msg}')
+                            key, val = msg.split('>')
+                            if key == 'dta':
+                                dta_split = val.split(',')
+                                self._log_results(val, time())
+                                self._q_out.put(f'ui_sft>trl>{port},{dta_split[4]}')
+
+                            elif key in ['VIB', 'LED', 'AUD']:
+                                print(key)
+                            elif key in ['clk', 'trl', 'rt']:
+                                self._q_out.put(f'ui_sft>{key}>{port},{val}')
+                            else:
+                                self._q_out.put(f'ui_sft>{msg}')
                     except SerialException:
                         pass
 
@@ -65,9 +79,25 @@ class SFTController:
                     if val == 'ALL':
                         for val in self._connected_sft_devices:
                             asyncio.create_task(self._message_device(self._connected_sft_devices[val], key))
+                    elif key == 'fpath':
+                        self._file_path = val
                     else:
                         asyncio.create_task(self._message_device(self._connected_sft_devices[val], key))
             await asyncio.sleep(.01)
+
+    def _log_results(self, state, timestamp):
+        def _write(_path, _results):
+            try:
+                with open(_path, 'a') as writer:
+                    writer.write(_results + '\n')
+            except (PermissionError, FileNotFoundError):
+                print("Control write error")
+
+        data = f"control,{state},{timestamp}"
+        file_path = f"{self._file_path}/data.txt"
+
+        t = Thread(target=_write, args=(file_path, data))
+        t.start()
 
     @staticmethod
     async def _message_device(serial_conn, cmd):

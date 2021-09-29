@@ -38,17 +38,20 @@ class Main:
         while 1:
             while not self.queues['main'].empty():
                 msg = self.queues['main'].get()
-                print(msg)
-                address, key, val = msg.split('>')
-                if address == 'main':
-                    if val == 'ALL':
-                        for q in self.queues:
-                            if q != 'main':
-                                self.queues[q].put(f'{q}>{key}>{val}')
+                if msg == 'exit':
+                    print('Main: Handle Exit Stub')
                 else:
-                    self.queues[address].put(msg)
+                    address, key, val = msg.split('>')
+                    if address == 'main':
+                        if val == 'ALL' or key == 'fpath':
+                            for q in self.queues:
+                                if q != 'main':
+                                    self.queues[q].put(f'{q}>{key}>{val}')
 
-            await asyncio.sleep(.01)
+                    else:
+                        self.queues[address].put(msg)
+
+            await asyncio.sleep(.1)
 
 
 if __name__ == "__main__":

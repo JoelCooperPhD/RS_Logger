@@ -179,6 +179,7 @@ class Plotter:
 
     def _rescale_rt_y(self, val=0):
         if val is not None:
+            val = int(val)
             if val >= self._rt_y_max:
                 self._plt[0].set_yticks(np.arange(0, val, 1))
                 self._plt[0].set_ylim(self._rt_y_min - .3, val * 1.2)
@@ -187,7 +188,7 @@ class Plotter:
 
     # Plot Controls
     def rt_update(self, unit_id, val):
-        self._rt_now[unit_id] = val
+        self._rt_now[unit_id] = int(val)
 
     def state_update(self, unit_id, val):
         self._state_now[unit_id] = val

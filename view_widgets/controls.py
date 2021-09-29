@@ -46,10 +46,11 @@ class ExpControls:
         self.entry = Entry(self._widget_lf, textvariable=self.var_cond_name, width=20)
         self.entry.grid(row=1, column=1, pady=4, padx=2, sticky='EW', columnspan=2)
 
+
     def handle_log_init(self, timestamp):
         self._log_running = True
-        self._record_button['state']="normal"
-        self._log_button['text']="\nClose\n"
+        self._record_button['state'] = "normal"
+        self._log_button['text'] = "\nClose\n"
         self._log_controls('initialize', timestamp)
 
     def handle_log_close(self, timestamp):
@@ -84,7 +85,7 @@ class ExpControls:
         file_path = filedialog.askdirectory()
         if file_path:
             self._file_path = file_path
-            self._q_out.put(f'ui_sft>fpath>{file_path}')
+            self._q_out.put(f'main>fpath>{file_path}')
         else:
             self._file_path = None
 
@@ -112,13 +113,12 @@ class ExpControls:
             self._q_out.put(f'main>stop>ALL')
             self.handle_data_pause(timestamp)
 
-
     def _log_controls(self, state, timestamp):
         def _write(_path, _results):
             try:
                 with open(_path, 'a') as writer:
                     writer.write(_results + '\n')
-            except PermissionError:
+            except (PermissionError, FileNotFoundError):
                 print("Control write error")
 
         data = f"control,{state},{timestamp}"

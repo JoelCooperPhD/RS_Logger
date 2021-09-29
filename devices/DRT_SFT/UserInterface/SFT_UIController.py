@@ -6,7 +6,7 @@ from devices.DRT_SFT.UserInterface import SFT_UIView, SFT_UIConfig
 class SFTUIController:
     def __init__(self, win, q_out, q_in):
         self._win: Tk = win
-        self._q_out: SimpleQueue = q_out
+        self._q_out: SimpleQueue = q_out 
         self._q_in: SimpleQueue = q_in
 
         self.devices = dict()
@@ -26,7 +26,7 @@ class SFTUIController:
         self._active_tab = None
 
         # Configure Window
-        self._cnf_win = SFT_UIConfig.SFTConfigWin(self._q_in)
+        self._cnf_win = SFT_UIConfig.SFTConfigWin(self._q_out)
 
         self._queue_monitor()
 
@@ -54,6 +54,8 @@ class SFTUIController:
                 self._update_configuration(val)
             elif key == 'stm':
                 self._update_stimulus_state(val)
+            elif key == 'trl':
+                self._update_trial_num(val)
             elif key == 'rt':
                 self._update_rt(val)
             elif key == 'clk':
@@ -63,7 +65,11 @@ class SFTUIController:
             elif key == 'clear':
                 self._clear_plot()
 
-        self._win.after(1, self._queue_monitor)
+            # File Path
+            elif key == 'fpath':
+                pass
+
+        self._win.after(10, self._queue_monitor)
 
     # Main Controller Events
     def _log_init(self, time_stamp=None):
@@ -101,6 +107,7 @@ class SFTUIController:
             for id_ in to_add:
                 if id_ not in self.devices:
                     self.devices[id_] = self._UIView.build_tab(id_)
+                    self._q_out.put(f'main>stop>ALL')
                     pass
 
         to_remove = set(self.devices) - set(units)
@@ -118,16 +125,22 @@ class SFTUIController:
         if self._running:
             self.devices[arg[1]]['plot'].state_update(arg[1], arg[0])
 
+    def _update_trial_num(self, arg):
+        if self._running:
+            unit_id, cnt = arg.split(',')
+            self.devices[unit_id]['trl_n'].set(cnt)
+
     def _update_rt(self, arg):
         if self._running:
-            unit_id, rt = arg[0].split(',')
-            rt = round((int(rt) / 1000000), 2)
+            unit_id, rt = arg.split(',')
+            if int(rt) != -1:
+                rt = round((int(rt) / 1000), 2)
             self.devices[unit_id]['rt'].set(rt)
             self.devices[unit_id]['plot'].rt_update(unit_id, rt)
 
     def _update_clicks(self, arg):
         if self._running:
-            unit_id, clicks = arg[0].split(',')
+            unit_id, clicks = arg.split(',')
             self.devices[unit_id]['clicks'].set(clicks)
 
     # Plot Commands

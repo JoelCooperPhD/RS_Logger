@@ -33,14 +33,14 @@ class SFTConfigWin:
         self.UI_settings = dict(zip(keys, values))
         self.HW_settings = dict.fromkeys(keys, str())
 
-        self._port = None
+        self._active_tab = None
 
         # Callbacks
         self._iso_cb = None
         self._custom_cb = None
 
     def show(self, uid):
-        self._port = uid
+        self._active_tab = uid
 
         win = Toplevel()
         win.grab_set()
@@ -53,7 +53,7 @@ class SFTConfigWin:
 
 
         # How Many Stimuli
-        hms_lf = LabelFrame(win, text="Count Probabilities")
+        hms_lf = LabelFrame(win, text="Count Probabilities (%)")
         hms_lf.pack(padx=3)
 
         Label(hms_lf, text='HMS:0').grid(row=0, column=0)
@@ -67,7 +67,7 @@ class SFTConfigWin:
         Entry(hms_lf, textvariable=self.UI_settings['HMS:3'], width=7).grid(row=1, column=3, sticky="W", padx=2)
 
         # Which Stimuli
-        ws_lf = LabelFrame(win, text="Selection Probabilities")
+        ws_lf = LabelFrame(win, text="Selection Probabilities (%)")
         ws_lf.pack(expand=True, fill=BOTH, pady=5, padx=3)
 
         Label(ws_lf, text="WS:LED").grid(row=0, column=0)
@@ -79,7 +79,7 @@ class SFTConfigWin:
         Entry(ws_lf, textvariable=self.UI_settings['WS:AUD'], width=7).grid(row=1, column=2, sticky="W", padx=2)
 
         # How Salient
-        hs_lf = LabelFrame(win, text="Salience Probabilities")
+        hs_lf = LabelFrame(win, text="Salience Probabilities (%)")
         hs_lf.pack(expand=True, fill=BOTH, pady=5, padx=3)
 
         Label(hs_lf, text="HS:LED").grid(row=0, column=0)
@@ -91,7 +91,7 @@ class SFTConfigWin:
         Entry(hs_lf, textvariable=self.UI_settings['HS:AUD'], width=7).grid(row=1, column=2, sticky="W", padx=2)
 
         # Salience Definitions
-        sd_lf = LabelFrame(win, text="High / Low Salience Percentages")
+        sd_lf = LabelFrame(win, text="High Low Salience Definitions (%)")
         sd_lf.pack(expand=True, fill=BOTH, pady=5, padx=3)
         sd_lf.grid_columnconfigure(0, weight=1)
 
@@ -149,7 +149,7 @@ class SFTConfigWin:
             kv = kv.split("=")
             if len(kv) == 2:
                 key = kv[0].strip('"').strip()
-                val = float(kv[1].strip('"').strip())
+                val = kv[1].strip('"').strip()
                 fnc = self.UI_settings.get(key, None)
                 if fnc:
                     fnc.set(val)
@@ -159,18 +159,16 @@ class SFTConfigWin:
 
     def _send_changed_parameters(self):
         for k in self.UI_settings:
-            try:
-                if float(self.UI_settings[k].get()) != float(self.HW_settings[k]):
-                    self._q_out.put(f'hi_sft>{self._port}>{k},{self.UI_settings[k].get()}')
-                    sleep(.2)
-            except ValueError:
-                pass
+            if int(self.UI_settings[k].get()) != int(self.HW_settings[k]):
+                self._q_out.put(f'hi_sft>{k},{self.UI_settings[k].get()}>{self._active_tab}')
+                sleep(.2)
+
 
     # Custom upload
     def _upload_clicked(self):
         self._send_changed_parameters()
         self._clear_fields()
-        self._q_out.put(f'hi_sft>{self._port}>config')
+        self._q_out.put(f'hi_sft>config>{self._active_tab}')
 
     def register_upload_cb(self, cb):
         self._custom_cb = cb
