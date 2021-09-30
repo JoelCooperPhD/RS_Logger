@@ -51,15 +51,19 @@ class SFTController:
                     try:
                         if self._connected_sft_devices[port].inWaiting():
                             msg = self._connected_sft_devices[port].read_until(b'\r\n').strip()
+                            timestamp = time()
                             msg = str(msg, 'utf-8').strip()
                             key, val = msg.split('>')
                             if key == 'dta':
                                 dta_split = val.split(',')
-                                self._log_results(val, time())
+                                sub_str = ','.join(dta_split[2:])
+                                self._log_results(f'sft_{port},data,{timestamp},{sub_str}')
                                 self._q_out.put(f'ui_sft>trl>{port},{dta_split[4]}')
+                                if dta_split[5] == '-1':
+                                    self._q_out.put(f'ui_sft>rt>{port},-1')
 
                             elif key in ['VIB', 'LED', 'AUD']:
-                                print(key)
+                                self._q_out.put(f'ui_sft>stm>{port},{val}')
                             elif key in ['clk', 'trl', 'rt']:
                                 self._q_out.put(f'ui_sft>{key}>{port},{val}')
                             else:
@@ -85,24 +89,20 @@ class SFTController:
                         asyncio.create_task(self._message_device(self._connected_sft_devices[val], key))
             await asyncio.sleep(.01)
 
-    def _log_results(self, state, timestamp):
+    def _log_results(self, data_packet):
         def _write(_path, _results):
             try:
                 with open(_path, 'a') as writer:
                     writer.write(_results + '\n')
             except (PermissionError, FileNotFoundError):
                 print("Control write error")
-
-        data = f"control,{state},{timestamp}"
         file_path = f"{self._file_path}/data.txt"
-
-        t = Thread(target=_write, args=(file_path, data))
+        t = Thread(target=_write, args=(file_path, data_packet))
         t.start()
 
     @staticmethod
     async def _message_device(serial_conn, cmd):
         serial_conn.write(str.encode(f'{cmd}\n'))
-        print(f'{cmd}\n')
 
     def _exit_async_loop(self):
         self._run = False

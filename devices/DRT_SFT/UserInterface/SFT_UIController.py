@@ -74,15 +74,9 @@ class SFTUIController:
     # Main Controller Events
     def _log_init(self, time_stamp=None):
         pass
-        # refresh and disable charts
-        # for d in self.devices:
-        #     self.devices[d]['refresh'].config(state='disabled')
 
     def _log_close(self, time_stamp=None):
         pass
-        # refresh and enable charts
-        # for d in self.devices:
-        #     self.devices[d]['refresh'].config(state='active')
 
     def _data_start(self, time_stamp=None):
         self._running = True
@@ -122,8 +116,9 @@ class SFTUIController:
         self._cnf_win.parse_config(args)
 
     def _update_stimulus_state(self, arg):
+        port, state = arg.split(',')
         if self._running:
-            self.devices[arg[1]]['plot'].state_update(arg[1], arg[0])
+            self.devices[port]['plot'].state_update(port, state)
 
     def _update_trial_num(self, arg):
         if self._running:
@@ -135,7 +130,9 @@ class SFTUIController:
             unit_id, rt = arg.split(',')
             if int(rt) != -1:
                 rt = round((int(rt) / 1000), 2)
-            self.devices[unit_id]['rt'].set(rt)
+            else:
+                self.devices[unit_id]['rt'].set(rt)
+                rt = -.001
             self.devices[unit_id]['plot'].rt_update(unit_id, rt)
 
     def _update_clicks(self, arg):

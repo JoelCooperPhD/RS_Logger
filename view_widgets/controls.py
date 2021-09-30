@@ -120,9 +120,9 @@ class ExpControls:
                     writer.write(_results + '\n')
             except (PermissionError, FileNotFoundError):
                 print("Control write error")
+        if timestamp !=  'ALL':
+            data = f"control,{state},{timestamp}"
+            file_path = f"{self._file_path}/controls.txt"
 
-        data = f"control,{state},{timestamp}"
-        file_path = f"{self._file_path}/controls.txt"
-
-        t = Thread(target=_write, args=(file_path, data))
-        t.start()
+            t = Thread(target=_write, args=(file_path, data))
+            t.start()

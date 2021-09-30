@@ -31,7 +31,7 @@ class Plotter:
         self._plot_lines = set()
 
         self._rt_y_min = 0
-        self._rt_y_max = 2
+        self._rt_y_max = 1
 
         # Stimulus State
         self._state_now = dict()
@@ -179,7 +179,6 @@ class Plotter:
 
     def _rescale_rt_y(self, val=0):
         if val is not None:
-            val = int(val)
             if val >= self._rt_y_max:
                 self._plt[0].set_yticks(np.arange(0, val, 1))
                 self._plt[0].set_ylim(self._rt_y_min - .3, val * 1.2)
@@ -188,9 +187,13 @@ class Plotter:
 
     # Plot Controls
     def rt_update(self, unit_id, val):
-        self._rt_now[unit_id] = int(val)
+        self._rt_now[unit_id] = val
 
     def state_update(self, unit_id, val):
+        if val in ['H', 'L']:
+            val = 1
+        else:
+            val = 0
         self._state_now[unit_id] = val
 
     def clear_all(self):

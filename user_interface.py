@@ -74,6 +74,7 @@ class MainWindow:
         '''
 
     def _handle_new_logger_command(self, key, val):
+
         for w in self._widgets:
             try:
                 if key == 'init':
