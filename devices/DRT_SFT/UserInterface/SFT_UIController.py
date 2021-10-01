@@ -17,9 +17,12 @@ class SFTUIController:
         # View
         self._win.bind("<<NotebookTabChanged>>", self._tab_changed_cb)
         self._UIView = SFT_UIView.SFTTabbedControls(self._win)
-        self._UIView.register_vib_cb(self._vib_button_cb)
-        self._UIView.register_led_cb(self._led_button_cb)
-        self._UIView.register_aud_cb(self._aud_button_cb)
+        self._UIView.register_vib_l_cb(self._vib_l_button_cb)
+        self._UIView.register_vib_h_cb(self._vib_h_button_cb)
+        self._UIView.register_led_l_cb(self._led_l_button_cb)
+        self._UIView.register_led_h_cb(self._led_h_button_cb)
+        self._UIView.register_aud_l_cb(self._aud_l_button_cb)
+        self._UIView.register_aud_h_cb(self._aud_h_button_cb)
 
         self._UIView.register_configure_clicked_cb(self._configure_button_cb)
 
@@ -131,8 +134,8 @@ class SFTUIController:
             if int(rt) != -1:
                 rt = round((int(rt) / 1000), 2)
             else:
-                self.devices[unit_id]['rt'].set(rt)
                 rt = -.001
+            self.devices[unit_id]['rt'].set(rt)
             self.devices[unit_id]['plot'].rt_update(unit_id, rt)
 
     def _update_clicks(self, arg):
@@ -164,14 +167,23 @@ class SFTUIController:
             except Exception as e:
                 print(f"vController _tab_changed_cb: {e}")
 
-    def _vib_button_cb(self):
-        self._q_out.put(f"hi_sft>vib>{self._active_tab}")
+    def _vib_l_button_cb(self):
+        self._q_out.put(f"hi_sft>VIB.L>{self._active_tab}")
 
-    def _led_button_cb(self):
-        self._q_out.put(f"hi_sft>led>{self._active_tab}")
+    def _vib_h_button_cb(self):
+        self._q_out.put(f"hi_sft>VIB.H>{self._active_tab}")
 
-    def _aud_button_cb(self):
-        self._q_out.put(f"hi_sft>aud>{self._active_tab}")
+    def _led_l_button_cb(self):
+        self._q_out.put(f"hi_sft>LED.L>{self._active_tab}")
+
+    def _led_h_button_cb(self):
+        self._q_out.put(f"hi_sft>LED.H>{self._active_tab}")
+
+    def _aud_l_button_cb(self):
+        self._q_out.put(f"hi_sft>AUD.L>{self._active_tab}")
+
+    def _aud_h_button_cb(self):
+        self._q_out.put(f"hi_sft>AUD.H>{self._active_tab}")
 
     def _configure_button_cb(self):
         self._cnf_win.show(self._active_tab)

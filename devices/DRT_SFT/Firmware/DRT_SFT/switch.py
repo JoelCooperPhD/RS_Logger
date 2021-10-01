@@ -82,7 +82,7 @@ class DebouncedSwitch:
             if self._debounced():
                 self._closure_cnt += 1
                 if self._click_cb:
-                    self._click_cb()
+                    self._click_cb(self._closure_cnt)
 
     ##################
     # Public Methods

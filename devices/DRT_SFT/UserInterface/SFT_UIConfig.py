@@ -79,7 +79,7 @@ class SFTConfigWin:
         Entry(ws_lf, textvariable=self.UI_settings['WS:AUD'], width=7).grid(row=1, column=2, sticky="W", padx=2)
 
         # How Salient
-        hs_lf = LabelFrame(win, text="Salience Probabilities (%)")
+        hs_lf = LabelFrame(win, text="Low Salience Stimulus Probabilities (%)")
         hs_lf.pack(expand=True, fill=BOTH, pady=5, padx=3)
 
         Label(hs_lf, text="HS:LED").grid(row=0, column=0)

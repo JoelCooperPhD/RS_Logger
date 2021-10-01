@@ -21,14 +21,13 @@ class StimulusSelector:
         "HMS:2": 0.5,
         "HMS:3": 0.1,
         '''
-        val = random.random()
+        val = int(random.random() * 100)
         cum_prob = self.cn['HMS:0'] + self.cn['HMS:1'] + self.cn['HMS:2'] + self.cn['HMS:3']
-        
-        o = self.cn['HMS:0'] / cum_prob
-        l = o + (self.cn['HMS:1'] / cum_prob)
-        m = l + (self.cn['HMS:2'] / cum_prob)
-        h = m + (self.cn['HMS:3'] / cum_prob)
-        
+        o = self.cn['HMS:0'] * 100 // cum_prob
+        l = o + self.cn['HMS:1'] * 100 // cum_prob
+        m = l + self.cn['HMS:2'] * 100 // cum_prob
+        h = m + self.cn['HMS:3'] * 100 // cum_prob
+
         if val <= o:
             return 0
         elif o < val <= l:
@@ -45,24 +44,23 @@ class StimulusSelector:
         "WS:AUD": 0,
         '''
         selected = list()
-        stimuli = {'LED': self.cn['WS:LED'], 'VIB': self.cn['WS:VIB'], 'AUD': self.cn['WS:AUD']}       
-            
-
+        stimuli = {'LED': self.cn['WS:LED'], 'VIB': self.cn['WS:VIB'], 'AUD': self.cn['WS:AUD']}
+        
         for c in range(count):
-            rn = random.random()
+            rn = int(random.random() * 100)
             low = 0
             high = 0
-            to_remove = ''
+            to_remove = None
             cum_prob = sum(stimuli.values())
-            
+
             for key in stimuli:
-                high += stimuli[key] / cum_prob
+                high += (stimuli[key]*100) // cum_prob
                 if low < rn <= high:
                     selected.append(key)
                     to_remove = key
-                low += stimuli[key] / cum_prob
-                
-            stimuli.pop(to_remove)
+                low += high
+            if to_remove:
+                stimuli.pop(to_remove)
         
         return selected
 
@@ -76,7 +74,7 @@ class StimulusSelector:
         salience = list()
         if len(stimuli):
             for i in stimuli:
-                rn = random.random()
+                rn = int(random.random() * 100)
                 if i is 'LED':
                     if rn <= self.cn['HS:LED']:
                         salience.append('LED.L')

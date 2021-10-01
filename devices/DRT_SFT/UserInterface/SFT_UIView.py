@@ -23,9 +23,12 @@ class SFTTabbedControls:
         # Callbacks
         self._rt_checkbox_cb = None
         self._state_checkbox_cb = None
-        self._vib_cb = None
-        self._led_cb = None
-        self._aud_cb = None
+        self._vib_l_cb = None
+        self._vib_h_cb = None
+        self._led_l_cb = None
+        self._led_h_cb = None
+        self._aud_l_cb = None
+        self._aud_h_cb = None
         self._configure_clicked_cb = None
         self._rescan_network_cb = None
 
@@ -61,16 +64,25 @@ class SFTTabbedControls:
         lf.grid_columnconfigure(0, weight=1)
 
         # Vibration Motor Controls
-        self._tab_f['on_vib'] = Button(lf, text="VIB", command=self._vib_cb)
-        self._tab_f['on_vib'].grid(row=0, column=0, sticky='NEWS')
+        self._tab_f['on_vib_l'] = Button(lf, text="VIB:LOW", command=self._vib_l_cb)
+        self._tab_f['on_vib_l'].grid(row=0, column=0, sticky='NEWS')
+
+        self._tab_f['on_vib_h'] = Button(lf, text="VIB:HIGH", command=self._vib_h_cb)
+        self._tab_f['on_vib_h'].grid(row=0, column=1, sticky='NEWS')
 
         # LED controls
-        self._tab_f['on_led'] = Button(lf, text="LED", command=self._led_cb)
-        self._tab_f['on_led'].grid(row=1, column=0, sticky='NEWS')
+        self._tab_f['on_led_l'] = Button(lf, text="LED:LOW", command=self._led_l_cb)
+        self._tab_f['on_led_l'].grid(row=1, column=0, sticky='NEWS')
+
+        self._tab_f['on_led_h'] = Button(lf, text="LED:HIGH", command=self._led_h_cb)
+        self._tab_f['on_led_h'].grid(row=1, column=1, sticky='NEWS')
 
         # Auditory controls
-        self._tab_f['on_aud'] = Button(lf, text="AUD", command=self._aud_cb)
-        self._tab_f['on_aud'].grid(row=2, column=0, sticky='NEWS')
+        self._tab_f['on_aud_l'] = Button(lf, text="AUD:LOW", command=self._aud_l_cb)
+        self._tab_f['on_aud_l'].grid(row=2, column=0, sticky='NEWS')
+
+        self._tab_f['on_aud_h'] = Button(lf, text="AUD:HIGH", command=self._aud_h_cb)
+        self._tab_f['on_aud_h'].grid(row=2, column=1, sticky='NEWS')
 
     def _tab_add_results(self):
         lf = LabelFrame(self._tab_f['frame'], text="Results")
@@ -107,14 +119,23 @@ class SFTTabbedControls:
     def register_state_checkbox_cb(self, cb):
         self._state_checkbox_cb = cb
 
-    def register_vib_cb(self, cb):
-        self._vib_cb = cb
+    def register_vib_l_cb(self, cb):
+        self._vib_l_cb = cb
 
-    def register_led_cb(self, cb):
-        self._led_cb = cb
+    def register_vib_h_cb(self, cb):
+        self._vib_h_cb = cb
 
-    def register_aud_cb(self, cb):
-        self._aud_cb = cb
+    def register_led_l_cb(self, cb):
+        self._led_l_cb = cb
+
+    def register_led_h_cb(self, cb):
+        self._led_h_cb = cb
+
+    def register_aud_l_cb(self, cb):
+        self._aud_l_cb = cb
+
+    def register_aud_h_cb(self, cb):
+        self._aud_h_cb = cb
 
     def register_configure_clicked_cb(self, cb):
         self._configure_clicked_cb = cb

@@ -8,7 +8,7 @@ class Configurator:
     def get_config_str(self):
         cnf = ""
         for i in self.config:
-            cnf += i + ":"
+            cnf += i + "="
             cnf += str(self.config[i]) + ", "
         return cnf[:-1]
 
