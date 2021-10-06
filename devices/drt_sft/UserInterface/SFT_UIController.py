@@ -1,6 +1,6 @@
 from queue import SimpleQueue
 from tkinter import Tk, TclError
-from devices.DRT_SFT.UserInterface import SFT_UIView, SFT_UIConfig
+from devices.drt_sft.UserInterface import SFT_UIView, SFT_UIConfig
 
 
 class SFTUIController:

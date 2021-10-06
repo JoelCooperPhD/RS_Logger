@@ -36,7 +36,7 @@ class ConnectionManager:
                 self.port_event.set()
 
             self._old_ports = new_ports
-            await sleep(.25)
+            await sleep(1)
 
     def _identify_rs_devices(self, ports):
         self._known_rs_devices.clear()

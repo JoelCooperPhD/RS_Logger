@@ -3,18 +3,19 @@ import tkinter.ttk as ttk
 from os import path
 from time import sleep
 
-from view_widgets.controls import ExpControls
-from view_widgets.key_logger import KeyFlagger
-from view_widgets.note_logger import NoteTaker
-from view_widgets.log_timers import InfoDisplay
+from user_interface.controls import ExpControls
+from user_interface.key_logger import KeyFlagger
+from user_interface.note_logger import NoteTaker
+from user_interface.log_timers import InfoDisplay
+from user_interface.usb_cameras.cam_ui import CameraWidget
 
-from devices.DRT_SFT.UserInterface import SFT_UIController
+from devices.drt_sft.UserInterface import SFT_UIController
 
 
 class MainWindow:
     def __init__(self, queues):
         self._queues = queues
-        self._q_in = queues['ui_root']
+        self._q_in = queues['user_interface']
         self._q_out = queues['main']
 
         self._win: Tk = Tk()
@@ -23,7 +24,7 @@ class MainWindow:
 
         self._win.resizable(True, True)
         self._win.title("Red Scientific Data Logger")
-        path_to_icon = path.abspath(path.join(path.dirname(__file__), 'img/rs_icon.ico'))
+        path_to_icon = path.abspath(path.join(path.dirname(__file__), '../img/rs_icon.ico'))
         self._win.iconbitmap(path_to_icon)
 
         # Widgets
@@ -34,12 +35,15 @@ class MainWindow:
         self._widgets = {'control': ExpControls(self._widget_frame, self._q_out),
                          'key_flag': KeyFlagger(self._win, self._widget_frame),
                          'note': NoteTaker(self._widget_frame, self._q_out),
-                         'info': InfoDisplay(self._widget_frame, self._q_out)}
+                         'info': InfoDisplay(self._widget_frame, self._q_out),
+                         'cam': CameraWidget(self._win, self._widget_frame, self._q_out),
+                         # 'cams': CameraWidget(self._win, self._widget_frame, self._q_out)
+                         }
 
         self._queue_monitor()
 
         # Devices
-        self._devices = {'DRT_SFT': SFT_UIController.SFTUIController(self._win,
+        self._devices = {'drt_sft': SFT_UIController.SFTUIController(self._win,
                                                                      self._q_out,
                                                                      self._queues['ui_sft'])}
 

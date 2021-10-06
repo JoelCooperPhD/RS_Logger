@@ -3,7 +3,7 @@ from tkinter.ttk import Frame, Notebook
 from tkinter import Tk, StringVar, BOTH
 from tkinter import Label as tkLabel
 from queue import SimpleQueue
-from devices.DRT_SFT.UserInterface import SFT_UIPlotter
+from devices.drt_sft.UserInterface import SFT_UIPlotter
 
 
 class SFTTabbedControls:

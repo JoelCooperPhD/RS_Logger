@@ -17,9 +17,9 @@ class Configurator:
             c = cfgs.split(",")
             for cnf in c:
                 kv = cnf.split(':')
-                self.config.update({kv[0]: int(kv[1])})
+                self.config.run({kv[0]: int(kv[1])})
         elif isinstance(cfgs, dict):
-            self.config.update(cfgs)
+            self.config.run(cfgs)
         self._save()
 
     def _load(self):

@@ -24,7 +24,7 @@ class SystemsFactorialTechnology:
         
         
         # Config
-        self.cn = config.Configurator('DRT_SFT/config.jsn')
+        self.cn = config.Configurator('drt_sft/config.jsn')
         
         # Experiment
         self.tic = 0
@@ -43,7 +43,7 @@ class SystemsFactorialTechnology:
         await asyncio.gather(
             # self.diagnostics.heartbeat(),
             self.serial_listen(),
-            self.sw.update(),
+            self.sw.run(),
             )
         
     def start_trial(self, reset=False):
@@ -177,7 +177,7 @@ class SystemsFactorialTechnology:
                     val = 0
             
             self.cn.config[f'{cmd}:{key}'] = int(val)
-            self.cn.update(self.cn.config)
+            self.cn.run(self.cn.config)
             print(f'cfg>{cmd}:{key},{val}')
         else:
             # Get value and return

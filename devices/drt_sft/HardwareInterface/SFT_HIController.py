@@ -1,6 +1,6 @@
 import serial.serialutil
 from threading import Thread
-from devices.utilities.HardwareInterface import USBConnect, Results
+from devices.common_utilities.HardwareInterface import USBConnect, Results
 import asyncio
 from queue import SimpleQueue
 from serial.serialutil import SerialException
@@ -12,8 +12,8 @@ class SFTController:
         self._q_out: SimpleQueue = q_main
         self._q_in: SimpleQueue = q_hi_sft
 
-        self._connection_manager = USBConnect.ConnectionManager(name='DRT_SFT', vid='F055', pid='9800')
-        self._results_writer = Results.ResultsWriter('DRT_SFT')
+        self._connection_manager = USBConnect.ConnectionManager(name='drt_sft', vid='F055', pid='9800')
+        self._results_writer = Results.ResultsWriter('drt_sft')
 
         self._connected_sft_devices = None
         self._connected_sft_ports = None
@@ -25,8 +25,7 @@ class SFTController:
 
         self._file_path = None
 
-    def update(self):
-
+    def run(self):
         asyncio.create_task(self._connection_manager.update())
         asyncio.create_task(self._connect_event())
         asyncio.create_task(self._handle_messages_from_sft_devices())

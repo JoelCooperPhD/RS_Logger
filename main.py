@@ -2,8 +2,8 @@ import asyncio
 from threading import Thread
 from queue import SimpleQueue
 from multiprocessing import freeze_support
-import user_interface as view_main
-import hardware_interface as controller
+from user_interface import ui_root as view_main
+from devices.drt_sft.HardwareInterface import SFT_HIController
 
 
 class Main:
@@ -13,8 +13,7 @@ class Main:
         # Queues to communicate with the view and controller between threads
         self.queues = {'main': SimpleQueue(),
 
-                       'hi_root': SimpleQueue(),
-                       'ui_root': SimpleQueue(),
+                       'user_interface': SimpleQueue(),
 
                        'hi_sft': SimpleQueue(),
                        'ui_sft': SimpleQueue()}
@@ -30,9 +29,11 @@ class Main:
         asyncio.run(self.run_main_async())
 
     async def run_main_async(self):
-        main_controller = controller.HardwareInterface(self.queues)
-        await asyncio.gather(main_controller.run(),
-                             self.main_message_router())
+        devices = {'SFT': SFT_HIController.SFTController(self.queues['main'], self.queues['hi_sft'])}
+        for d in devices:
+            devices[d].run()
+
+        await asyncio.gather(self.main_message_router())
 
     async def main_message_router(self):
         while 1:
@@ -51,7 +52,7 @@ class Main:
                     else:
                         self.queues[address].put(msg)
 
-            await asyncio.sleep(.1)
+            await asyncio.sleep(.01)
 
 
 if __name__ == "__main__":
