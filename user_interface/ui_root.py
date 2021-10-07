@@ -10,6 +10,7 @@ from user_interface.log_timers import InfoDisplay
 from user_interface.usb_cameras.cam_ui import CameraWidget
 
 from devices.drt_sft.UserInterface import SFT_UIController
+from devices.drt.UserInterface import DRT_UIController
 
 
 class MainWindow:
@@ -37,15 +38,14 @@ class MainWindow:
                          'note': NoteTaker(self._widget_frame, self._q_out),
                          'info': InfoDisplay(self._widget_frame, self._q_out),
                          'cam': CameraWidget(self._win, self._widget_frame, self._q_out),
-                         # 'cams': CameraWidget(self._win, self._widget_frame, self._q_out)
                          }
 
         self._queue_monitor()
 
         # Devices
-        self._devices = {'drt_sft': SFT_UIController.SFTUIController(self._win,
-                                                                     self._q_out,
-                                                                     self._queues['ui_sft'])}
+        self._devices = {'sft': SFT_UIController.SFTUIController(self._win, self._q_out, self._queues['ui_sft']),
+                         'drt': DRT_UIController.DRTUIController(self._win, self._q_out, self._queues['ui_drt']),
+                         }
 
         # Tkinter loop
         self._win.protocol("WM_DELETE_WINDOW", self._close_event)
