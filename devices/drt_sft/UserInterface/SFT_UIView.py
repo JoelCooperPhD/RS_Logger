@@ -14,8 +14,6 @@ class SFTTabbedControls:
 
         self._tabs = dict()
 
-
-
         # Notebook - Tabs
         self.NB = Notebook(self._frame)
         self.NB.grid(row=0, column=0, sticky='NEWS')
@@ -23,8 +21,6 @@ class SFTTabbedControls:
         self.tab_f = dict()
 
         # Toggle Controls
-
-
         # Callbacks
         self._rt_checkbox_cb = None
         self._state_checkbox_cb = None
