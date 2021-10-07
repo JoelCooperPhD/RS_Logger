@@ -28,7 +28,6 @@ class SFTTabbedControls:
         self._aud_l_cb = None
         self._aud_h_cb = None
         self._configure_clicked_cb = None
-        self._rescan_network_cb = None
 
     def build_tab(self, dev_id) -> dict:
         self.tab_f.clear()
@@ -137,9 +136,6 @@ class SFTTabbedControls:
 
     def register_configure_clicked_cb(self, cb):
         self._configure_clicked_cb = cb
-
-    def register_rescan_network(self, cb):
-        self._rescan_network_cb = cb
 
     def show(self):
         self._frame.pack(fill=BOTH, expand=1)
