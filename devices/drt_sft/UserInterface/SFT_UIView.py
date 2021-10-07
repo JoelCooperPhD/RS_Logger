@@ -1,8 +1,5 @@
-from tkinter.ttk import Label, LabelFrame, Button, Checkbutton
-from tkinter.ttk import Frame, Notebook
+from tkinter.ttk import Label, LabelFrame, Button, Frame, Notebook
 from tkinter import Tk, StringVar, BOTH
-from tkinter import Label as tkLabel
-from queue import SimpleQueue
 from devices.drt_sft.UserInterface import SFT_UIPlotter
 
 
