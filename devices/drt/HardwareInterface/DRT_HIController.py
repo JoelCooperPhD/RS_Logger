@@ -3,6 +3,7 @@ from devices.common_utilities.HardwareInterface import USBConnect, Results
 from threading import Thread
 from queue import SimpleQueue
 import asyncio
+from time import time
 
 
 class DRTController:
@@ -59,13 +60,11 @@ class DRTController:
                                 if dta_split[5] == '-1':
                                     self._q_out.put(f'ui_drt>rt>{port},-1')
 
-                            elif key in ['VIB', 'LED', 'AUD']:
-                                self._q_out.put(f'ui_drt>stm>{port},{val}')
-                            elif key in ['clk', 'trl', 'rt']:
+                            elif key in ['clk', 'trl', 'rt', 'stm', 'end']:
                                 self._q_out.put(f'ui_drt>{key}>{port},{val}')
                             else:
                                 self._q_out.put(f'ui_drt>{msg}')
-                    except SerialException:
+                    except (SerialException, ValueError):
                         pass
 
             await asyncio.sleep(.01)
@@ -100,7 +99,23 @@ class DRTController:
 
     @staticmethod
     async def _message_device(serial_conn, cmd):
-        serial_conn.write(str.encode(f'{cmd}\n'))
+        msg = ''
+        if cmd == 'start':
+            msg = 'exp_start'
+        elif cmd == 'stop':
+            msg = 'exp_stop'
+        elif cmd == 'stim_on':
+            pass
+        elif cmd == 'stim_off':
+            pass
+        elif cmd == 'config':
+            msg = 'get_config'
+        elif cmd == 'lisi':
+            pass
+        else:
+            print(f'DRT_HIController {cmd} not handled')
+
+        serial_conn.write(str.encode(f'{msg}\n'))
 
     def _exit_async_loop(self):
         self._run = False

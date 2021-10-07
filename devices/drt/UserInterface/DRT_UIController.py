@@ -3,7 +3,7 @@ from tkinter import Tk, TclError
 from devices.drt.UserInterface import DRT_UIView, DRT_UIConfig
 
 
-class drtUIController:
+class DRTUIController:
     def __init__(self, win, q_out, q_in):
         self._win: Tk = win
         self._q_out: SimpleQueue = q_out
@@ -16,15 +16,16 @@ class drtUIController:
 
         # View
         self._win.bind("<<NotebookTabChanged>>", self._tab_changed_cb)
-        self._UIView = DRT_UIView.drtTabbedControls(self._win)
-        self._UIView.register_stim_l_cb(self._stimulus_toggle_cb)
+        self._UIView = DRT_UIView.DRTTabbedControls(self._win)
 
         self._UIView.register_configure_clicked_cb(self._configure_button_cb)
+        self._UIView.register_stimulus_on_cb(self._stimulus_on_cb)
+        self._UIView.register_stimulus_off_cb(self._stimulus_off_cb)
 
         self._active_tab = None
 
         # Configure Window
-        self._cnf_win = DRT_UIConfig.drtConfigWin(self._q_out)
+        self._cnf_win = DRT_UIConfig.DRTConfigWin(self._q_out)
 
         self._queue_monitor()
 
@@ -48,7 +49,7 @@ class drtUIController:
                 self._update_devices(val)
 
             # Messages from drt hardware
-            elif key == 'cnf':
+            elif key == 'cfg':
                 self._update_configuration(val)
             elif key == 'stm':
                 self._update_stimulus_state(val)
@@ -72,14 +73,12 @@ class drtUIController:
     # Main Controller Events
     def _log_init(self, time_stamp=None):
         for d in self.devices:
-            for c in self.devices[d]['lf'].winfo_children():
-                c.configure(state="disabled")
+            self.devices[d]['toggle'].configure(state='disabled')
             self.devices[d]['configure'].configure(state='disabled')
 
     def _log_close(self, time_stamp=None):
         for d in self.devices:
-            for c in self.devices[d]['lf'].winfo_children():
-                c.configure(state="normal")
+            self.devices[d]['toggle'].configure(state='normal')
             self.devices[d]['configure'].configure(state='normal')
 
     def _data_start(self, time_stamp=None):
@@ -89,7 +88,6 @@ class drtUIController:
             self.devices[self._active_tab]['plot'].clear_all()
 
     def _data_stop(self, time_stamp=None):
-
         self._running = False
         if self.devices and self._active_tab:
             self.devices[self._active_tab]['plot'].run = False
@@ -120,7 +118,7 @@ class drtUIController:
 
     # Messages from drt hardware
     def _update_configuration(self, args):
-        self._cnf_win.parse_config(args)
+        self._cnf_win.update_fields(args)
 
     def _update_stimulus_state(self, arg):
         port, state = arg.split(',')
@@ -171,8 +169,11 @@ class drtUIController:
             except Exception as e:
                 print(f"vController _tab_changed_cb: {e}")
 
-    def _stimulus_toggle_cb(self):
-        self._q_out.put(f"hi_drt>VIB.L>{self._active_tab}")
+    def _stimulus_on_cb(self):
+        self._q_out.put(f"hi_drt>stim_on>{self._active_tab}")
+
+    def _stimulus_off_cb(self):
+        self._q_out.put(f"hi_drt>stim_off>{self._active_tab}")
 
     def _configure_button_cb(self):
         self._cnf_win.show(self._active_tab)

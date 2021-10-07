@@ -4,6 +4,7 @@ from queue import SimpleQueue
 from math import ceil
 from os import path
 
+
 class DRTConfigWin:
     def __init__(self, q_out: SimpleQueue):
         self._to_drt_c = q_out
