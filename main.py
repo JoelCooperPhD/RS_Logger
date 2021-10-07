@@ -4,6 +4,7 @@ from queue import SimpleQueue
 from multiprocessing import freeze_support
 from user_interface import ui_root as view_main
 from devices.drt_sft.HardwareInterface import SFT_HIController
+from devices.drt.HardwareInterface import DRT_HIController
 
 
 class Main:
@@ -16,7 +17,10 @@ class Main:
                        'user_interface': SimpleQueue(),
 
                        'hi_sft': SimpleQueue(),
-                       'ui_sft': SimpleQueue()}
+                       'ui_sft': SimpleQueue(),
+
+                       'hi_drt': SimpleQueue(),
+                       'ui_drt': SimpleQueue()}
 
         # Controller Thread - This is a newly spawned thread where an asyncio loop is used
         self.t = Thread(target=self.async_controller_thread, daemon=True)
@@ -29,7 +33,8 @@ class Main:
         asyncio.run(self.run_main_async())
 
     async def run_main_async(self):
-        devices = {'SFT': SFT_HIController.SFTController(self.queues['main'], self.queues['hi_sft'])}
+        devices = {'SFT': SFT_HIController.SFTController(self.queues['main'], self.queues['hi_sft']),
+                   'DRT': DRT_HIController.DRTController(self.queues['main'], self.queues['hi_drt'])}
         for d in devices:
             devices[d].run()
 
