@@ -90,8 +90,6 @@ class CameraReader:
                     self._handle_save_video(kv)
                 elif 'SHW' in kv[0]:
                     self._handle_show_win(kv)
-                elif 'HDE' in kv[0]:
-                    self._handle_hide_win(kv)
                 elif 'EXIT' in kv[0]:
                     self._handle_exit(kv)
                 elif 'FNM' in kv[0]:
@@ -121,9 +119,6 @@ class CameraReader:
     def _handle_show_win(self, arg):
         self._show_window = True
 
-    def _handle_hide_win(self, arg):
-        self._show_window = False
-
     def _handle_exit(self, arg):
         self._show_window = False
         self._close = True
@@ -138,7 +133,7 @@ class CameraReader:
     def _init_save(self):
         if self._record:
             fourcc = cv2.VideoWriter_fourcc(*'DIVX')
-            path = f"{self._fpath}/{self._id}_output.avi"
+            path = f"{self._fpath}/cam_{self._id}.avi"
             fps_ = self._desired_fps
             w = int(self._cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             h = int(self._cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -236,7 +231,6 @@ class CamViewer:
             "USE": self._handle_exit_process,
             "RCD": self._handle_record,
             "SHW": self._handle_video_expand,
-            "HDE": self._handle_video_hide,
             "FNM": self._handle_set_file_name,
             "FPS": self._handle_set_fps,
             "RES": self._handle_set_resolution,
@@ -269,25 +263,16 @@ class CamViewer:
                 kv = msg.split(">")
                 if "USE" in kv[0]:
                     self._handle_exit_process(msg)
-                    print("USE")
                 elif "RCD" in kv[0]:
                     self._handle_record(msg)
-                    print("RCD")
                 elif "SHW" in kv[0]:
                     self._handle_video_expand(msg)
-                    print("SHW")
-                elif "HDE" in kv[0]:
-                    self._handle_video_hide(msg)
-                    print("HDE")
                 elif "FNM" in kv[0]:
                     self._handle_set_file_name(msg)
-                    print("FNM")
                 elif "FPS" in kv[0]:
                     self._handle_set_fps(msg)
-                    print("FPS")
                 elif "RES" in kv[0]:
                     self._handle_set_resolution(msg)
-                    print("RES")
                 else:
                     print("cam_popup message not handled")
         except (BrokenPipeError, EOFError):
@@ -300,22 +285,18 @@ class CamViewer:
         self._cv2cr.put(arg)
 
     def _handle_set_file_name(self, arg):
-        self._cv2cr.put(f"{arg[0]}>{arg[1]}")
+        self._cv2cr.put(arg)
 
     def _handle_video_expand(self, arg):
         self._cv2cr.put("SHW")
         self._show_window = True
-
-    def _handle_video_hide(self, arg):
-        self._cv2cr.put("HDE")
-        self._show_window = False
 
     def _handle_exit_process(self, arg):
         if "0" in arg:
             self._cv2cr.put("EXIT")
 
     def _handle_record(self, arg):
-        self._cv2cr.put(f"{arg[0]}>{arg[1]}")
+        self._cv2cr.put(arg)
 
     def _display_cam_view(self):
         # Launches a new window to display frames read from the CameraReader passed over the it_frame_q

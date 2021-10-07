@@ -83,12 +83,14 @@ class SFTUIController:
 
     def _data_start(self, time_stamp=None):
         self._running = True
-        self.devices[self._active_tab]['plot'].run = True
-        self.devices[self._active_tab]['plot'].clear_all()
+        if self.devices:
+            self.devices[self._active_tab]['plot'].run = True
+            self.devices[self._active_tab]['plot'].clear_all()
 
     def _data_stop(self, time_stamp=None):
         self._running = False
-        self.devices[self._active_tab]['plot'].run = False
+        if self.devices:
+            self.devices[self._active_tab]['plot'].run = False
 
     # Tab Events
     def _update_devices(self, devices=None):

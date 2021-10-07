@@ -58,22 +58,29 @@ class CameraWidget:
         self.log_running = False
         self.record_running = False
 
+    def set_file_path(self, file_path):
+        self._file_path = file_path
+
     ########################
     # Controls
-    def handle_log_init(self):
+    def handle_log_init(self, val):
         for c in self._cam_parent_pipe:
             self._cam_parent_pipe[c].send(f"FNM>{self._file_path}")
             self._cam_parent_pipe[c].send("RCD>1")
+        for c in self._cam_lf.winfo_children():
+            c.configure(state="disabled")
 
-    def handle_log_close(self):
+    def handle_log_close(self, val):
         self.log_running = False
         for c in self._cam_parent_pipe:
             self._cam_parent_pipe[c].send("RCD>0")
+        for c in self._cam_lf.winfo_children():
+            c.configure(state="normal")
 
-    def handle_data_record(self):
+    def handle_data_record(self, val):
         self.record_running = True
 
-    def handle_data_pause(self):
+    def handle_data_pause(self, val):
         self.record_running = False
 
     ########################
@@ -105,32 +112,44 @@ class CameraWidget:
     ########################
     # Select Cameras
     def _cb_cam_selected(self):
-        if self._selected_camera.get() in list(self._attached_cameras.keys()):
-            self._use_camera_var.set(self._attached_cameras[self._selected_camera.get()]['use'])
-            self._selected_resolution.set(self._attached_cameras[self._selected_camera.get()]['res'])
-            self._selected_frame_rate.set(self._attached_cameras[self._selected_camera.get()]['FPS'])
+        cam = self._selected_camera.get()
+        if cam != 'Scanning...' and cam != '0':
+            if cam in list(self._attached_cameras.keys()):
+                self._use_camera_var.set(self._attached_cameras[cam]['use'])
+                self._selected_resolution.set(self._attached_cameras[cam]['res'])
+                self._selected_frame_rate.set(self._attached_cameras[cam]['FPS'])
+        else:
+            self._selected_camera.set('Scanning...')
 
     def _cb_use_selected(self):
         cam = self._selected_camera.get()
-        val = self._use_camera_var.get()
-        self._attached_cameras[cam]['use'] = val
+        if cam != 'Scanning...':
+            val = self._use_camera_var.get()
+            self._attached_cameras[cam]['use'] = val
 
-        if val == 0:
-            self._cam_parent_pipe[cam].send(f"{cam}-USE>{cam}")
-        else:
-            self._connect_cameras(cam)
+            try:
+                if val == 0:
+                    self._cam_parent_pipe[cam].send(f"{cam}-USE>{cam}")
+                else:
+                    self._connect_cameras(cam)
+            except BrokenPipeError:
+                pass
 
     def _cb_resolution_selected(self):
-        self._attached_cameras[self._selected_camera.get()]['res'] = self._selected_resolution.get()
-        if self._selected_camera.get() in self._cam_parent_pipe:
-            self._cam_parent_pipe[self._selected_camera.get()].\
-                send(f"{self._selected_camera.get()}-RES>{self._selected_resolution.get()}")
+        cam = self._selected_camera.get()
+        if cam != 'Scanning...':
+            self._attached_cameras[cam]['res'] = self._selected_resolution.get()
+            if cam in self._cam_parent_pipe:
+                self._cam_parent_pipe[cam].\
+                    send(f"{cam}-RES>{self._selected_resolution.get()}")
 
     def _cb_fps_selected(self):
-        self._attached_cameras[self._selected_camera.get()]['FPS'] = self._selected_frame_rate.get()
-        if self._selected_camera.get() in self._cam_parent_pipe:
-            self._cam_parent_pipe[self._selected_camera.get()]. \
-                send(f"{self._selected_camera.get()}-FPS>{self._selected_frame_rate.get()}")
+        cam = self._selected_camera.get()
+        if cam != 'Scanning...':
+            self._attached_cameras[cam]['FPS'] = self._selected_frame_rate.get()
+            if cam in self._cam_parent_pipe:
+                self._cam_parent_pipe[cam]. \
+                    send(f"{self._selected_camera.get()}-FPS>{self._selected_frame_rate.get()}")
 
     def _connect_cameras(self, cam_id):
         cam = cam_id.split(':')[1]
@@ -201,6 +220,7 @@ class CameraWidget:
     # Messaging
     def _cam_pipe_msg_handler(self):
         """ Checks all camera pipes for a new message. New messages are then handled """
+        pop = None
         if self._process_running:
             for i in self._cam_parent_pipe:
                 try:
@@ -211,9 +231,12 @@ class CameraWidget:
                         if cmd == 'USE':
                             self._attached_cameras[kv[0]]['use'] = val
                             self._use_camera_var.set(val)
+                            pop = kv[0]
 
                 except BrokenPipeError:
                     pass
                     # print(f"Camera {i} has been disconnected")
-
+            if pop:
+                self._cam_parent_pipe.pop(pop)
             self._win.after(200, self._cam_pipe_msg_handler)
+
