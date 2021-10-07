@@ -76,10 +76,16 @@ class SFTUIController:
 
     # Main Controller Events
     def _log_init(self, time_stamp=None):
-        pass
+        for d in self.devices:
+            for c in self.devices[d]['lf'].winfo_children():
+                c.configure(state="disabled")
+            self.devices[d]['configure'].configure(state='disabled')
 
     def _log_close(self, time_stamp=None):
-        pass
+        for d in self.devices:
+            for c in self.devices[d]['lf'].winfo_children():
+                c.configure(state="normal")
+            self.devices[d]['configure'].configure(state='normal')
 
     def _data_start(self, time_stamp=None):
         self._running = True
@@ -88,8 +94,9 @@ class SFTUIController:
             self.devices[self._active_tab]['plot'].clear_all()
 
     def _data_stop(self, time_stamp=None):
+
         self._running = False
-        if self.devices:
+        if self.devices and self._active_tab:
             self.devices[self._active_tab]['plot'].run = False
 
     # Tab Events
