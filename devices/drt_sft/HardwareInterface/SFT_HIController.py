@@ -1,4 +1,3 @@
-import serial.serialutil
 from threading import Thread
 from devices.common_utilities.HardwareInterface import USBConnect, Results
 import asyncio

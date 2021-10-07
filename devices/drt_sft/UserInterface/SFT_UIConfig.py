@@ -35,10 +35,6 @@ class SFTConfigWin:
 
         self._active_tab = None
 
-        # Callbacks
-        self._iso_cb = None
-        self._custom_cb = None
-
     def show(self, uid):
         self._active_tab = uid
 
@@ -109,8 +105,8 @@ class SFTConfigWin:
         Entry(sd_lf, textvariable=self.UI_settings['AUD:L'], width=7).grid(row=3, column=1, sticky='W', padx=2, pady=2)
         Entry(sd_lf, textvariable=self.UI_settings['AUD:H'], width=7).grid(row=3, column=2, sticky='W', padx=2, pady=2)
 
-        # Standard DRT parameters
-        drt_lf = LabelFrame(win, text="DRT Experiment Parameters")
+        # Standard drt parameters
+        drt_lf = LabelFrame(win, text="drt Experiment Parameters")
         drt_lf.pack(expand=True, fill=BOTH, pady=5, padx=3)
         drt_lf.grid_columnconfigure(0, weight=1)
 
@@ -163,14 +159,10 @@ class SFTConfigWin:
                 self._q_out.put(f'hi_sft>{k},{self.UI_settings[k].get()}>{self._active_tab}')
                 sleep(.2)
 
-
     # Custom upload
     def _upload_clicked(self):
         self._send_changed_parameters()
         self._clear_fields()
         self._q_out.put(f'hi_sft>config>{self._active_tab}')
-
-    def register_upload_cb(self, cb):
-        self._custom_cb = cb
 
 
