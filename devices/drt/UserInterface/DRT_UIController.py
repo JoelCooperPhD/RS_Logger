@@ -15,14 +15,12 @@ class DRTUIController:
         self._running = False
 
         # View
-        self._win.bind("<<NotebookTabChanged>>", self._tab_changed_cb)
+        # self._win.bind("<<NotebookTabChanged>>", self._drt_tab_changed_cb)
         self._UIView = DRT_UIView.DRTTabbedControls(self._win)
 
         self._UIView.register_configure_clicked_cb(self._configure_button_cb)
         self._UIView.register_stimulus_on_cb(self._stimulus_on_cb)
         self._UIView.register_stimulus_off_cb(self._stimulus_off_cb)
-
-        self._active_tab = None
 
         # Configure Window
         self._cnf_win = DRT_UIConfig.DRTConfigWin(self._q_out)
@@ -74,7 +72,7 @@ class DRTUIController:
             self.devices[d]['stm_on'].configure(state='disabled')
             self.devices[d]['stm_off'].configure(state='disabled')
             self.devices[d]['configure'].configure(state='disabled')
-            self.devices[self._active_tab]['plot'].clear_all()
+            self.devices[self._UIView.NB.tab(self._UIView.NB.select(), "text")]['plot'].clear_all()
 
     def _log_close(self, time_stamp=None):
         for d in self.devices:
@@ -84,15 +82,15 @@ class DRTUIController:
 
     def _data_start(self, time_stamp=None):
         self._running = True
-        if self.devices:
-            self.devices[self._active_tab]['plot'].run = True
-            self.devices[self._active_tab]['plot'].clear_all()
+        for d in self.devices:
+            self.devices[d]['plot'].run = True
+            self.devices[d]['plot'].clear_all()
             self._reset_results_text()
 
     def _data_stop(self, time_stamp=None):
         self._running = False
-        if self.devices and self._active_tab:
-            self.devices[self._active_tab]['plot'].run = False
+        for d in self.devices:
+            self.devices[d]['plot'].run = False
 
     # Tab Events
     def _update_devices(self, devices=None):
@@ -166,35 +164,20 @@ class DRTUIController:
 
     # Plot Commands
     def _clear_plot(self):
-        self.devices[self._active_tab]['plot'].clear_all()
+        for d in self.devices:
+            self.devices[d]['plot'].clear_all()
 
     def _stop_plotter(self):
-        self.devices[self._active_tab]['plot'].run = False
-
-    # Registered Callbacks with drt UIView
-    def _tab_changed_cb(self, e):
-        if self.devices:
-            try:
-                # Clean up old tab and device
-                if self._running:
-                    self.devices[self._active_tab]['plot'].run = False
-                    self.devices[self._active_tab]['plot'].clear_all()
-                # Start new tab and device
-                self._active_tab = self._UIView.NB.tab(self._UIView.NB.select(), "text")
-
-                if self._running:
-                    self.devices[self._active_tab]['plot'].run = True
-                    self.devices[self._active_tab]['plot'].clear_all()
-            except Exception as e:
-                print(f"vController _tab_changed_cb: {e}")
+        for d in self.devices:
+            self.devices[d]['plot'].run = False
 
     def _stimulus_on_cb(self):
-        self._q_out.put(f"hi_drt>stim_on>{self._active_tab}")
+        self._q_out.put(f"hi_drt>stim_on>{self._UIView.NB.tab(self._UIView.NB.select(), 'text')}")
 
     def _stimulus_off_cb(self):
-        self._q_out.put(f"hi_drt>stim_off>{self._active_tab}")
+        self._q_out.put(f"hi_drt>stim_off>{self._UIView.NB.tab(self._UIView.NB.select(), 'text')}")
 
     def _configure_button_cb(self):
-        self._cnf_win.show(self._active_tab)
-        self._q_out.put(f"hi_drt>get_config>{self._active_tab}")
+        self._cnf_win.show(self._UIView.NB.tab(self._UIView.NB.select(), "text"))
+        self._q_out.put(f"hi_drt>get_config>{self._UIView.NB.tab(self._UIView.NB.select(), 'text')}")
 

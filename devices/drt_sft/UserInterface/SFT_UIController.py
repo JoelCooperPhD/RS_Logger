@@ -15,7 +15,7 @@ class SFTUIController:
         self._running = False
 
         # View
-        self._win.bind("<<NotebookTabChanged>>", self._tab_changed_cb)
+        # self._win.bind("<<NotebookTabChanged>>", self._tab_changed_cb)
         self._UIView = SFT_UIView.SFTTabbedControls(self._win)
         self._UIView.register_vib_l_cb(self._vib_l_button_cb)
         self._UIView.register_vib_h_cb(self._vib_h_button_cb)
@@ -25,8 +25,6 @@ class SFTUIController:
         self._UIView.register_aud_h_cb(self._aud_h_button_cb)
 
         self._UIView.register_configure_clicked_cb(self._configure_button_cb)
-
-        self._active_tab = None
 
         # Configure Window
         self._cnf_win = SFT_UIConfig.SFTConfigWin(self._q_out)
@@ -89,15 +87,15 @@ class SFTUIController:
 
     def _data_start(self, time_stamp=None):
         self._running = True
-        if self.devices:
-            self.devices[self._active_tab]['plot'].run = True
-            self.devices[self._active_tab]['plot'].clear_all()
+        for d in self.devices:
+            self.devices[d]['plot'].run = True
+            self.devices[d]['plot'].clear_all()
 
     def _data_stop(self, time_stamp=None):
 
         self._running = False
-        if self.devices and self._active_tab:
-            self.devices[self._active_tab]['plot'].run = False
+        for d in self.devices:
+            self.devices[d]['plot'].run = False
 
     # Tab Events
     def _update_devices(self, devices=None):
@@ -154,47 +152,32 @@ class SFTUIController:
 
     # Plot Commands
     def _clear_plot(self):
-        self.devices[self._active_tab]['plot'].clear_all()
+        for d in self.devices:
+            self.devices[d]['plot'].clear_all()
 
     def _stop_plotter(self):
-        self.devices[self._active_tab]['plot'].run = False
-
-    # Registered Callbacks with SFT UIView
-    def _tab_changed_cb(self, e):
-        if self.devices:
-            try:
-                # Clean up old tab and device
-                if self._running:
-                    self.devices[self._active_tab]['plot'].run = False
-                    self.devices[self._active_tab]['plot'].clear_all()
-                # Start new tab and device
-                self._active_tab = self._UIView.NB.tab(self._UIView.NB.select(), "text")
-
-                if self._running:
-                    self.devices[self._active_tab]['plot'].run = True
-                    self.devices[self._active_tab]['plot'].clear_all()
-            except Exception as e:
-                print(f"vController _tab_changed_cb: {e}")
+        for d in self.devices:
+            self.devices[d]['plot'].run = False
 
     def _vib_l_button_cb(self):
-        self._q_out.put(f"hi_sft>VIB.L>{self._active_tab}")
+        self._q_out.put(f"hi_sft>VIB.L>{self._UIView.NB.tab(self._UIView.NB.select(), 'text')}")
 
     def _vib_h_button_cb(self):
-        self._q_out.put(f"hi_sft>VIB.H>{self._active_tab}")
+        self._q_out.put(f"hi_sft>VIB.H>{self._UIView.NB.tab(self._UIView.NB.select(), 'text')}")
 
     def _led_l_button_cb(self):
-        self._q_out.put(f"hi_sft>LED.L>{self._active_tab}")
+        self._q_out.put(f"hi_sft>LED.L>{self._UIView.NB.tab(self._UIView.NB.select(), 'text')}")
 
     def _led_h_button_cb(self):
-        self._q_out.put(f"hi_sft>LED.H>{self._active_tab}")
+        self._q_out.put(f"hi_sft>LED.H>{self._UIView.NB.tab(self._UIView.NB.select(), 'text')}")
 
     def _aud_l_button_cb(self):
-        self._q_out.put(f"hi_sft>AUD.L>{self._active_tab}")
+        self._q_out.put(f"hi_sft>AUD.L>{self._UIView.NB.tab(self._UIView.NB.select(), 'text')}")
 
     def _aud_h_button_cb(self):
-        self._q_out.put(f"hi_sft>AUD.H>{self._active_tab}")
+        self._q_out.put(f"hi_sft>AUD.H>{self._UIView.NB.tab(self._UIView.NB.select(), 'text')}")
 
     def _configure_button_cb(self):
-        self._cnf_win.show(self._active_tab)
-        self._q_out.put(f"hi_sft>config>{self._active_tab}")
+        self._cnf_win.show(self._UIView.NB.tab(self._UIView.NB.select(), "text"))
+        self._q_out.put(f"hi_sft>config>{self._UIView.NB.tab(self._UIView.NB.select(), 'text')}")
 
