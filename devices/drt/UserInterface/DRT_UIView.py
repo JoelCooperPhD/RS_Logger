@@ -56,11 +56,11 @@ class DRTTabbedControls:
         self.tab_f['lf'].grid_columnconfigure(0, weight=1)
 
         # Vibration Motor Controls
-        self.tab_f['toggle'] = Button(self.tab_f['lf'], text="ON", command=self._stimulus_on_cb)
-        self.tab_f['toggle'].grid(row=0, column=0, sticky='NEWS')
+        self.tab_f['stm_on'] = Button(self.tab_f['lf'], text="ON", command=self._stimulus_on_cb)
+        self.tab_f['stm_on'].grid(row=0, column=0, sticky='NEWS')
 
-        self.tab_f['toggle'] = Button(self.tab_f['lf'], text="OFF", command=self._stimulus_off_cb)
-        self.tab_f['toggle'].grid(row=0, column=1, sticky='NEWS')
+        self.tab_f['stm_off'] = Button(self.tab_f['lf'], text="OFF", command=self._stimulus_off_cb)
+        self.tab_f['stm_off'].grid(row=0, column=1, sticky='NEWS')
 
     def _tab_add_results(self):
         lf = LabelFrame(self.tab_f['frame'], text="Results")
@@ -68,17 +68,17 @@ class DRTTabbedControls:
         lf.grid_columnconfigure(1, weight=1)
 
         self.tab_f['trl_n'] = StringVar()
-        self.tab_f['trl_n'].set("NA")
+        self.tab_f['trl_n'].set("0")
         Label(lf, text="Trial Number:").grid(row=0, column=0, sticky='NEWS')
         Label(lf, textvariable=self.tab_f['trl_n']).grid(row=0, column=1, sticky="E")
 
         self.tab_f['rt'] = StringVar()
-        self.tab_f['rt'].set("NA")
+        self.tab_f['rt'].set('-1')
         Label(lf, text="Reaction Time:").grid(row=1, column=0, sticky='NEWS')
         Label(lf, textvariable=self.tab_f['rt']).grid(row=1, column=1, sticky="E")
 
         self.tab_f['clicks'] = StringVar()
-        self.tab_f['clicks'].set("NA")
+        self.tab_f['clicks'].set("0")
         Label(lf, text="Response Count:").grid(row=2, column=0, sticky='NEWS')
         Label(lf, textvariable=self.tab_f['clicks']).grid(row=2, column=1, sticky="E")
 

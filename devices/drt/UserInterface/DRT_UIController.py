@@ -52,13 +52,11 @@ class DRTUIController:
             elif key == 'cfg':
                 self._update_configuration(val)
             elif key == 'stm':
-                self._update_stimulus_state(val)
+                self._update_stimulus_plot(val)
             elif key == 'trl':
-                self._update_trial_num(val)
-            elif key == 'rt':
-                self._update_rt(val)
+                self._update_results(val)
             elif key == 'clk':
-                self._update_clicks(val)
+                self._update_response_text(val)
 
             # Plot Commands
             elif key == 'clear':
@@ -73,12 +71,15 @@ class DRTUIController:
     # Main Controller Events
     def _log_init(self, time_stamp=None):
         for d in self.devices:
-            self.devices[d]['toggle'].configure(state='disabled')
+            self.devices[d]['stm_on'].configure(state='disabled')
+            self.devices[d]['stm_off'].configure(state='disabled')
             self.devices[d]['configure'].configure(state='disabled')
+            self.devices[self._active_tab]['plot'].clear_all()
 
     def _log_close(self, time_stamp=None):
         for d in self.devices:
-            self.devices[d]['toggle'].configure(state='normal')
+            self.devices[d]['stm_on'].configure(state='normal')
+            self.devices[d]['stm_off'].configure(state='normal')
             self.devices[d]['configure'].configure(state='normal')
 
     def _data_start(self, time_stamp=None):
@@ -86,6 +87,7 @@ class DRTUIController:
         if self.devices:
             self.devices[self._active_tab]['plot'].run = True
             self.devices[self._active_tab]['plot'].clear_all()
+            self._reset_results_text()
 
     def _data_stop(self, time_stamp=None):
         self._running = False
@@ -120,29 +122,46 @@ class DRTUIController:
     def _update_configuration(self, args):
         self._cnf_win.update_fields(args)
 
-    def _update_stimulus_state(self, arg):
+    def _update_stimulus_plot(self, arg):
         port, state = arg.split(',')
         if self._running:
             self.devices[port]['plot'].state_update(port, state)
 
-    def _update_trial_num(self, arg):
-        if self._running:
-            unit_id, cnt = arg.split(',')
-            self.devices[unit_id]['trl_n'].set(cnt)
+            if state == '1':
+                self._update_response_text(f'{port},0')
 
-    def _update_rt(self, arg):
+    def _update_rt_plot(self, arg):
         if self._running:
             unit_id, rt = arg.split(',')
-            if int(rt) != -1:
-                rt = round((int(rt) / 1000), 2)
-            else:
-                rt = -.001
-            self.devices[unit_id]['rt'].set(rt)
+            rt = int(rt)
+            rt = -0.1 if rt == -1 else round((int(rt) / 1000), 2)
             self.devices[unit_id]['plot'].rt_update(unit_id, rt)
 
-    def _update_clicks(self, arg):
+    def _update_results(self, arg):
+        unit_id, mills, trl_n, rt = arg.split(',')
+        self._update_trial_text(unit_id, trl_n)
+        self._update_rt_text(unit_id, rt)
+        self._update_rt_plot(f'{unit_id}, {rt}')
+
+    def _reset_results_text(self):
+        for d in self.devices:
+            self._update_trial_text(d, '0')
+            self._update_rt_text(d, '-1')
+            self._update_response_text(f'{d},0')
+
+    def _update_trial_text(self, unit_id, cnt):
         if self._running:
-            unit_id, clicks = arg.split(',')
+            self.devices[unit_id]['trl_n'].set(cnt)
+
+    def _update_rt_text(self, unit_id, rt):
+        if self._running:
+            if rt != '-1':
+                rt = round((int(rt) / 1000), 2)
+            self.devices[unit_id]['rt'].set(rt)
+
+    def _update_response_text(self, msg):
+        unit_id, clicks = msg.split(',')
+        if self._running:
             self.devices[unit_id]['clicks'].set(clicks)
 
     # Plot Commands
@@ -177,5 +196,5 @@ class DRTUIController:
 
     def _configure_button_cb(self):
         self._cnf_win.show(self._active_tab)
-        self._q_out.put(f"hi_drt>config>{self._active_tab}")
+        self._q_out.put(f"hi_drt>get_config>{self._active_tab}")
 

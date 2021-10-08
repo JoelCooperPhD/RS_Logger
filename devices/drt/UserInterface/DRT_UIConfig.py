@@ -18,7 +18,7 @@ class DRTConfigWin:
 
         win = Toplevel()
         win.grab_set()
-        win.title(uid)
+        win.title("")
 
         icon_path = path.abspath(path.join(path.dirname(__file__), '../../../img/rs_icon.ico'))
         win.iconbitmap(icon_path)
@@ -82,16 +82,16 @@ class DRTConfigWin:
 
     def _upload_to_device_cb(self):
         low = self._filter_entry(self.UI_settings['lowerISI'].get(), 3000, 0, 65535)
-        self._to_drt_c.put(f"hi_drt>lisi>{self._active_tab} {low}")
+        self._to_drt_c.put(f"hi_drt>set_lowerISI {low}>{self._active_tab}")
 
         high = self._filter_entry(self.UI_settings['upperISI'].get(), 5000, low, 65535)
-        self._to_drt_c.put(f"hi_drt>uisi>{self._active_tab} {high}")
+        self._to_drt_c.put(f"hi_drt>set_upperISI {high}>{self._active_tab}")
 
         intensity = ceil(self._filter_entry(self.UI_settings['intensity'].get(), 100, 0, 100) * 2.55)
-        self._to_drt_c.put(f"hi_drt>inty>{self._active_tab} {intensity}")
+        self._to_drt_c.put(f"hi_drt>set_intensity {intensity}>{self._active_tab}")
 
         duration = self._filter_entry(self.UI_settings['stimDur'].get(), 1000, 0, 65535)
-        self._to_drt_c.put(f"hi_drt>dur>{self._active_tab} {duration}")
+        self._to_drt_c.put(f"hi_drt>set_stimDur {duration}>{self._active_tab}")
 
         self._clear_settings()
 

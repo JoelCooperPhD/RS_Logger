@@ -190,11 +190,7 @@ class Plotter:
         self._rt_now[unit_id] = val
 
     def state_update(self, unit_id, val):
-        if val in ['H', 'L']:
-            val = 1
-        else:
-            val = 0
-        self._state_now[unit_id] = val
+        self._state_now[unit_id] = int(val)
 
     def clear_all(self):
         for unit_id in self._state_array.keys():
