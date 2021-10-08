@@ -209,7 +209,7 @@ void exp_stop()
   analogWrite(stimPin, 0);
   Serial.println("stm>0");
   Serial.println("rt>");
-  Serial.println(micros());
+  Serial.print(micros());
 }
 
 /////////////////////////////////////////
