@@ -142,13 +142,15 @@ void initTrial()
 
 void sendResults()
 {
-  Serial.print("trl>");
-  Serial.print(startMillis);
-  Serial.print(",");
-  Serial.print(trial);
-  Serial.print(",");
-  Serial.print(rt);
-  Serial.println();
+    if (trial > 0) {
+      Serial.print("trl>");
+      Serial.print(startMillis);
+      Serial.print(",");
+      Serial.print(trial);
+      Serial.print(",");
+      Serial.print(rt);
+      Serial.println();
+  }
 }
 
 void handleResponse()
@@ -208,8 +210,6 @@ void exp_stop()
   swTrial.stop();
   analogWrite(stimPin, 0);
   Serial.println("stm>0");
-  Serial.println("rt>");
-  Serial.print(micros());
 }
 
 /////////////////////////////////////////
