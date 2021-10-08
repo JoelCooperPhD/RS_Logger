@@ -136,7 +136,14 @@ class DRTUIController:
             self.devices[unit_id]['plot'].rt_update(unit_id, rt)
 
     def _update_results(self, arg):
-        unit_id, mills, trl_n, rt = arg.split(',')
+        arg_split = arg.split(',')
+
+        if len(arg_split) == 5:
+            unit_id, mills, trl_n, clicks, rt = arg_split
+            self._update_response_text(f'{unit_id}, {clicks}')
+        else:
+            unit_id, mills, trl_n, rt = arg_split
+
         self._update_trial_text(unit_id, trl_n)
         self._update_rt_text(unit_id, rt)
         self._update_rt_plot(f'{unit_id}, {rt}')

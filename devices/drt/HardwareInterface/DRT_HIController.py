@@ -24,6 +24,9 @@ class DRTController:
 
         self._file_path = None
 
+        # results
+        self._clicks = '0'
+
     def run(self):
         asyncio.create_task(self._handle_messages_from_drt_devices())
         asyncio.create_task(self._connection_manager.update())
@@ -55,6 +58,8 @@ class DRTController:
 
                         if key in ['clk', 'trl', 'stm', 'end']:
                             self._q_out.put(f'ui_drt>{key}>{port},{val}')
+                            if key == 'clk':
+                                self._clicks = val
                             if key == 'trl':
                                 self._log_results(port, timestamp, val)
                         else:
@@ -78,7 +83,11 @@ class DRTController:
             await asyncio.sleep(.01)
 
     def _log_results(self, port, timestamp, data):
-        packet = f'drt_{port},data,{timestamp},{data}'
+        d = data.split(',')
+        if len(d) == 3: # Update firmware doesn't include clicks in raw data
+            data = f'{d[0]}, {d[1]}, {self._clicks}, {d[2]}'
+        print(data)
+        packet = f'drt_{port}, data, {timestamp}, {data}'
 
         def _write(_path, _results):
             try:
