@@ -63,7 +63,7 @@ class KeyFlagger:
             except PermissionError:
                 print("Keylog write error")
 
-        data = f"keyflag,{event},{timestamp}"
+        data = f"keyflag, {event}, {timestamp}"
         file_path = f"{self._file_path}/keyflags.txt"
 
         t = Thread(target=_write, args=(file_path, data))

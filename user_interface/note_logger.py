@@ -57,7 +57,7 @@ class NoteTaker:
             except PermissionError:
                 print("Note write error")
 
-        data = f"Note,{note},{timestamp}"
+        data = f"Note, {note}, {timestamp}"
         file_path = f"{self._file_path}/notes.txt"
 
         t = Thread(target=_write, args=(file_path, data))
