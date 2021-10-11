@@ -54,8 +54,8 @@ class SFTController:
                             key, val = msg.split('>')
                             if key == 'dta':
                                 dta_split = val.split(',')
-                                sub_str = ','.join(dta_split[2:])
-                                self._log_results(f'sft_{port},data,{timestamp},{sub_str}')
+                                sub_str = ', '.join(dta_split[2:])
+                                self._log_results(f'sft_{port}, data, {timestamp}, {sub_str}')
                                 self._q_out.put(f'ui_sft>trl>{port},{dta_split[4]}')
                                 if dta_split[5] == '-1':
                                     self._q_out.put(f'ui_sft>rt>{port},-1')
