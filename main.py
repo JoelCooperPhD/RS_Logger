@@ -2,9 +2,25 @@ import asyncio
 from threading import Thread
 from queue import SimpleQueue
 from multiprocessing import freeze_support
-from user_interface import ui_root as view_main
+from os import path
+from tkinter import Tk, ttk, BOTH
+
+# Hardware Interface
 from devices.drt_sft.HardwareInterface import SFT_HIController
 from devices.drt.HardwareInterface import DRT_HIController
+from devices.vog.HardwareInterface import VOG_HIController
+
+# User Interface
+from devices.drt_sft.UserInterface import SFT_UIController
+from devices.drt.UserInterface import DRT_UIController
+from devices.vog.UserInterface import VOG_UIController
+
+# Widgets
+from user_interface.controls import ExpControls
+from user_interface.key_logger import KeyFlagger
+from user_interface.note_logger import NoteTaker
+from user_interface.log_timers import InfoDisplay
+from user_interface.usb_cameras.cam_ui import CameraWidget
 
 
 class Main:
@@ -20,21 +36,53 @@ class Main:
                        'ui_sft': SimpleQueue(),
 
                        'hi_drt': SimpleQueue(),
-                       'ui_drt': SimpleQueue()}
+                       'ui_drt': SimpleQueue(),
+
+                       'hi_vog': SimpleQueue(),
+                       'ui_vog': SimpleQueue()}
 
         # Controller Thread - This is a newly spawned thread where an asyncio loop is used
         self.t = Thread(target=self.async_controller_thread, daemon=True)
         self.t.start()
 
         # UserInterface Thread - This is the main thread where a tkinter loop is used
-        self.view_main = view_main.MainWindow(self.queues)
+        self._win: Tk = Tk()
+
+        self._file_path = [None]
+
+        self._win.resizable(True, True)
+        self._win.title("Red Scientific Data Logger")
+        path_to_icon = path.abspath(path.join(path.dirname(__file__), '../RS_Logger/img/rs_icon.ico'))
+        self._win.iconbitmap(path_to_icon)
+
+        # Widgets
+        self._widget_frame = ttk.Frame(self._win)
+        self._widget_frame.pack(fill=BOTH)
+        self._widget_frame.columnconfigure(4, weight=1)
+
+        self._widgets = {'control': ExpControls(self._widget_frame, self.queues['main']),
+                         'key_flag': KeyFlagger(self._win, self._widget_frame),
+                         'note': NoteTaker(self._widget_frame, self.queues['main']),
+                         'info': InfoDisplay(self._widget_frame, self.queues['main']),
+                         'cam': CameraWidget(self._win, self._widget_frame, self.queues['main']),
+                         }
+
+        # Devices
+        self._devices = {'sft': SFT_UIController.SFTUIController(self._win, self.queues['main'], self.queues['ui_sft']),
+                         'drt': DRT_UIController.DRTUIController(self._win, self.queues['main'], self.queues['ui_drt']),
+                         'vog': VOG_UIController.VOGUIController(self._win, self.queues['main'], self.queues['ui_vog'])
+                         }
+
+        # Tkinter loop
+        self._win.mainloop()
 
     def async_controller_thread(self):
         asyncio.run(self.run_main_async())
 
     async def run_main_async(self):
         devices = {'SFT': SFT_HIController.SFTController(self.queues['main'], self.queues['hi_sft']),
-                   'DRT': DRT_HIController.DRTController(self.queues['main'], self.queues['hi_drt'])}
+                   'DRT': DRT_HIController.DRTController(self.queues['main'], self.queues['hi_drt']),
+                   'VOG': VOG_HIController.VOGController(self.queues['main'], self.queues['hi_vog'])}
         for d in devices:
             devices[d].run()
 
