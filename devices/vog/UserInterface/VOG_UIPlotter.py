@@ -24,14 +24,17 @@ class Plotter:
         self._next_update = time.time()
         self._interval = .1
 
-        # Reaction Time
-        self._rt_now = dict()
-        self._rt_array = dict()
-        self._rt_xy = dict()
-        self._plot_lines = set()
+        # Total Shutter Times
+        self._tsot_now = dict()
+        self._tsct_now = dict()
 
-        self._rt_y_min = 0
-        self._rt_y_max = 1
+        self._tst_array = dict()
+        self._tst_xy = dict()
+
+        self._tst_y_min = 0
+        self._tst_y_max = 1
+
+        self._plot_lines = set()
 
         # Stimulus State
         self._state_now = dict()
@@ -41,19 +44,19 @@ class Plotter:
         # Animation
         self._ani = None
 
-        self._add_rt_plot()
+        self._add_tsot_plot()
         self._add_state_plot()
 
         self.run = False
 
-    def _add_rt_plot(self):
+        self.recording = False
+
+    def _add_tsot_plot(self):
         self._plt.append(self._fig.add_subplot(212))
         # Y axes
-        self._plt[0].set_ylabel("Switch")
+        self._plt[0].set_ylabel("TSOT-TSCT")
         self._plt[0].yaxis.set_label_position('right')
         self._plt[0].yaxis.set_tick_params()
-        self._plt[0].set_yticks([0, 1])
-        self._plt[0].set_yticklabels(["Up", "Down"])
 
     def _add_state_plot(self):
         self._plt.append(self._fig.add_subplot(211))
@@ -61,43 +64,46 @@ class Plotter:
         # X axes
         self._plt[1].xaxis.set_tick_params(labelbottom=False)
         # Y axes
-        self._plt[1].set_ylabel("Lenses")
+        self._plt[1].set_ylabel("State")
         self._plt[1].yaxis.set_label_position('right')
         self._plt[1].set_ylim([-0.2, 1.2])
         self._plt[1].set_yticks([0, 1])
         self._plt[1].set_yticklabels(["Clear", "Opaque"])
 
 
-    def set_rt_and_state_lines(self, unit_id):
+    def set_tsot_and_state_lines(self, unit_id):
         # RT LINE
 
-        self._rt_now[unit_id] = None
+        self._tsot_now[unit_id] = None
+        self._tsct_now[unit_id] = None
 
-        self._rt_array[unit_id] = dict()
-        self._rt_xy[unit_id] = dict()
-        # Hits
-        self._rt_array[unit_id]['hit'] = np.empty([600])
-        self._rt_array[unit_id]['hit'][:] = np.nan
+        self._tst_array[unit_id] = dict()
+        self._tst_xy[unit_id] = dict()
 
-        self._rt_xy[unit_id]['hit'] = self._plt[0].\
-            plot(self._time_array, self._rt_array[unit_id]['hit'], marker="o")
+        # TSOT
+        self._tst_array[unit_id]['tsot'] = np.empty([600])
+        self._tst_array[unit_id]['tsot'][:] = np.nan
 
-        c = self._rt_xy[unit_id]['hit'][0].get_color()
-        # ---- Misses
-        self._rt_array[unit_id]['miss'] = np.empty([600])
-        self._rt_array[unit_id]['miss'][:] = np.nan
+        self._tst_xy[unit_id]['tsot'] = self._plt[0].\
+            plot(self._time_array, self._tst_array[unit_id]['tsot'], marker="o")
 
-        self._rt_xy[unit_id]['miss'] = self._plt[0].\
-            plot(self._time_array, self._rt_array[unit_id]['miss'], marker="x", color=c)
+        c = self._tst_xy[unit_id]['tsot'][0].get_color()
 
-        # ---- X axes - RT
+        # TSCT
+        self._tst_array[unit_id]['tsct'] = np.empty([600])
+        self._tst_array[unit_id]['tsct'][:] = np.nan
+
+        self._tst_xy[unit_id]['tsct'] = self._plt[0].\
+            plot(self._time_array, self._tst_array[unit_id]['tsct'], marker="_", color=c)
+
+        # ---- X axes - TST
         self._plt[0].set_xticks([-60, -50, -40, -30, -20, -10, 0])
         self._plt[0].set_xlim([-62, 2])
-        self._plt[0].set_yticks(np.arange(0, 2, 1))
-        self._plt[0].set_ylim([-0.2, 1.2])
+        self._plt[0].set_yticks(np.arange(0, 3000, 1000))
+        self._plt[0].set_ylim([0, 3000])
 
         # STATE LINE
-        self._state_now[unit_id] = 0
+        self._state_now[unit_id] = np.nan
         self._state_array[unit_id] = np.empty([600])
         self._state_array[unit_id][:] = np.nan
 
@@ -118,12 +124,12 @@ class Plotter:
 
     def _init_animation(self, p):
         self._state_xy[p][0].set_data(self._time_array, self._state_array[p])
-        self._rt_xy[p]['hit'][0].set_data(self._time_array, self._rt_array[p]['hit'])
-        self._rt_xy[p]['miss'][0].set_data(self._time_array, self._rt_array[p]['miss'])
+        self._tst_xy[p]['tsot'][0].set_data(self._time_array, self._tst_array[p]['tsot'])
+        self._tst_xy[p]['tsct'][0].set_data(self._time_array, self._tst_array[p]['tsct'])
 
         self._plot_lines.update(self._state_xy[p])
-        self._plot_lines.update(self._rt_xy[p]['hit'])
-        self._plot_lines.update(self._rt_xy[p]['miss'])
+        self._plot_lines.update(self._tst_xy[p]['tsot'])
+        self._plot_lines.update(self._tst_xy[p]['tsct'])
 
         return self._plot_lines
 
@@ -132,39 +138,34 @@ class Plotter:
             if self._ready_to_update():
 
                 for unit_id in self._unit_ids:
-                    try:
-                        self._rescale_rt_y(self._rt_now[unit_id])
 
-                        # Hits
-                        self._rt_array[unit_id]['hit'] = np.roll(self._rt_array[unit_id]['hit'], -1)
-                        self._rt_array[unit_id]['miss'] = np.roll(self._rt_array[unit_id]['miss'], -1)
+                    self._rescale_y(self._tsot_now[unit_id], self._tsct_now[unit_id])
 
-                        if self._rt_now[unit_id]:
-                            if self._rt_now[unit_id] > 0:
-                                self._rt_array[unit_id]['hit'][-1] = self._rt_now[unit_id]
-                                self._rt_array[unit_id]['miss'][-1] = None
-                            else:
-                                self._rt_array[unit_id]['miss'][-1] = None
-                                self._rt_array[unit_id]['miss'][-1] = self._rt_now[unit_id]
-                        else:
-                            self._rt_array[unit_id]['hit'][-1] = None
-                            self._rt_array[unit_id]['miss'][-1] = None
+                    # TST
+                    self._tst_array[unit_id]['tsot'] = np.roll(self._tst_array[unit_id]['tsot'], -1)
+                    self._tst_array[unit_id]['tsct'] = np.roll(self._tst_array[unit_id]['tsct'], -1)
 
-                        self._rt_xy[unit_id]['hit'][0].set_data(self._time_array, self._rt_array[unit_id]['hit'])
-                        self._rt_xy[unit_id]['miss'][0].set_data(self._time_array, self._rt_array[unit_id]['miss'])
+                    if self._tsot_now[unit_id]:
+                        self._tst_array[unit_id]['tsot'][-1] = self._tsot_now[unit_id]
 
-                        self._rt_now[unit_id] = None
+                    if self._tsct_now[unit_id]:
+                        self._tst_array[unit_id]['tsct'][-1] = self._tsct_now[unit_id]
 
-                        self._plot_lines.update(self._rt_xy[unit_id]['hit'])
-                        self._plot_lines.update(self._rt_xy[unit_id]['miss'])
+                    self._tst_xy[unit_id]['tsot'][0].set_data(self._time_array, self._tst_array[unit_id]['tsot'])
+                    self._tst_xy[unit_id]['tsct'][0].set_data(self._time_array, self._tst_array[unit_id]['tsct'])
 
-                        self._state_array[unit_id] = np.roll(self._state_array[unit_id], -1)
-                        self._state_array[unit_id][-1] = self._state_now[unit_id]
-                        self._state_xy[unit_id][0].set_data(self._time_array, self._state_array[unit_id])
+                    self._tsot_now[unit_id] = np.nan
+                    self._tsct_now[unit_id] = np.nan
 
-                        self._plot_lines.update(self._state_xy[unit_id])
-                    except KeyError:
-                        pass
+                    self._plot_lines.update(self._tst_xy[unit_id]['tsot'])
+                    self._plot_lines.update(self._tst_xy[unit_id]['tsct'])
+
+                    # State
+                    self._state_array[unit_id] = np.roll(self._state_array[unit_id], -1)
+                    self._state_array[unit_id][-1] = self._state_now[unit_id]
+                    self._state_xy[unit_id][0].set_data(self._time_array, self._state_array[unit_id])
+
+                    self._plot_lines.update(self._state_xy[unit_id])
 
         return self._plot_lines
 
@@ -179,52 +180,60 @@ class Plotter:
         else:
             return False
 
-    def _rescale_rt_y(self, val=0):
-        if val is not None:
-            if val >= self._rt_y_max:
-                self._plt[0].set_yticks(np.arange(0, val, 1))
-                self._plt[0].set_ylim(self._rt_y_min - .3, val * 1.2)
-                self._rt_y_max = val
-                self._plt[0].figure.canvas.draw_idle()
+    def _rescale_y(self, tsot, tsct):
+        if tsot and tsct:
+            val = max(tsot, tsct)
+            if val is not None:
+                if val >= self._tst_y_max:
+                    val = round(val/1000) * 1000
+                    tic_width = round(val/3/1000)*1000
+                    self._plt[0].set_yticks(np.arange(0, val*1.2, tic_width))
+                    self._plt[0].set_ylim(self._tst_y_min - .3, val * 1.2)
+                    self._tst_y_max = val
+                    self._plt[0].figure.canvas.draw_idle()
 
     # Plot Controls
-    def rt_update(self, unit_id, val):
-        self._rt_now[unit_id] = val
+    def tsot_update(self, unit_id, val):
+        self._tsot_now[unit_id] = val
+
+    def tsct_update(self, unit_id, val):
+        self._tsct_now[unit_id] = val
 
     def state_update(self, unit_id, val):
-        self._state_now[unit_id] = int(val)
+        if self.recording:
+            self._state_now[unit_id] = val
 
     def clear_all(self):
         for unit_id in self._state_array.keys():
-            self._state_now[unit_id] = 0
+            self._state_now[unit_id] = np.nan
             self._state_array[unit_id][:] = np.nan
             self._state_xy[unit_id][0].set_data(self._time_array, self._state_array[unit_id])
 
-        for unit_id in self._rt_array.keys():
-            self._rt_array[unit_id]['hit'][:] = np.nan
-            self._rt_array[unit_id]['miss'][:] = np.nan
-            self._rt_xy[unit_id]['hit'][0].set_data(self._time_array, self._rt_array[unit_id]['hit'])
-            self._rt_xy[unit_id]['miss'][0].set_data(self._time_array, self._rt_array[unit_id]['miss'])
+        for unit_id in self._tst_array.keys():
+            self._tst_array[unit_id]['tsot'][:] = np.nan
+            self._tst_array[unit_id]['tsct'][:] = np.nan
+            self._tst_xy[unit_id]['tsot'][0].set_data(self._time_array, self._tst_array[unit_id]['tsot'])
+            self._tst_xy[unit_id]['tsct'][0].set_data(self._time_array, self._tst_array[unit_id]['tsct'])
 
         self._plt[0].figure.canvas.draw_idle()
 
     def remove_unit_id(self, unit_id):
         self._state_array.pop(unit_id)
         self._state_xy.pop(unit_id)
-        self._rt_array.pop(unit_id)
+        self._tst_array.pop(unit_id)
         self._unit_ids.remove(unit_id)
 
     def hide_lines(self, unit_id, name=None):
         if name == 'rt':
-            self._rt_xy[unit_id]['hit'][0].set_visible(False)
-            self._rt_xy[unit_id]['miss'][0].set_visible(False)
+            self._tst_xy[unit_id]['tsot'][0].set_visible(False)
+            self._tst_xy[unit_id]['tsct'][0].set_visible(False)
         elif name == 'stim_state':
             self._state_xy[unit_id][0].set_visible(False)
 
     def show_lines(self, unit_id, name=None):
         if name == 'rt':
-            self._rt_xy[unit_id]['hit'][0].set_visible(True)
-            self._rt_xy[unit_id]['miss'][0].set_visible(True)
+            self._tst_xy[unit_id]['tsot'][0].set_visible(True)
+            self._tst_xy[unit_id]['tsct'][0].set_visible(True)
         elif name == 'stim_state':
             self._state_xy[unit_id][0].set_visible(True)
 

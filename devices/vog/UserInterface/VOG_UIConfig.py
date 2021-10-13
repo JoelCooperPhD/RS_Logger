@@ -9,7 +9,7 @@ from os import path
 class VOGConfigWin:
     def __init__(self, q_out: SimpleQueue):
         self._q_out = q_out
-        self._UISettings = {"configName": StringVar(), "configMaxOpen": StringVar(),
+        self._UISettings = {"deviceVer": StringVar(), "configName": StringVar(), "configMaxOpen": StringVar(),
                             "configMaxClose": StringVar(), "configDebounce": StringVar(),
                             "configClickMode": StringVar(), "buttonControl": StringVar(),
                             "openInf": IntVar(), "closeInf": IntVar()}
@@ -94,8 +94,8 @@ class VOGConfigWin:
         button_nhtsa = Button(f, text="NHTSA", command=self._set_nhtsa_cb)
         button_nhtsa.grid(row=0, column=0, sticky="NEWS")
 
-        button_glance = Button(f, text="Glance", command=self._set_glance_cb)
-        button_glance.grid(row=0, column=1, sticky="NEWS")
+        self.button_glance = Button(f, text="Glance", command=self._set_glance_cb, state='disabled')
+        self.button_glance.grid(row=0, column=1, sticky="NEWS")
 
         button_e_blindfold = Button(f, text="eBlindfold", command=self._set_eblindfold_cb)
         button_e_blindfold.grid(row=0, column=2, sticky="NEWS")
@@ -165,6 +165,9 @@ class VOGConfigWin:
                 self._UISettings['openInf'].set(1)
             else:
                 self._UISettings['openInf'].set(0)
+        elif key == 'deviceVer':
+            if float(val) >= 2.2:
+                self.button_glance.config(state='normal')
         elif key == 'configMaxClose':
             if val == '2147483647':
                 self._UISettings['closeInf'].set(1)

@@ -53,16 +53,17 @@ class VOGController:
                         timestamp = time()
                         msg = self._connected_vog_devices[port].read_until(b'\r\n')
                         msg = str(msg, 'utf-8').strip()
-                        print(msg)
                         if msg in ['peekOpen', 'peekClose']:
                             pass
-                        elif 'config' in msg or 'button' in msg:
+                        elif any([i in msg for i in ['config', 'button', 'device', 'stm', 'data']]):
                             key, val = msg.split('|')
                             self._q_out.put(f'ui_vog>{key}>{val}')
+                        else:
+                            print(msg)
 
                         # msg_split = msg.split(',')
                         # self._q_out.put(f'ui_vog>{msg}')
-            await asyncio.sleep(.01)
+            await asyncio.sleep(.001)
 
     async def _queue_monitor(self):
         while 1:
@@ -118,7 +119,7 @@ class VOGController:
                 serial_conn.write(str.encode(f'{msg}\n'))
                 await asyncio.sleep(0)
         elif cmd == 'get_config':
-            for msg in ['get_configName', 'get_configMaxOpen', 'get_configMaxClose',
+            for msg in ['get_deviceVer', 'get_configName', 'get_configMaxOpen', 'get_configMaxClose',
                         'get_configDebounce', 'get_configClickMode', 'get_configButtonControl']:
                 serial_conn.write(str.encode(f'>{msg}|<<\n'))
         elif 'cfg' in cmd:

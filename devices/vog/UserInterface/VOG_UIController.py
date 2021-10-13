@@ -1,5 +1,8 @@
 from queue import SimpleQueue
 from tkinter import Tk
+
+import numpy as np
+
 from devices.vog.UserInterface import VOG_UIView, VOG_UIConfig
 
 
@@ -47,9 +50,15 @@ class VOGUIController:
                 self._update_devices(val)
 
             # Messages from vog hardware
-            elif key in ['configName', 'configMaxOpen',  'configMaxClose',
+            elif key in ['deviceVer', 'configName', 'configMaxOpen',  'configMaxClose',
                          'configDebounce', 'configClickMode', 'buttonControl', 'configButtonControl']:
                 self._cnf_win.update_fields(key, val)
+
+            elif key == 'stm':
+                self._update_stimulus_plot(val)
+
+            elif key == 'data':
+                self._update_tsot_plot(val)
 
             # Plot Commands
             elif key == 'clear':
@@ -63,29 +72,38 @@ class VOGUIController:
 
     # Main Controller Events
     def _log_init(self, time_stamp=None):
+        self._running = True
         for d in self.devices:
             self.devices[d]['stm_on'].configure(state='disabled')
             self.devices[d]['stm_off'].configure(state='disabled')
             self.devices[d]['configure'].configure(state='disabled')
             self.devices[self._UIView.NB.tab(self._UIView.NB.select(), "text")]['plot'].clear_all()
 
-    def _log_close(self, time_stamp=None):
-        for d in self.devices:
-            self.devices[d]['stm_on'].configure(state='normal')
-            self.devices[d]['stm_off'].configure(state='normal')
-            self.devices[d]['configure'].configure(state='normal')
-
-    def _data_start(self, time_stamp=None):
-        self._running = True
-        for d in self.devices:
             self.devices[d]['plot'].run = True
             self.devices[d]['plot'].clear_all()
             self._reset_results_text()
 
-    def _data_stop(self, time_stamp=None):
+
+    def _log_close(self, time_stamp=None):
         self._running = False
         for d in self.devices:
+            self.devices[d]['stm_on'].configure(state='normal')
+            self.devices[d]['stm_off'].configure(state='normal')
+            self.devices[d]['configure'].configure(state='normal')
             self.devices[d]['plot'].run = False
+
+    def _data_start(self, time_stamp=None):
+        for d in self.devices:
+            self.devices[d]['plot'].recording = True
+        port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
+        self.devices[port]['plot'].state_update(port, np.nan)
+
+
+    def _data_stop(self, time_stamp=None):
+        port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
+        self.devices[port]['plot'].state_update(port, np.nan)
+        for d in self.devices:
+            self.devices[d]['plot'].recording = False
 
     # Tab Events
     def _update_devices(self, devices=None):
@@ -115,20 +133,20 @@ class VOGUIController:
     def _update_configuration(self, args):
         self._cnf_win.update_fields(args)
 
-    def _update_stimulus_plot(self, arg):
-        port, state = arg.split(',')
+    def _update_stimulus_plot(self, state):
+        port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
         if self._running:
             self.devices[port]['plot'].state_update(port, state)
 
-            if state == '1':
-                self._update_response_text(f'{port},0')
-
-    def _update_rt_plot(self, arg):
+    def _update_tsot_plot(self, arg):
+        port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
         if self._running:
-            unit_id, rt = arg.split(',')
-            rt = int(rt)
-            rt = -0.1 if rt == -1 else round((int(rt) / 1000), 2)
-            self.devices[unit_id]['plot'].rt_update(unit_id, rt)
+            trial, opened, closed = arg.split(',')
+            opened = int(opened)
+            closed = int(closed)
+
+            self.devices[port]['plot'].tsot_update(port, opened)
+            self.devices[port]['plot'].tsct_update(port, closed)
 
     def _update_results(self, arg):
         arg_split = arg.split(',')
@@ -141,7 +159,7 @@ class VOGUIController:
 
         self._update_trial_text(unit_id, trl_n)
         self._update_rt_text(unit_id, rt)
-        self._update_rt_plot(f'{unit_id}, {rt}')
+        self._update_tsot_plot(f'{unit_id}, {rt}')
 
     def _reset_results_text(self):
         for d in self.devices:

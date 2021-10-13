@@ -4,7 +4,7 @@
 #define button_pin 2
 
 const String deviceName = "VOG";
-const String deviceDate = "4/30/2021";
+const String deviceDate = "10/12/2021";
 const String deviceVer = "2.2";
 
 //EXPERIMENT > BLOCK > TRIAL
@@ -604,6 +604,7 @@ void loop()
       break;
 
     case 2: //Button controls "glance"
+      Serial.println("glancing");
       if (isOpen && openTimeHasExpired())
       {
         vog_close();

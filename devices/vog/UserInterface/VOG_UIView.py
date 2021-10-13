@@ -48,7 +48,7 @@ class VOGTabbedControls:
 
     def _tab_add_plot(self, dev_id):
         self.tab_f['plot'] = VOG_UIPlotter.Plotter(self.tab_f['frame'])
-        self.tab_f['plot'].set_rt_and_state_lines(dev_id)
+        self.tab_f['plot'].set_tsot_and_state_lines(dev_id)
 
     def _tab_add_manual_controls(self):
         self.tab_f['lf'] = LabelFrame(self.tab_f['frame'], text="Lens State")
