@@ -89,7 +89,6 @@ class DRTController:
         d = data.split(',')
         if len(d) == 3: # Update firmware doesn't include clicks in raw data
             data = f'{d[0]}, {d[1]}, {self._clicks}, {d[2]}'
-        print(data)
         packet = f'drt_{port}, data, {timestamp}, {data}'
 
         def _write(_path, _results):
@@ -97,7 +96,8 @@ class DRTController:
                 with open(_path, 'a') as writer:
                     writer.write(_results + '\n')
             except (PermissionError, FileNotFoundError):
-                print("Control write error")
+                pass
+                # print("Control write error")
 
         file_path = f"{self._file_path}/drt.txt"
         t = Thread(target=_write, args=(file_path, packet))
@@ -116,7 +116,8 @@ class DRTController:
         elif cmd == 'init':
             pass
         else:
-            print(f'DRT_HIController {cmd} not handled')
+            pass
+            # print(f'DRT_HIController {cmd} not handled')
         await asyncio.sleep(0)
 
     @staticmethod
