@@ -51,6 +51,7 @@ class Main:
         self._file_path = [None]
 
         self._win.resizable(True, True)
+        self._win.minsize(816, 105)
         self._win.title("Red Scientific Data Logger")
         path_to_icon = path.abspath(path.join(path.dirname(__file__), 'RSLogger/img/rs_icon.ico'))
         self._win.iconbitmap(path_to_icon)
