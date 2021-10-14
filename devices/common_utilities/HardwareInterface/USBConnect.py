@@ -21,21 +21,24 @@ class ConnectionManager:
 
     async def update(self):
         while 1:
-            loop = get_running_loop()
-            new_ports = await loop.run_in_executor(None, comports)
-            len_diff = len(new_ports) - len(self._old_ports)
+            try:
+                loop = get_running_loop()
+                new_ports = await loop.run_in_executor(None, comports)
+                len_diff = len(new_ports) - len(self._old_ports)
 
-            if len_diff != 0:
-                self._identify_rs_devices(new_ports)
-                await asyncio.sleep(.2)
-                if len_diff > 0:
-                    self._connect_device()
-                else:
-                    self._disconnect_device()
+                if len_diff != 0:
+                    self._identify_rs_devices(new_ports)
+                    await asyncio.sleep(.2)
+                    if len_diff > 0:
+                        self._connect_device()
+                    else:
+                        self._disconnect_device()
 
-                self.port_event.set()
+                    self.port_event.set()
 
-            self._old_ports = new_ports
+                self._old_ports = new_ports
+            except RuntimeError:
+                pass
             await sleep(1)
 
     def _identify_rs_devices(self, ports):
