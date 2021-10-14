@@ -60,25 +60,27 @@ class CameraReader:
     async def capture(self):
         asyncio.create_task(self._monitor_cv2cr())
         while not self._close:
-            ret, frame = await asyncio.get_running_loop().run_in_executor(None, self._cap.read)
-            if frame is not None:
-                time_stamp = datetime.now().strftime('%H:%M:%S.%f')[:-3]
+            try:
+                ret, frame = await asyncio.get_running_loop().run_in_executor(None, self._cap.read)
+                if frame is not None:
+                    time_stamp = datetime.now().strftime('%H:%M:%S.%f')[:-3]
 
-                fps, sd = self._fps_counter()
-                msg = f"{str(fps)} {self._desired_fps} {time_stamp}"
-                cv2.putText(frame, msg, (5, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+                    fps, sd = self._fps_counter()
+                    msg = f"{str(fps)} {self._desired_fps} {time_stamp}"
+                    cv2.putText(frame, msg, (5, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
 
-                if self._show_window:
-                    self._it_frame_writer.put(frame)
+                    if self._show_window:
+                        self._it_frame_writer.put(frame)
 
-                if self._record:
-                    self._save_camera_feed(frame)
-                elif self._out is not None:
-                    self._out.release()
-                    self._out = None
-            else:
-                self._close = True
-
+                    if self._record:
+                        self._save_camera_feed(frame)
+                    elif self._out is not None:
+                        self._out.release()
+                        self._out = None
+                else:
+                    self._close = True
+            except RuntimeError:
+                pass
             await asyncio.sleep(.001)
 
     async def _monitor_cv2cr(self):

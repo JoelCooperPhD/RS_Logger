@@ -96,17 +96,42 @@ class Main:
                     print('Main: Handle Exit Stub')
                 else:
                     address, key, val = msg.split('>')
+                    if key in ['init', 'close', 'start', 'stop']:
+                        self._handle_new_logger_command(key, val)
                     if address == 'main':
                         if val == 'ALL' or key == 'fpath':
+                            if key == 'fpath':
+                                self._update_file_paths(val)
                             for q in self.queues:
                                 if q != 'main':
                                     self.queues[q].put(f'{q}>{key}>{val}')
 
+                        if key in ['init', 'close', 'start', 'stop']:
+                            self._handle_new_logger_command(key, val)
                     else:
                         self.queues[address].put(msg)
-
             await asyncio.sleep(.01)
 
+    def _update_file_paths(self, file_path):
+        for w in self._widgets:
+            try:
+                self._widgets[w].set_file_path(file_path)
+            except AttributeError:
+                pass
+
+    def _handle_new_logger_command(self, key, val):
+        for w in self._widgets:
+            try:
+                if key == 'init':
+                    self._widgets[w].handle_log_init(val)
+                elif key == 'close':
+                    self._widgets[w].handle_log_close(val)
+                elif key == 'start':
+                    self._widgets[w].handle_data_record(val)
+                elif key == 'stop':
+                    self._widgets[w].handle_data_pause(val)
+            except AttributeError:
+                pass
 
 if __name__ == "__main__":
     freeze_support()
