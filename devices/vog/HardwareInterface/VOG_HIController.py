@@ -67,7 +67,7 @@ class VOGController:
                     except SerialException:
                         pass
 
-            await asyncio.sleep(.001)
+            await asyncio.sleep(.01)
 
     async def _queue_monitor(self):
         while 1:
