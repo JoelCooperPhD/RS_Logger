@@ -3,6 +3,7 @@ from threading import Thread
 from queue import SimpleQueue
 import asyncio
 from time import time
+from serial import SerialException
 
 
 class VOGController:
@@ -49,20 +50,21 @@ class VOGController:
         while 1:
             if self._connected_vog_devices:
                 for port in self._connected_vog_devices:
-                    if self._connected_vog_devices[port].inWaiting():
-                        timestamp = time()
-                        msg = self._connected_vog_devices[port].read_until(b'\r\n')
-                        msg = str(msg, 'utf-8').strip()
-                        if msg in ['peekOpen', 'peekClose']:
-                            pass
-                        elif any([i in msg for i in ['config', 'button', 'device', 'stm', 'data']]):
-                            key, val = msg.split('|')
-                            self._q_out.put(f'ui_vog>{key}>{val}')
-                        else:
-                            print(msg)
+                    try:
+                        if self._connected_vog_devices[port].inWaiting():
+                            timestamp = time()
+                            msg = self._connected_vog_devices[port].read_until(b'\r\n')
+                            msg = str(msg, 'utf-8').strip()
+                            if msg in ['peekOpen', 'peekClose']:
+                                pass
+                            elif any([i in msg for i in ['config', 'button', 'device', 'stm', 'data']]):
+                                key, val = msg.split('|')
+                                self._q_out.put(f'ui_vog>{key}>{val}')
+                            else:
+                                print(f'VOG_HIController: {msg}')
+                    except SerialException:
+                        pass
 
-                        # msg_split = msg.split(',')
-                        # self._q_out.put(f'ui_vog>{msg}')
             await asyncio.sleep(.001)
 
     async def _queue_monitor(self):

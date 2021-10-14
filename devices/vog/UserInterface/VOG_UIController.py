@@ -18,7 +18,6 @@ class VOGUIController:
         self._running = False
 
         # View
-
         self._UIView = VOG_UIView.VOGTabbedControls(self._win)
 
         self._UIView.register_configure_clicked_cb(self._configure_button_cb)
@@ -83,7 +82,6 @@ class VOGUIController:
             self.devices[d]['plot'].clear_all()
             self._reset_results_text()
 
-
     def _log_close(self, time_stamp=None):
         self._running = False
         for d in self.devices:
@@ -97,7 +95,6 @@ class VOGUIController:
             self.devices[d]['plot'].recording = True
         port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
         self.devices[port]['plot'].state_update(port, np.nan)
-
 
     def _data_stop(self, time_stamp=None):
         port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
@@ -130,9 +127,6 @@ class VOGUIController:
                     self._UIView.NB.forget(self._UIView.NB.children[id_.lower()])
 
     # Messages from vog hardware
-    def _update_configuration(self, args):
-        self._cnf_win.update_fields(args)
-
     def _update_stimulus_plot(self, state):
         port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
         if self._running:
@@ -145,42 +139,31 @@ class VOGUIController:
             opened = int(opened)
             closed = int(closed)
 
+            self.devices[port]['trl_n'].set(trial)
+            self.devices[port]['tsot'].set(opened)
+            self.devices[port]['tsct'].set(closed)
+
             self.devices[port]['plot'].tsot_update(port, opened)
+
             self.devices[port]['plot'].tsct_update(port, closed)
-
-    def _update_results(self, arg):
-        arg_split = arg.split(',')
-
-        if len(arg_split) == 5:
-            unit_id, mills, trl_n, clicks, rt = arg_split
-            self._update_response_text(f'{unit_id}, {clicks}')
-        else:
-            unit_id, mills, trl_n, rt = arg_split
-
-        self._update_trial_text(unit_id, trl_n)
-        self._update_rt_text(unit_id, rt)
-        self._update_tsot_plot(f'{unit_id}, {rt}')
 
     def _reset_results_text(self):
         for d in self.devices:
             self._update_trial_text(d, '0')
-            self._update_rt_text(d, '-1')
-            self._update_response_text(f'{d},0')
+            self._update_tsot_text(d, '0')
+            self._update_tsct_text(d, '0')
 
     def _update_trial_text(self, unit_id, cnt):
         if self._running:
             self.devices[unit_id]['trl_n'].set(cnt)
 
-    def _update_rt_text(self, unit_id, rt):
+    def _update_tsot_text(self, unit_id, tsot):
         if self._running:
-            if rt != '-1':
-                rt = round((int(rt) / 1000), 2)
-            self.devices[unit_id]['rt'].set(rt)
+            self.devices[unit_id]['tsot'].set(tsot)
 
-    def _update_response_text(self, msg):
-        unit_id, clicks = msg.split(',')
+    def _update_tsct_text(self, unit_id, tsct):
         if self._running:
-            self.devices[unit_id]['clicks'].set(clicks)
+            self.devices[unit_id]['tsct'].set(tsct)
 
     # Plot Commands
     def _clear_plot(self):

@@ -72,15 +72,15 @@ class VOGTabbedControls:
         Label(lf, text="Trial Number:").grid(row=0, column=0, sticky='NEWS')
         Label(lf, textvariable=self.tab_f['trl_n']).grid(row=0, column=1, sticky="E")
 
-        self.tab_f['rt'] = StringVar()
-        self.tab_f['rt'].set('-1')
-        Label(lf, text="Reaction Time:").grid(row=1, column=0, sticky='NEWS')
-        Label(lf, textvariable=self.tab_f['rt']).grid(row=1, column=1, sticky="E")
+        self.tab_f['tsot'] = StringVar()
+        self.tab_f['tsot'].set('0')
+        Label(lf, text="Total Opened (TSOT):").grid(row=1, column=0, sticky='NEWS')
+        Label(lf, textvariable=self.tab_f['tsot']).grid(row=1, column=1, sticky="E")
 
-        self.tab_f['clicks'] = StringVar()
-        self.tab_f['clicks'].set("0")
-        Label(lf, text="Response Count:").grid(row=2, column=0, sticky='NEWS')
-        Label(lf, textvariable=self.tab_f['clicks']).grid(row=2, column=1, sticky="E")
+        self.tab_f['tsct'] = StringVar()
+        self.tab_f['tsct'].set("0")
+        Label(lf, text="Total Closed (TSCT):").grid(row=2, column=0, sticky='NEWS')
+        Label(lf, textvariable=self.tab_f['tsct']).grid(row=2, column=1, sticky="E")
 
     def _tab_add_configure(self):
         f = Frame(self.tab_f['frame'])
