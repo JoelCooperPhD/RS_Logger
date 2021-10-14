@@ -96,7 +96,7 @@ class DRTController:
             except (PermissionError, FileNotFoundError):
                 print("Control write error")
 
-        file_path = f"{self._file_path}/data.txt"
+        file_path = f"{self._file_path}/drt.txt"
         t = Thread(target=_write, args=(file_path, packet))
         t.start()
 
