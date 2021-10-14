@@ -7,7 +7,7 @@ import cv2
 from multiprocessing import Process, Pipe
 from RSLogger.user_interface.usb_cameras import cam_win
 from threading import Thread
-from tkinter import LEFT
+from tkinter import RIGHT
 
 
 class CameraWidget:
@@ -19,7 +19,7 @@ class CameraWidget:
 
         # Label frame
         self._cam_lf = LabelFrame(widget_frame, text="Cameras")
-        self._cam_lf.pack(side=LEFT, fill='y', padx=2)
+        self._cam_lf.pack(side=RIGHT, fill='y', padx=2)
         self._cam_lf.grid_columnconfigure(0, weight=1)
         self._cam_lf.grid_rowconfigure(5, weight=1)
 
