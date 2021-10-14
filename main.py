@@ -6,21 +6,21 @@ from os import path
 from tkinter import Tk, ttk, BOTH
 
 # Hardware Interface
-from devices.drt_sft.HardwareInterface import SFT_HIController
-from devices.drt.HardwareInterface import DRT_HIController
-from devices.vog.HardwareInterface import VOG_HIController
+from RSLogger.devices.drt_sft.HardwareInterface import SFT_HIController
+from RSLogger.devices.drt.HardwareInterface import DRT_HIController
+from RSLogger.devices.vog.HardwareInterface import VOG_HIController
 
 # User Interface
-from devices.drt_sft.UserInterface import SFT_UIController
-from devices.drt.UserInterface import DRT_UIController
-from devices.vog.UserInterface import VOG_UIController
+from RSLogger.devices.drt_sft.UserInterface import SFT_UIController
+from RSLogger.devices.drt.UserInterface import DRT_UIController
+from RSLogger.devices.vog.UserInterface import VOG_UIController
 
 # Widgets
-from user_interface.controls import ExpControls
-from user_interface.key_logger import KeyFlagger
-from user_interface.note_logger import NoteTaker
-from user_interface.log_timers import InfoDisplay
-from user_interface.usb_cameras.cam_ui import CameraWidget
+from RSLogger.user_interface.controls import ExpControls
+from RSLogger.user_interface.key_logger import KeyFlagger
+from RSLogger.user_interface.note_logger import NoteTaker
+from RSLogger.user_interface.log_timers import InfoDisplay
+from RSLogger.user_interface.usb_cameras.cam_ui import CameraWidget
 
 
 class Main:
@@ -52,7 +52,7 @@ class Main:
 
         self._win.resizable(True, True)
         self._win.title("Red Scientific Data Logger")
-        path_to_icon = path.abspath(path.join(path.dirname(__file__), '../RS_Logger/img/rs_icon.ico'))
+        path_to_icon = path.abspath(path.join(path.dirname(__file__), 'RSLogger/img/rs_icon.ico'))
         self._win.iconbitmap(path_to_icon)
 
         # Widgets
