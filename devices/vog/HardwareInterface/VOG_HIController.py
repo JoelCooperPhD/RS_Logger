@@ -60,6 +60,8 @@ class VOGController:
                             elif any([i in msg for i in ['config', 'button', 'device', 'stm', 'data']]):
                                 key, val = msg.split('|')
                                 self._q_out.put(f'ui_vog>{key}>{val}')
+                                if key == 'data':
+                                    self._log_results(port, timestamp, val)
                             else:
                                 print(f'VOG_HIController: {msg}')
                     except SerialException:
@@ -88,9 +90,7 @@ class VOGController:
 
     def _log_results(self, port, timestamp, data):
         d = data.split(',')
-        if len(d) == 3:  # Update firmware doesn't include clicks in raw data
-            data = f'{d[0]}, {d[1]}, {self._clicks}, {d[2]}'
-        print(data)
+        data = ', '.join(d)
         packet = f'vog_{port}, data, {timestamp}, {data}'
 
         def _write(_path, _results):
@@ -100,7 +100,7 @@ class VOGController:
             except (PermissionError, FileNotFoundError):
                 print("Control write error")
 
-        file_path = f"{self._file_path}/data.txt"
+        file_path = f"{self._file_path}/vog.txt"
         t = Thread(target=_write, args=(file_path, packet))
         t.start()
 
