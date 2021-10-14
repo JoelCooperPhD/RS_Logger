@@ -91,16 +91,18 @@ class VOGUIController:
             self.devices[d]['plot'].run = False
 
     def _data_start(self, time_stamp=None):
-        for d in self.devices:
-            self.devices[d]['plot'].recording = True
-        port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
-        self.devices[port]['plot'].state_update(port, np.nan)
+        if self.devices:
+            for d in self.devices:
+                self.devices[d]['plot'].recording = True
+            port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
+            self.devices[port]['plot'].state_update(port, np.nan)
 
     def _data_stop(self, time_stamp=None):
-        port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
-        self.devices[port]['plot'].state_update(port, np.nan)
-        for d in self.devices:
-            self.devices[d]['plot'].recording = False
+        if self.devices:
+            port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
+            self.devices[port]['plot'].state_update(port, np.nan)
+            for d in self.devices:
+                self.devices[d]['plot'].recording = False
 
     # Tab Events
     def _update_devices(self, devices=None):
