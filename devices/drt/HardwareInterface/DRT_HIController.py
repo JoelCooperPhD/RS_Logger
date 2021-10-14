@@ -50,20 +50,23 @@ class DRTController:
         while 1:
             if self._connected_drt_devices:
                 for port in self._connected_drt_devices:
-                    if self._connected_drt_devices[port].inWaiting():
-                        msg = self._connected_drt_devices[port].read_until(b'\r\n').strip()
-                        timestamp = time()
-                        msg = str(msg, 'utf-8').strip()
-                        key, val = msg.split('>')
+                    try:
+                        if self._connected_drt_devices[port].inWaiting():
+                            msg = self._connected_drt_devices[port].read_until(b'\r\n').strip()
+                            timestamp = time()
+                            msg = str(msg, 'utf-8').strip()
+                            key, val = msg.split('>')
 
-                        if key in ['clk', 'trl', 'stm', 'end']:
-                            self._q_out.put(f'ui_drt>{key}>{port},{val}')
-                            if key == 'clk':
-                                self._clicks = val
-                            if key == 'trl':
-                                self._log_results(port, timestamp, val)
-                        else:
-                            self._q_out.put(f'ui_drt>{msg}')
+                            if key in ['clk', 'trl', 'stm', 'end']:
+                                self._q_out.put(f'ui_drt>{key}>{port},{val}')
+                                if key == 'clk':
+                                    self._clicks = val
+                                if key == 'trl':
+                                    self._log_results(port, timestamp, val)
+                            else:
+                                self._q_out.put(f'ui_drt>{msg}')
+                    except SerialException:
+                        pass
             await asyncio.sleep(.01)
 
     async def _queue_monitor(self):
