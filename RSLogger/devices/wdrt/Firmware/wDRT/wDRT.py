@@ -9,7 +9,7 @@ from wDRT import battery, xbee, switch, config, mmc, drt
 
 
 class wDRT:
-    def __init__(self):
+    def __init__(self, serial):
         self.events = {
             'get_cfg': self.get_cfg,
             'set_cfg': self.set_cfg,
@@ -26,6 +26,9 @@ class wDRT:
             
             'set_vrb': self.set_verbose,
         }
+        # Serial
+        self.serial = serial
+        
         # Debug
         self.debug = False
 
@@ -57,6 +60,7 @@ class wDRT:
         asyncio.create_task(self.button_runner())
         await asyncio.gather(
             self.xb.run(),
+            self.handle_serial_msg(),
             self.handle_xb_msg(),
             self.handle_drt_msg(),
         )
@@ -71,21 +75,38 @@ class wDRT:
                     msg += ",{}\n".format(self.battery.percent())
                     self.mmc.write("wDRT,{},,{}".format(self.xb.name_NI, msg[4:]))
                     self.xb.transmit(msg)
+                    print(msg)
                 elif self.verbose:
                     self.xb.transmit(msg)
+                    print(msg)
+
+    async def handle_serial_msg(self):
+        while True:
+            if self.serial.any():
+                cmd = self.serial.read()
+                cmd = cmd.strip().decode('utf-8')
+                self.parse_cmd(cmd)
+            await asyncio.sleep(0)
 
     async def handle_xb_msg(self):
         while True:
             cmd = await self.xb.new_cmd()
+            self.parse_cmd(cmd)
+  
+    def parse_cmd(self, cmd):
+        if ">" in cmd:
             kv = cmd.split(">")
             if len(kv[1]):
                 self.events.get(kv[0], lambda: print("Invalid CB"))(kv[1])
             else:
                 self.events.get(kv[0], lambda: print("Invalid CB"))()
+        
 
     # Config File
     def get_cfg(self):
-        self.xb.transmit("cfg>{}".format(self.cn.get_config_str()))
+        msg = f"cfg>{self.cn.get_config_str()}"
+        self.xb.transmit(msg)
+        print(msg)
 
     def set_cfg(self, arg):
         self.cn.update(arg)
@@ -121,12 +142,16 @@ class wDRT:
 
     def get_rtc(self):
         r = self.rtc.datetime()
-        self.xb.transmit("rtc>{}".format(','.join([str(v) for v in r])))
+        msg = "rtc>" + ','.join([str(v) for v in r])
+        self.xb.transmit(msg)
+        print(msg)
 
     # Battery
     def get_bat(self):
         percent = self.battery.percent()
-        self.xb.transmit("bty>{}".format(percent))
+        msg = f"bty>{percent}"
+        self.xb.transmit(msg)
+        print(msg)
         
     # Button Runner - execute drt.start and drt.stop commands from button presses
     async def button_runner(self):
