@@ -6,13 +6,13 @@ from os import path
 from tkinter import Tk, ttk, BOTH
 
 # Hardware Interface
-from RSLogger.devices.drt_sft.HardwareInterface import SFT_HIController
+from RSLogger.devices.sft.HardwareInterface import SFT_HIController
 from RSLogger.devices.drt.HardwareInterface import DRT_HIController
 from RSLogger.devices.vog.HardwareInterface import VOG_HIController
 from RSLogger.devices.wdrt.HardwareInterface import WDRT_HIController
 
 # User Interface
-from RSLogger.devices.drt_sft.UserInterface import SFT_UIController
+from RSLogger.devices.sft.UserInterface import SFT_UIController
 from RSLogger.devices.drt.UserInterface import DRT_UIController
 from RSLogger.devices.vog.UserInterface import VOG_UIController
 from RSLogger.devices.wdrt.UserInterface import WDRT_UIController
