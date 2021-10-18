@@ -24,7 +24,7 @@ class SystemsFactorialTechnology:
         
         
         # Config
-        self.cn = config.Configurator('drt_sft/config.jsn')
+        self.cn = config.Configurator('sft/config.jsn')
         
         # Experiment
         self.tic = 0

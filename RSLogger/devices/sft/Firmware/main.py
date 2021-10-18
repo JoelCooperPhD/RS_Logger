@@ -1,5 +1,5 @@
 from uasyncio import run
-from DRT_SFT import drt_sft
+from SFT import drt_sft
 
 serial = pyb.USB_VCP()
 drt = drt_sft.SystemsFactorialTechnology(serial)

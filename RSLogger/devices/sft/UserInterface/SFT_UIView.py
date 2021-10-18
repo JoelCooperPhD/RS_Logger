@@ -1,6 +1,6 @@
 from tkinter.ttk import Label, LabelFrame, Button, Frame, Notebook
 from tkinter import Tk, StringVar, BOTH
-from RSLogger.devices.drt_sft.UserInterface import SFT_UIPlotter
+from RSLogger.devices.sft.UserInterface import SFT_UIPlotter
 
 
 class SFTTabbedControls:

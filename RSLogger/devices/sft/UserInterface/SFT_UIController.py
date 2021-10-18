@@ -1,6 +1,6 @@
 from queue import SimpleQueue
 from tkinter import Tk
-from RSLogger.devices.drt_sft.UserInterface import SFT_UIConfig, SFT_UIView
+from RSLogger.devices.sft.UserInterface import SFT_UIConfig, SFT_UIView
 
 
 class SFTUIController:

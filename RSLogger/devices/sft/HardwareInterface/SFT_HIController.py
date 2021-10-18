@@ -11,8 +11,8 @@ class SFTController:
         self._q_out: SimpleQueue = q_main
         self._q_in: SimpleQueue = q_hi_sft
 
-        self._connection_manager = USBConnect.ConnectionManager(name='drt_sft', vid='F055', pid='9800')
-        self._results_writer = Results.ResultsWriter('drt_sft')
+        self._connection_manager = USBConnect.ConnectionManager(name='sft', vid='F055', pid='9800')
+        self._results_writer = Results.ResultsWriter('sft')
 
         self._connected_sft_devices = None
         self._connected_sft_ports = None
