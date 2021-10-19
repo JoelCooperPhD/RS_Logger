@@ -112,9 +112,6 @@ class Main:
                             for q in self.queues:
                                 if q != 'main':
                                     self.queues[q].put(f'{q}>{key}>{val}')
-
-                        if key in ['init', 'close', 'start', 'stop']:
-                            self._handle_new_logger_command(key, val)
                     else:
                         self.queues[address].put(msg)
             await asyncio.sleep(.01)
