@@ -15,10 +15,13 @@ class Configurator:
 
     def update(self, cfgs):
         if isinstance(cfgs, str):
-            c = cfgs.split(",")
-            for cnf in c:
-                kv = cnf.split(':')
-                self.config.update({kv[0]: int(kv[1])})
+            try:
+                c = cfgs.split(",")
+                for cnf in c:
+                    kv = cnf.split(':')
+                    self.config.update({kv[0]: int(kv[1])})
+            except:
+                pass
         elif isinstance(cfgs, dict):
             self.config.update(cfgs)
         self._save()
@@ -30,5 +33,6 @@ class Configurator:
     def _save(self):
         with open(self._fname, 'w') as outfile:
             outfile.write(dumps(self.config))
+
 
 
