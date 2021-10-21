@@ -6,16 +6,16 @@ from RSLogger.devices.wdrt.UserInterface import WDRT_UIView, WDRT_UIConfig, WDRT
 class WDRTUIController:
     def __init__(self, win, q_out, q_in):
         self._win: Tk = win
-        self._vt_q: SimpleQueue = q_out
-        self._ct_q: SimpleQueue = q_in
+        self._q_in: SimpleQueue = q_in
+        self._q_out: SimpleQueue = q_out
 
         # Events
         self._events = {
             # Main Controller Events
             "init": self._log_init,
             "close": self._log_close,
-            "record": self._data_record,
-            "pause": self._data_pause,
+            "start": self._data_record,
+            "stop": self._data_pause,
 
             # Tab Events
             "devices": self._update_devices,
@@ -31,8 +31,10 @@ class WDRTUIController:
             "bty": self._update_battery_soc,
             "rt":  self._update_rt,
             "clk": self._update_clicks,
+
+            "fpath": self._update_file_path,
         }
-        self._update_vt_q()
+        self._listen_for_incoming_messages()
 
         self.devices = dict()
 
@@ -41,11 +43,11 @@ class WDRTUIController:
 
         # UserInterface
         self._win.bind("<<NotebookTabChanged>>", self._tab_changed_cb)
-        self._v = WDRT_UIView.WDRTMainWindow(win, q_out)
-        self._v.register_stim_on_cb(self._stim_on_button_cb)
-        self._v.register_stim_off_cb(self._stim_off_button_cb)
-        self._v.register_configure_clicked_cb(self._configure_button_cb)
-        self._v.register_rescan_network(self._rescan_network_cb)
+        self._view = WDRT_UIView.WDRTMainWindow(win, q_out)
+        self._view.register_stim_on_cb(self._stim_on_button_cb)
+        self._view.register_stim_off_cb(self._stim_off_button_cb)
+        self._view.register_configure_clicked_cb(self._configure_button_cb)
+        self._view.register_rescan_network(self._rescan_network_cb)
         self._active_tab = None
 
         # Configure Window
@@ -53,78 +55,84 @@ class WDRTUIController:
         self._cnf_win.register_custom_cb(self._custom_button_cb)
         self._cnf_win.register_iso_cb(self._iso_button_cb)
 
-    def _update_vt_q(self):
-        while not self._vt_q.empty():
-            msg = self._vt_q.get()
-            try:
-                kvals = msg.split(">")
-                if len(kvals[1]):
-                    self._events[kvals[0]](kvals[1:])
-                else:
-                    self._events[kvals[0]]()
-            except Exception as e:
-                print(f"vController: {e}")
+    def _listen_for_incoming_messages(self):
+        while not self._q_in.empty():
+            msg = self._q_in.get()
 
-        self._win.after(10, self._update_vt_q)
+            kvals = msg.split(">")
+            if len(kvals[1]):
+                self._events[kvals[1]](kvals[2:])
+            else:
+                self._events[kvals[1]]()
+
+
+        self._win.after(10, self._listen_for_incoming_messages)
 
     def _update_devices(self, devices=None):
         units = list()
-        if devices:
-            units = devices[0].split(",")
-            self._v.show()
-        else:
-            self._v.hide()
+        try:
+            if devices != ['']:
+                units = devices[0].split(",")
+                self._view.show()
+            else:
+                self._view.hide()
 
-        to_add = set(units) - set(self.devices)
-        if to_add:
-            self._add_tab(to_add)
-        to_remove = set(self.devices) - set(units)
-        if to_remove:
-            self._remove_tab(to_remove)
+            to_add = set(units) - set(self.devices)
+            if to_add:
+                self._add_tab(to_add)
+            to_remove = set(self.devices) - set(units)
+            if to_remove:
+                self._remove_tab(to_remove)
+
+        except AttributeError:
+            pass
 
     def _add_tab(self, dev_ids):
         for id_ in dev_ids:
             if id_ not in self.devices:
-                self.devices[id_] = self._v.build_tab(id_)
+                self.devices[id_] = self._view.build_tab(id_)
                 pass
 
     def _remove_tab(self, dev_ids):
         for id_ in dev_ids:
             if id_ in self.devices.keys():
                 self.devices.pop(id_)
-                self._v.NB.forget(self._v.NB.children[id_.lower()])
+                self._view.NB.forget(self._view.NB.children[id_.lower()])
 
     # UserInterface Parent
-    def _log_init(self):
+    def _log_init(self, arg):
         for d in self.devices:
             self.devices[d]['refresh'].config(state='disabled')
 
-    def _log_close(self):
+    def _log_close(self, arg):
         for d in self.devices:
             self.devices[d]['refresh'].config(state='active')
 
-    def _data_record(self):
+    def _data_record(self, arg):
         self._running = True
         self.devices[self._active_tab]['plot'].run = True
         self.devices[self._active_tab]['plot'].clear_all()
 
-    def _data_pause(self):
+    def _data_pause(self, arg):
         self._running = False
         self.devices[self._active_tab]['plot'].run = False
+
+    def _update_file_path(self, arg):
+        pass
 
     # Registered Callbacks with wDRT UserInterface
     def _tab_changed_cb(self, e):
         if self.devices:
             try:
                 # Clean up old tab and device
-                self._ct_q.put(f"vrb_off>{self._active_tab}")
+                self._q_out.put(f"hi_wdrt>vrb_off>{self._active_tab}")
                 if self._running:
                     self.devices[self._active_tab]['plot'].run = False
                     self.devices[self._active_tab]['plot'].clear_all()
                 # Start new tab and device
-                self._active_tab = self._v.NB.tab(self._v.NB.select(), "text")
-                self._ct_q.put(f"vrb_on>{self._active_tab}")
-                self._ct_q.put(f"get_bat>{self._active_tab}")
+                self._active_tab = self._view.NB.tab(self._view.NB.select(), "text")
+                self._q_out.put(f"hi_wdrt>vrb_on>{self._active_tab}")
+                self._q_out.put(f"hi_wdrt>get_bat>{self._active_tab}")
                 if self._running:
                     self.devices[self._active_tab]['plot'].run = True
                     self.devices[self._active_tab]['plot'].clear_all()
@@ -132,29 +140,33 @@ class WDRTUIController:
                 print(f"vController _tab_changed_cb: {e}")
 
     def _stim_on_button_cb(self):
-        self._ct_q.put(f"stm_on>{self._active_tab}")
+        self._q_out.put(f"hi_wdrt>stm_on>{self._active_tab}")
 
     def _stim_off_button_cb(self):
-        self._ct_q.put(f"stm_off>{self._active_tab}")
+        self._q_out.put(f"hi_wdrt>stm_off>{self._active_tab}")
 
     def _configure_button_cb(self):
         self._cnf_win.show(self._active_tab)
-        self._ct_q.put(f"get_cfg>{self._active_tab}")
+        self._q_out.put(f"hi_wdrt>get_cfg>{self._active_tab}")
 
     def _rescan_network_cb(self):
-        for c in self._v.NB.winfo_children():
+        for c in self._view.NB.winfo_children():
             try:
-                self._v.NB.forget(c)
+                self._view.NB.forget(c)
             except TclError:
                 pass
         self.devices.clear()
-        self._ct_q.put(f"net_scn>")
-        self._v.hide()
+        self._q_out.put(f"hi_wdrt>net_scn>")
+        self._view.hide()
 
     # Plotter
     def _update_stim_state(self, arg):
-        if self._running:
-            self.devices[arg[1]]['plot'].state_update(arg[1], arg[0])
+        kv = arg[0].split(' ')
+        try:
+            if self._running:
+                self.devices[kv[1]]['plot'].state_update(kv[1], kv[0])
+        except AttributeError:
+            pass
 
     def _update_stim_data(self, arg):
         if self._running:
@@ -200,11 +212,11 @@ class WDRTUIController:
     # Configuration Window
     # ---- Registered Callbacks
     def _custom_button_cb(self, msg):
-        self._ct_q.put(f"set_cfg>{msg}>{self._active_tab}")
+        self._q_out.put(f"hi_wdrt>set_cfg>{msg}, {self._active_tab}")
 
     def _iso_button_cb(self):
-        self._ct_q.put(f"set_iso>{self._active_tab}")
+        self._q_out.put(f"hi_wdrt>set_iso>{self._active_tab}")
 
     # ---- msg from wDRT unit
     def _update_configuration(self, args):
-        self._cnf_win.parse_config(args)
+        self._cnf_win.parse_config(args[0])

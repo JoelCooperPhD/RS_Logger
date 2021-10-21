@@ -1,7 +1,6 @@
 from serial.tools.list_ports import comports
 import asyncio
 from digi.xbee.devices import XBeeDevice, XBeeNetwork, NetworkDiscoveryStatus
-import time
 
 class ConnectionManager:
     def __init__(self):
@@ -17,8 +16,8 @@ class ConnectionManager:
         self._devices_pid = '6015'
 
         # These queues pass the xcvr and remote units respectively
-        self.attached_xcvr = asyncio.Queue()
-        self.networked_devices = asyncio.Queue()
+        self.attached_xcvr_q = asyncio.Queue()
+        self.networked_devices_q = asyncio.Queue()
 
         # All messages from xb units are passed via this queue
         self.xb_msg_q = asyncio.Queue()
@@ -39,19 +38,18 @@ class ConnectionManager:
             if to_add and not self._xcvr:
                 self._xcvr = XBeeDevice(to_add[0], self._baud)
                 self._xcvr.open()
-                self.attached_xcvr.put_nowait(self._xcvr)
+                self.attached_xcvr_q.put_nowait(self._xcvr)
                 self._xcvr.add_data_received_callback(self._msg_received)
 
             to_remove = list(set(ports_old) - set(ports))
             if self._xcvr:
                 if self._xcvr.serial_port in to_remove:
                     self._xcvr = None
-                    self.attached_xcvr.put_nowait(self._xcvr)
+                    self.attached_xcvr_q.put_nowait(self._xcvr)
 
             ports_old = ports
 
             await asyncio.sleep(1)
-
 
     def _msg_received(self, msg):
         self.xb_msg_q.put_nowait(msg)
@@ -78,11 +76,12 @@ class ConnectionManager:
 
     def _add_devices(self, e: NetworkDiscoveryStatus):
         if e.value[1] == "Success":
-            to_add = set(self._network.get_devices()) - self.devices
+            new = set(self._network.get_devices())
+            to_add = new - self.devices
             if to_add:
                 self.devices.update(to_add)
             else:
                 self.start_network_scan()
-            self.networked_devices.put_nowait(self.devices)
+            self.networked_devices_q.put_nowait(self.devices)
         else:
             self.start_network_scan()

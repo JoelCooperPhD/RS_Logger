@@ -7,6 +7,7 @@ class WDRTModel:
         self.xcvr = None
         self.devices = None
 
+
     def data_record(self):
         asyncio.create_task(self.write_msg(f'dta_rcd>'))
 
@@ -45,6 +46,8 @@ class WDRTModel:
             for d in self.devices:
                 if unit_id == d.get_node_id():
                     return d
+
+
 
     async def write_msg(self, msg, unit=None):
         self.xcvr: XBeeDevice

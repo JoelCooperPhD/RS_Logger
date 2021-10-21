@@ -90,14 +90,17 @@ class WDRTConfigWin:
                 'SPCT': 'intensity'
             }[key]
 
-        vals = vals[0].split(",")
+        vals = vals.split(',')
         for kv in vals:
-            kv = kv.split(":")
-            if len(kv) == 2:
-                new_key = recode_config(kv[0].strip(' '))
-                fnc = self._var.get(new_key, None)
-                if fnc:
-                    fnc.set(int(kv[1]))
+            try:
+                kv = kv.split(":")
+                if len(kv) == 2:
+                    new_key = recode_config(kv[0].strip(' '))
+                    fnc = self._var.get(new_key, None)
+                    if fnc:
+                        fnc.set(int(kv[1]))
+            except:
+                pass
 
     # Custom upload
     def _custom_clicked(self):
