@@ -27,8 +27,8 @@ bool responded = false,
      expActive = false;
 
 String name = "sDRT",
-       buildDate = "10/10/2018",
-       version = "1.0";
+       buildDate = "10/25/2021",
+       version = "1.1";
 
 /////////////////////////////////////////
 //Onboard LED Dotstar
