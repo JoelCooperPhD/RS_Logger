@@ -24,7 +24,7 @@ class SystemsFactorialTechnology:
         
         
         # Config
-        self.cn = config.Configurator('sft/config.jsn')
+        self.cn = config.Configurator('DRT_SFT/config.jsn')
         
         # Experiment
         self.tic = 0
@@ -43,7 +43,7 @@ class SystemsFactorialTechnology:
         await asyncio.gather(
             # self.diagnostics.heartbeat(),
             self.serial_listen(),
-            self.sw.run(),
+            self.sw.update(),
             )
         
     def start_trial(self, reset=False):
@@ -111,7 +111,7 @@ class SystemsFactorialTechnology:
         
     def send_results(self):
         selected_set = "[" + ": ".join(self.selected_set) + "]"
-        results = f'dta>DRT,SFT,{time()},{946684800},{self.trial},{self.rt},{self.sw.closure_cnt}, {selected_set}'
+        results = f'dta>DRT, SFT, {time()}, {946684800}, {self.trial}, {self.rt}, {self.sw.closure_cnt}, {selected_set}'
         print(results)
         self.complete = True
         
@@ -128,18 +128,20 @@ class SystemsFactorialTechnology:
                 msg = msg.strip().decode('utf-8')
                 kv = msg.split(":")
                 if len(kv) == 1:
-                    self.run_command(kv[0])
+                    asyncio.create_task(self.run_command(kv[0]))
                 else:
                     self.update_config(kv[0], kv[1])
             await asyncio.sleep(0)
      
-    def run_command(self, cmd):
+    async def run_command(self, cmd):
         if 'init' in cmd:
             pass
         elif 'close' in cmd:
             pass
         elif 'start' in cmd:
-            if not self.running and self.complete:
+            if not self.running:
+                while not self.complete:
+                    await asyncio.sleep(0)
                 self.running = True
                 self.start_trial(reset=True)
         elif 'stop' in cmd:
@@ -177,7 +179,7 @@ class SystemsFactorialTechnology:
                     val = 0
             
             self.cn.config[f'{cmd}:{key}'] = int(val)
-            self.cn.run(self.cn.config)
+            self.cn.update(self.cn.config)
             print(f'cfg>{cmd}:{key},{val}')
         else:
             # Get value and return
@@ -189,4 +191,4 @@ class SystemsFactorialTechnology:
         
 
             
-        
+    
