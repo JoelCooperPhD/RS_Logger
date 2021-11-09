@@ -34,7 +34,7 @@ class WDRTUIController:
 
             "fpath": self._update_file_path,
         }
-        self._listen_for_incoming_messages()
+
 
         self.devices = dict()
 
@@ -54,6 +54,8 @@ class WDRTUIController:
         self._cnf_win = WDRT_UIConfig.WDRTConfigWin(q_out)
         self._cnf_win.register_custom_cb(self._custom_button_cb)
         self._cnf_win.register_iso_cb(self._iso_button_cb)
+
+        self._listen_for_incoming_messages()
 
     def _listen_for_incoming_messages(self):
         while not self._q_in.empty():
@@ -115,7 +117,8 @@ class WDRTUIController:
 
     def _data_pause(self, arg):
         self._running = False
-        self.devices[self._active_tab]['plot'].run = False
+        if self._active_tab:
+            self.devices[self._active_tab]['plot'].run = False
 
     def _update_file_path(self, arg):
         pass
