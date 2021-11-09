@@ -3,7 +3,7 @@ from DRT_SFT import sft_exp, config
 class sft_exp_test:
     def __init__(self):
         
-        self.cn = config.Configurator('sft/config.jsn')
+        self.cn = config.Configurator('DRT_SFT/config.jsn')
         self.sft = sft_exp.StimulusSelector(self.cn.config)
         
         self.stim_count = {'zero': 0, 'one': 0, 'two': 0, 'three': 0}

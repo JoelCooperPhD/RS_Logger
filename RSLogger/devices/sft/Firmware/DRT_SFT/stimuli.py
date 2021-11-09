@@ -82,14 +82,9 @@ class AuditoryStimulus:
     
     @intensity.setter
     def intensity(self, val):
-         self._volume = val * 127 // 100
-         self._adjust_pot()
-        
-        
-    def _adjust_pot(self, val=None):
-        if val:
-            self._volume = val
         self._cs.value(0)
+            
+        self._volume = val * 127 // 100 
         
         self._spi.write(b'\x00')
         self._spi.write((self._volume).to_bytes(1, 'little'))
@@ -130,7 +125,7 @@ class AuditoryStimulus:
 
     def toggle(self, volume=None):
         if volume:
-            self._adjust_pot(volume)
+            self.intensity = volume
         if self.stm_on:
             self.set_off()
         else:
