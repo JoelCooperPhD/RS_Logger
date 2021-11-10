@@ -22,7 +22,7 @@ from RSLogger.user_interface.controls import ExpControls
 from RSLogger.user_interface.key_logger import KeyFlagger
 from RSLogger.user_interface.note_logger import NoteTaker
 from RSLogger.user_interface.log_timers import InfoDisplay
-from RSLogger.user_interface.usb_cameras.cam_ui import CameraWidget
+# from RSLogger.user_interface.usb_cameras.cam_ui import CameraWidget
 
 
 class Main:
@@ -58,7 +58,7 @@ class Main:
         self._win.resizable(True, True)
         self._win.minsize(816, 105)
         self._win.title("Red Scientific Data Logger")
-        path_to_icon = path.abspath(path.join(path.dirname(__file__), 'RSLogger/img/rs_icon.ico'))
+        path_to_icon = path.abspath(path.join(path.dirname(__file__), 'rs_icon.ico'))
         self._win.iconbitmap(path_to_icon)
 
         # Widgets
@@ -70,14 +70,15 @@ class Main:
                          'key_flag': KeyFlagger(self._win, self._widget_frame),
                          'note': NoteTaker(self._widget_frame, self.queues['main']),
                          'info': InfoDisplay(self._widget_frame, self.queues['main']),
-                         'cam': CameraWidget(self._win, self._widget_frame, self.queues['main']),
+                         # 'cam': CameraWidget(self._win, self._widget_frame, self.queues['main']),
                          }
 
         # Devices
         self._devices = {'sft': SFT_UIController.SFTUIController(self._win, self.queues['main'], self.queues['ui_sft']),
                          'drt': DRT_UIController.DRTUIController(self._win, self.queues['main'], self.queues['ui_drt']),
                          'wdrt': WDRT_UIController.WDRTUIController(self._win, self.queues['main'], self.queues['ui_wdrt']),
-                         'vog': VOG_UIController.VOGUIController(self._win, self.queues['main'], self.queues['ui_vog'])}
+                         'vog': VOG_UIController.VOGUIController(self._win, self.queues['main'], self.queues['ui_vog'])
+                         }
 
         # Tkinter loop
         self._win.mainloop()
@@ -89,7 +90,8 @@ class Main:
         devices = {'SFT':  SFT_HIController.SFTController(self.queues['main'], self.queues['hi_sft']),
                    'DRT':  DRT_HIController.DRTController(self.queues['main'], self.queues['hi_drt']),
                    'WDRT': WDRT_HIController.WDRTController(self.queues['main'], self.queues['hi_wdrt']),
-                   'VOG':  VOG_HIController.VOGController(self.queues['main'], self.queues['hi_vog'])}
+                   'VOG':  VOG_HIController.VOGController(self.queues['main'], self.queues['hi_vog'])
+        }
         for d in devices:
             devices[d].run()
 
@@ -136,6 +138,7 @@ class Main:
                     self._widgets[w].handle_data_pause(val)
             except AttributeError:
                 pass
+
 
 if __name__ == "__main__":
     freeze_support()
