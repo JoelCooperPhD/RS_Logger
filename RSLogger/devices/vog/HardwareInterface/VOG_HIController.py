@@ -26,6 +26,7 @@ class VOGController:
 
         # results
         self._clicks = '0'
+        self._cond_name = ''
 
     def run(self):
         asyncio.create_task(self._handle_messages_from_vog_devices())
@@ -62,8 +63,6 @@ class VOGController:
                                 self._q_out.put(f'ui_vog>{key}>{val}')
                                 if key == 'data':
                                     self._log_results(port, timestamp, val)
-                            else:
-                                print(f'VOG_HIController: {msg}')
                     except SerialException:
                         pass
 
@@ -77,8 +76,11 @@ class VOGController:
                     address, key, val = msg.split(">")
 
                     if val == 'ALL':
-                        for val in self._connected_vog_devices:
-                            asyncio.create_task(self._message_device(self._connected_vog_devices[val], key))
+                        if 'cond' in key:
+                            self._cond_name = key.split(':')[1]
+                        else:
+                            for val in self._connected_vog_devices:
+                                asyncio.create_task(self._message_device(self._connected_vog_devices[val], key))
                     elif key == 'fpath':
                         self._file_path = val
                     elif 'COM' in key:
@@ -91,7 +93,7 @@ class VOGController:
     def _log_results(self, port, timestamp, data):
         d = data.split(',')
         data = ', '.join(d)
-        packet = f'vog_{port}, data, {timestamp}, {data}'
+        packet = f'vog_{port}, {self._cond_name}, {timestamp}, {data}'
 
         def _write(_path, _results):
             try:
@@ -131,7 +133,6 @@ class VOGController:
             for i, msg in enumerate(cmd_split):
                 packet = str.encode(f'>{cmds[i]}|{msg}<<\n')
                 serial_conn.write(packet)
-                print(packet)
         else:
             print(f'VOG_HIController {cmd} not handled')
         await asyncio.sleep(0)
