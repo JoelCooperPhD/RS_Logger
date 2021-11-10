@@ -23,6 +23,7 @@ class SFTController:
         self._run = True
 
         self._file_path = None
+        self._cond_name = ""
 
     def run(self):
         asyncio.create_task(self._connection_manager.update())
@@ -55,7 +56,7 @@ class SFTController:
                             if key == 'dta':
                                 dta_split = val.split(',')
                                 sub_str = ', '.join(dta_split[2:])
-                                self._log_results(f'sft_{port}, data, {timestamp}, {sub_str}')
+                                self._log_results(f'sft_{port}, {self._cond_name}, {timestamp}, {sub_str}')
                                 self._q_out.put(f'ui_sft>trl>{port},{dta_split[4]}')
                                 if dta_split[5] == '-1':
                                     self._q_out.put(f'ui_sft>rt>{port},-1')
@@ -79,8 +80,11 @@ class SFTController:
                     address, key, val = msg.split(">")
 
                     if val == 'ALL':
-                        for val in self._connected_sft_devices:
-                            asyncio.create_task(self._message_device(self._connected_sft_devices[val], key))
+                        if 'cond' in key:
+                            self._cond_name = key.split(':')[1]
+                        else:
+                            for val in self._connected_sft_devices:
+                                asyncio.create_task(self._message_device(self._connected_sft_devices[val], key))
                     elif key == 'fpath':
                         self._file_path = val
                     else:
