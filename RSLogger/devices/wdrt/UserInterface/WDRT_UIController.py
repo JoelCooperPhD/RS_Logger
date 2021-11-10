@@ -9,33 +9,6 @@ class WDRTUIController:
         self._q_in: SimpleQueue = q_in
         self._q_out: SimpleQueue = q_out
 
-        # Events
-        self._events = {
-            # Main Controller Events
-            "init": self._log_init,
-            "close": self._log_close,
-            "start": self._data_record,
-            "stop": self._data_pause,
-
-            # Tab Events
-            "devices": self._update_devices,
-            "remove": self._remove_tab,
-
-            # Plot Commands
-            "clear": self._clear_plot,
-
-            # Messages from wDRT unit
-            "cfg": self._update_configuration,
-            "stm": self._update_stim_state,
-            "dta": self._update_stim_data,
-            "bty": self._update_battery_soc,
-            "rt":  self._update_rt,
-            "clk": self._update_clicks,
-
-            "fpath": self._update_file_path,
-        }
-
-
         self.devices = dict()
 
         # Experiment
@@ -60,13 +33,48 @@ class WDRTUIController:
     def _listen_for_incoming_messages(self):
         while not self._q_in.empty():
             msg = self._q_in.get()
-
             kvals = msg.split(">")
-            if len(kvals[1]):
-                self._events[kvals[1]](kvals[2:])
-            else:
-                self._events[kvals[1]]()
+            arg = kvals[1]
 
+            # Main Controller Events
+            if arg == 'init':
+                self._log_init(kvals[2:])
+            elif arg == 'close':
+                self._log_close(kvals[2:])
+            elif arg == 'start':
+                self._data_record(kvals[2:])
+            elif arg == 'stop':
+                self._data_pause(kvals[2:])
+
+            # Tab Events
+            elif arg == 'devices':
+                self._update_devices(kvals[2:])
+            elif arg == 'remove':
+                self._remove_tab(kvals[2:])
+
+            # Plot Commands
+            elif arg == 'clear':
+                self._clear_plot()
+
+            # Messages from DRT unit
+            elif arg == 'cfg':
+                self._update_configuration(kvals[2:])
+            elif arg == 'stm':
+                self._update_stim_state(kvals[2:])
+            elif arg == 'dta':
+                self._update_stim_data(kvals[2:])
+            elif arg == 'bty':
+                self._update_battery_soc(kvals[2:])
+            elif arg == 'rt':
+                self._update_rt(kvals[2:])
+            elif arg == 'clk':
+                self._update_clicks(kvals[2:])
+
+            elif arg == 'fpath':
+                self._update_file_path(kvals[2:])
+
+            elif 'cond' in arg:
+                self._update_condition_name(arg)
 
         self._win.after(10, self._listen_for_incoming_messages)
 
@@ -112,8 +120,9 @@ class WDRTUIController:
 
     def _data_record(self, arg):
         self._running = True
-        self.devices[self._active_tab]['plot'].run = True
-        self.devices[self._active_tab]['plot'].clear_all()
+        if self._active_tab:
+            self.devices[self._active_tab]['plot'].run = True
+            self.devices[self._active_tab]['plot'].clear_all()
 
     def _data_pause(self, arg):
         self._running = False
