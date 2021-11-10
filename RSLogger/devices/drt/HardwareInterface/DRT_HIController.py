@@ -25,7 +25,9 @@ class DRTController:
         self._file_path = None
 
         # results
-        self._clicks = '0'
+        self._clicks = dict()
+        self._results = dict()
+        self._cond_name = ""
 
     def run(self):
         asyncio.create_task(self._handle_messages_from_drt_devices())
@@ -55,14 +57,19 @@ class DRTController:
                             msg = self._connected_drt_devices[port].read_until(b'\r\n').strip()
                             timestamp = time()
                             msg = str(msg, 'utf-8').strip()
+
                             key, val = msg.split('>')
 
                             if key in ['clk', 'trl', 'stm', 'end']:
                                 self._q_out.put(f'ui_drt>{key}>{port},{val}')
                                 if key == 'clk':
-                                    self._clicks = val
-                                if key == 'trl':
-                                    self._log_results(port, timestamp, val)
+                                    self._clicks[port] = val
+                                elif key == 'trl':
+                                    self._results[port] = val
+                                elif key == 'end':
+                                    self._log_results(port, timestamp)
+                                elif msg == 'stm>1':
+                                    self._clicks[port] = 0
                             else:
                                 self._q_out.put(f'ui_drt>{msg}')
                     except SerialException:
@@ -77,31 +84,42 @@ class DRTController:
                     address, key, val = msg.split(">")
 
                     if val == 'ALL':
-                        for val in self._connected_drt_devices:
-                            asyncio.create_task(self._message_device(self._connected_drt_devices[val], key))
+                        if 'cond' in key:
+                            self._cond_name = key.split(':')[1]
+                        else:
+                            for val in self._connected_drt_devices:
+                                asyncio.create_task(self._message_device(self._connected_drt_devices[val], key))
                     elif key == 'fpath':
                         self._file_path = val
                     else:
                         asyncio.create_task(self._message_device(self._connected_drt_devices[val], key))
             await asyncio.sleep(.01)
 
-    def _log_results(self, port, timestamp, data):
-        d = data.split(',')
-        if len(d) == 3: # Update firmware doesn't include clicks in raw data
-            data = f'{d[0]}, {d[1]}, {self._clicks}, {d[2]}'
-        packet = f'drt_{port}, data, {timestamp}, {data}'
+    def _log_results(self, port, timestamp):
+        if len(self._clicks):
+            d = self._results[port].split(',')
 
-        def _write(_path, _results):
-            try:
-                with open(_path, 'a') as writer:
-                    writer.write(_results + '\n')
-            except (PermissionError, FileNotFoundError):
-                pass
-                # print("Control write error")
+            # Old data format
+            if len(d) == 3:
+                data = f'{d[0]}, {d[1]}, {self._clicks[port]}, {d[2]}'
 
-        file_path = f"{self._file_path}/drt.txt"
-        t = Thread(target=_write, args=(file_path, packet))
-        t.start()
+            # New data format
+            else:
+                data = f'{d[0]}, {d[1]}, {self._clicks[port]}, {d[3]}'
+
+            packet = f'drt_{port}, {self._cond_name}, {timestamp}, {data}'
+
+            def _write(_path, _results):
+                try:
+                    with open(_path, 'a') as writer:
+                        writer.write(_results + '\n')
+                except (PermissionError, FileNotFoundError):
+                    pass
+
+            file_path = f"{self._file_path}/drt.txt"
+            t = Thread(target=_write, args=(file_path, packet))
+            t.start()
+
 
     @staticmethod
     async def _message_device(serial_conn, cmd):
@@ -113,17 +131,12 @@ class DRTController:
             for msg in ['set_lowerISI 3000', 'set_upperISI 5000', 'set_stimDur 1000', 'set_intensity 255']:
                 serial_conn.write(str.encode(f'{msg}\n'))
                 await asyncio.sleep(0)
-        elif cmd == 'init':
-            pass
-        else:
-            pass
-            # print(f'DRT_HIController {cmd} not handled')
+
         await asyncio.sleep(0)
 
     @staticmethod
     async def _send_msg_to_devices(serial_conn, msg):
         serial_conn.write(str.encode(f'{msg}\n'))
-
 
     def _exit_async_loop(self):
         self._run = False
