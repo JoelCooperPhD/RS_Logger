@@ -68,7 +68,7 @@ class Plotter:
         self._plt[1].yaxis.set_label_position('right')
         self._plt[1].set_ylim([-0.2, 1.2])
         self._plt[1].set_yticks([0, 1])
-        self._plt[1].set_yticklabels(["Clear", "Opaque"])
+        self._plt[1].set_yticklabels(["Opaque", "Clear"])
 
 
     def set_tsot_and_state_lines(self, unit_id):
