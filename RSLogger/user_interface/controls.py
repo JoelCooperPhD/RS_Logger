@@ -21,6 +21,7 @@ class ExpControls:
 
         # Widget Variables
         self.var_cond_name = StringVar()
+        self.var_cond_name.trace_add("write", self._block_cb)
 
         # Init Log Button
         self._log_running = False
@@ -36,6 +37,8 @@ class ExpControls:
         self._pause_img = ImageTk.PhotoImage(Image.open(pause_path))
 
         self._record_button = Button(self._widget_lf, image=self._record_img, command=self._record_button_cb)
+        # self._record_button = Button(self._widget_lf, text="Record", command=self._record_button_cb)
+
         self._record_button.grid(row=0, column=2, pady=0, padx=2, sticky='NEWS')
         self._record_button.config(state="disabled")
 
@@ -45,7 +48,6 @@ class ExpControls:
 
         self.entry = Entry(self._widget_lf, textvariable=self.var_cond_name, width=20)
         self.entry.grid(row=1, column=1, pady=4, padx=2, sticky='EW', columnspan=2)
-
 
     def handle_log_init(self, timestamp):
         self._log_running = True
@@ -71,6 +73,7 @@ class ExpControls:
             self._log_button['state'] = 'disabled'
             self.entry['state'] = 'disabled'
             self._record_button.config(image=self._pause_img)
+            # self._record_button.config(text="Pause")
             self._log_controls('record', timestamp)
 
     def handle_data_pause(self, timestamp):
@@ -78,6 +81,7 @@ class ExpControls:
         self.entry['state'] = 'normal'
         self._log_button['state'] = 'normal'
         self._record_button.config(image=self._record_img)
+        # self._record_button.config(text="Record")
         self._log_controls('pause', timestamp)
 
     # File Paths
@@ -112,6 +116,9 @@ class ExpControls:
         else:
             self._q_out.put(f'main>stop>ALL')
             self.handle_data_pause(timestamp)
+
+    def _block_cb(self, a, b, c):
+        self._q_out.put(f'main>cond:{self.var_cond_name.get()}>ALL')
 
     def _log_controls(self, state, timestamp):
         def _write(_path, _results):
