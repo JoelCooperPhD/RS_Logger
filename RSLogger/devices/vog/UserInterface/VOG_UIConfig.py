@@ -28,8 +28,8 @@ class VOGConfigWin:
         win.grab_set()
         win.title("")
 
-        icon_path = path.abspath(path.join(path.dirname(__file__), '../../../img/rs_icon.ico'))
-        win.iconbitmap(icon_path)
+        path_to_icon = path.abspath(path.join(path.dirname(__file__), '../../../../rs_icon.ico'))
+        win.iconbitmap(path_to_icon)
 
         win.focus_force()
         win.resizable(False, False)
