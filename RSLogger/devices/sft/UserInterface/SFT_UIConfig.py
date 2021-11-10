@@ -41,7 +41,7 @@ class SFTConfigWin:
         win = Toplevel()
         win.grab_set()
         win.title("")
-        path_to_icon = path.abspath(path.join(path.dirname(__file__), 'rs_icon.ico'))
+        path_to_icon = path.abspath(path.join(path.dirname(__file__), '../../../../rs_icon.ico'))
         win.iconbitmap(path_to_icon)
         win.focus_force()
         win.resizable(False, False)
