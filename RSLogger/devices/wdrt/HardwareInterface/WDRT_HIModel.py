@@ -47,8 +47,6 @@ class WDRTModel:
                 if unit_id == d.get_node_id():
                     return d
 
-
-
     async def write_msg(self, msg, unit=None):
         self.xcvr: XBeeDevice
         unit: RemoteRaw802Device
@@ -57,6 +55,7 @@ class WDRTModel:
             try:
                 if unit:
                     self.xcvr.send_data(unit, msg)
+                    await asyncio.sleep(.1)
                 else:
                     try:
                         for dev in self.devices:

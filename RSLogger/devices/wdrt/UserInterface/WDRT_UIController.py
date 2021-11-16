@@ -126,7 +126,7 @@ class WDRTUIController:
 
     def _data_pause(self, arg):
         self._running = False
-        if self._active_tab:
+        if self._active_tab and self.devices:
             self.devices[self._active_tab]['plot'].run = False
 
     def _update_file_path(self, arg):

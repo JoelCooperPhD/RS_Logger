@@ -80,8 +80,9 @@ class ConnectionManager:
             to_add = new - self.devices
             if to_add:
                 self.devices.update(to_add)
+                self.networked_devices_q.put_nowait(self.devices)
             else:
                 self.start_network_scan()
-            self.networked_devices_q.put_nowait(self.devices)
+
         else:
             self.start_network_scan()
