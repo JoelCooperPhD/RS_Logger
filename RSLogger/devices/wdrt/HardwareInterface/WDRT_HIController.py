@@ -55,6 +55,7 @@ class WDRTController:
             # -- cfg: New configuration
             if cmd == 'cfg':
                 self._q_out.put(f"ui_wdrt>cfg>{args} {n_id}")
+                print(f'Config {n_id}: {args}')
             # -- stm: Stimulus change notification
             elif cmd == 'stm':
                 self._q_out.put(f"ui_wdrt>stm>{args} {n_id}")

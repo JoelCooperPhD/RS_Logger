@@ -16,9 +16,6 @@ class WDRTConfigWin:
         self.com = None
         self.uid = None
 
-        qmark_path = path.abspath(path.join(path.dirname(__file__), '../../../img/questionmark_15.png'))
-        self._qmark_img = ImageTk.PhotoImage(Image.open(qmark_path))
-
         # Callbacks
         self._iso_cb = None
         self._custom_cb = None
@@ -29,8 +26,8 @@ class WDRTConfigWin:
         win = Toplevel()
         win.grab_set()
         win.title("")
-        icon_path = path.abspath(path.join(path.dirname(__file__), '../../../img/rs_icon.ico'))
-        win.iconbitmap(icon_path)
+        path_to_icon = path.abspath(path.join(path.dirname(__file__), '../../../../rs_icon.ico'))
+        win.iconbitmap(path_to_icon)
         win.focus_force()
         win.resizable(False, False)
         win.grid_columnconfigure(0, weight=1)
@@ -100,7 +97,7 @@ class WDRTConfigWin:
                     if fnc:
                         fnc.set(int(kv[1]))
             except:
-                pass
+                print("WDRT config KV error")
 
     # Custom upload
     def _custom_clicked(self):
