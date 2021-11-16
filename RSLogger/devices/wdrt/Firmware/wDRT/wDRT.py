@@ -74,11 +74,9 @@ class wDRT:
                 if "dta" in msg:
                     msg += ",{}\n".format(self.battery.percent())
                     self.mmc.write("wDRT,{},,{}".format(self.xb.name_NI, msg[4:]))
-                    self.xb.transmit(msg)
-                    print(msg)
+                    asyncio.create_task(self.xb.transmit(msg))
                 elif self.verbose:
-                    self.xb.transmit(msg)
-                    print(msg)
+                    asyncio.create_task(self.xb.transmit(msg))
 
     async def handle_serial_msg(self):
         while True:
@@ -105,8 +103,7 @@ class wDRT:
     # Config File
     def get_cfg(self):
         msg = f"cfg>{self.cn.get_config_str()}"
-        self.xb.transmit(msg)
-        print(msg)
+        asyncio.create_task(self.xb.transmit(msg))
 
     def set_cfg(self, arg):
         self.cn.update(arg)
@@ -138,20 +135,17 @@ class wDRT:
         
         if self.debug:
             self.get_rtc()
-            print(rtc_tuple)
 
     def get_rtc(self):
         r = self.rtc.datetime()
         msg = "rtc>" + ','.join([str(v) for v in r])
-        self.xb.transmit(msg)
-        print(msg)
+        asyncio.create_task(self.xb.transmit(msg))
 
     # Battery
     def get_bat(self):
         percent = self.battery.percent()
         msg = f"bty>{percent}"
-        self.xb.transmit(msg)
-        print(msg)
+        asyncio.create_task(self.xb.transmit(msg))
         
     # Button Runner - execute drt.start and drt.stop commands from button presses
     async def button_runner(self):

@@ -55,8 +55,8 @@ class DRT:
         self.running = False
         self._stm_timer.run = False
         self._trl_timer.run = False
-        sleep_ms(100)
-        self.stm.fade()
+        # sleep_ms(100)
+        asyncio.create_task(self.stm.fade())
 
     async def _run_block(self):
         self._trl_n = 0

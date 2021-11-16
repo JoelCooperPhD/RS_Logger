@@ -102,10 +102,11 @@ class Xbee:
     ##################
     # Transmit Request
     # ----send: 0x10
-    def transmit(self, msg):
+    async def transmit(self, msg):
         if self._dest_addr:
             packet = self._xmit_packetize(msg)
             asyncio.create_task(self._send_AT_frame(packet))
+            await asyncio.sleep(0)
 
     def _xmit_packetize(self, cmd):
         start = b'\x7E'  # Start byte
@@ -125,6 +126,7 @@ class Xbee:
         try:
             self._cmd = msg[15:-1].decode('utf-8')
             self._cmd_event.set()
+            print(self._cmd)
         except UnicodeError:
             if self._debug:
                 print("Xbee: Unicode Error")

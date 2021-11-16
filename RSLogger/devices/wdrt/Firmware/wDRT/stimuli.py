@@ -55,10 +55,10 @@ class DRTStimulus:
         else:
             return False
     
-    def fade(self):
+    async def fade(self):
         for i in range(100, -1, -1):
             self._stm.pulse_width_percent(i)
-            sleep_ms(35)
+            await asyncio.sleep_ms(35)
     
     def pulse(self, times=6):
         for i in range(times):
