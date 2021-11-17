@@ -123,20 +123,19 @@ class DRTController:
 
     @staticmethod
     async def _message_device(serial_conn, cmd):
-        if cmd in ['start', 'stop']:
-            serial_conn.write(str.encode(f'exp_{cmd}\n'))
-        elif any([c in cmd for c in ['get', 'set', 'stim']]):
-            serial_conn.write(str.encode(f'{cmd}\n'))
-        elif cmd == 'iso':
-            for msg in ['set_lowerISI 3000', 'set_upperISI 5000', 'set_stimDur 1000', 'set_intensity 255']:
-                serial_conn.write(str.encode(f'{msg}\n'))
-                await asyncio.sleep(0)
+        try:
+            if cmd in ['start', 'stop']:
+                serial_conn.write(str.encode(f'exp_{cmd}\n'))
+            elif any([c in cmd for c in ['get', 'set', 'stim']]):
+                serial_conn.write(str.encode(f'{cmd}\n'))
+            elif cmd == 'iso':
+                for msg in ['set_lowerISI 3000', 'set_upperISI 5000', 'set_stimDur 1000', 'set_intensity 255']:
+                    serial_conn.write(str.encode(f'{msg}\n'))
+                    await asyncio.sleep(0)
+        except Exception as e:
+            print(f"DRT message_device exception: {e}")
 
         await asyncio.sleep(0)
-
-    @staticmethod
-    async def _send_msg_to_devices(serial_conn, msg):
-        serial_conn.write(str.encode(f'{msg}\n'))
 
     def _exit_async_loop(self):
         self._run = False
