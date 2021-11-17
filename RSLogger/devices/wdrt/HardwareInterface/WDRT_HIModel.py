@@ -50,9 +50,8 @@ class WDRTModel:
     async def write_msg(self, msg, unit=None):
         self.xcvr: XBeeDevice
         unit: RemoteRaw802Device
-
-        if self.xcvr.is_open():
-            try:
+        try:
+            if self.xcvr.is_open():
                 if unit:
                     self.xcvr.send_data(unit, msg)
                     await asyncio.sleep(.1)
@@ -62,8 +61,8 @@ class WDRTModel:
                             self.xcvr.send_data(dev, msg)
                     except Exception as e:
                         print(e)
-            except TransmitException:
-                pass
+        except TransmitException:
+            pass
 
 
 
