@@ -26,8 +26,6 @@ class CameraReader:
         self._show_window = False
         self._close = False
 
-        print("Initializing CamReader")
-
         self._cv2cr = cv2cr
 
         # Capture Properties
@@ -137,7 +135,6 @@ class CameraReader:
         if self._record:
             fourcc = cv2.VideoWriter_fourcc(*'DIVX')
             path = f"{self._fpath}/cam_{self._id}.avi"
-            print(f"Initializing Save to {path}")
             fps_ = self._desired_fps
             w = int(self._cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             h = int(self._cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -151,8 +148,6 @@ class CameraReader:
         if not self._out:
             self._out = self._init_save()
             self._save_file_start_time = time.monotonic()
-            print(self._out)
-            print(self._save_file_start_time)
 
         fps_d = 1 / self._desired_fps
         run_time = time.monotonic() - self._save_file_start_time
@@ -166,7 +161,7 @@ class CameraReader:
         if ahead:
             self._frame_drops += 1
 
-            print(f" Drops: {self._frame_drops} Repeats: {self._frame_repeats}")
+            # print(f" Drops: {self._frame_drops} Repeats: {self._frame_repeats}")
 
         # I'm behind, write frames until i'm no longer behind
         elif behind:
@@ -176,14 +171,14 @@ class CameraReader:
                 self._out.write(frm)
                 behind = expected_frame_count - self._frame_count >= 0
 
-                print(f" Drops: {self._frame_drops} Repeats: {self._frame_repeats}")
+                # print(f" Drops: {self._frame_drops} Repeats: {self._frame_repeats}")
 
         # I'm on track! write a frame to stay that way
         elif on_track:
             self._frame_count += 1
             self._out.write(frm)
 
-            print(f'Frame on track...')
+            # print(f'Frame on track...')
 
     def _fps_counter(self):
         # FPS counter
