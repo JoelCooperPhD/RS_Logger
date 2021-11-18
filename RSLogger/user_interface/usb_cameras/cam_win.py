@@ -1,14 +1,12 @@
 import asyncio
-import sys
 
 import cv2
 import time
 from numpy import zeros, std
 from datetime import datetime
 from multiprocessing import Pipe, Queue
-from PIL import Image
 import queue
-from threading import Thread, Event
+from threading import Thread
 from time import sleep
 
 
@@ -27,6 +25,8 @@ class CameraReader:
         self._id = int(cam_id.split(":")[1])
         self._show_window = False
         self._close = False
+
+        print("Initializing CamReader")
 
         self._cv2cr = cv2cr
 
@@ -63,7 +63,7 @@ class CameraReader:
             try:
                 ret, frame = await asyncio.get_running_loop().run_in_executor(None, self._cap.read)
                 if frame is not None:
-                    time_stamp = datetime.now().strftime('%H:%M:%S.%f')[:-3]
+                    time_stamp = time.time()
 
                     fps, sd = self._fps_counter()
                     msg = f"{str(fps)} {self._desired_fps} {time_stamp}"
@@ -79,8 +79,8 @@ class CameraReader:
                         self._out = None
                 else:
                     self._close = True
-            except RuntimeError:
-                pass
+            except Exception as e:
+                print(f'cam_win capture exception: {e}')
             await asyncio.sleep(.001)
 
     async def _monitor_cv2cr(self):
@@ -133,9 +133,11 @@ class CameraReader:
             self._record = False
 
     def _init_save(self):
+
         if self._record:
             fourcc = cv2.VideoWriter_fourcc(*'DIVX')
             path = f"{self._fpath}/cam_{self._id}.avi"
+            print(f"Initializing Save to {path}")
             fps_ = self._desired_fps
             w = int(self._cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             h = int(self._cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -149,6 +151,8 @@ class CameraReader:
         if not self._out:
             self._out = self._init_save()
             self._save_file_start_time = time.monotonic()
+            print(self._out)
+            print(self._save_file_start_time)
 
         fps_d = 1 / self._desired_fps
         run_time = time.monotonic() - self._save_file_start_time
@@ -162,7 +166,7 @@ class CameraReader:
         if ahead:
             self._frame_drops += 1
 
-            # print(f" Drops: {self._frame_drops} Repeats: {self._frame_repeats}")
+            print(f" Drops: {self._frame_drops} Repeats: {self._frame_repeats}")
 
         # I'm behind, write frames until i'm no longer behind
         elif behind:
@@ -172,12 +176,14 @@ class CameraReader:
                 self._out.write(frm)
                 behind = expected_frame_count - self._frame_count >= 0
 
-                # print(f" Drops: {self._frame_drops} Repeats: {self._frame_repeats}")
+                print(f" Drops: {self._frame_drops} Repeats: {self._frame_repeats}")
 
         # I'm on track! write a frame to stay that way
         elif on_track:
             self._frame_count += 1
             self._out.write(frm)
+
+            print(f'Frame on track...')
 
     def _fps_counter(self):
         # FPS counter
@@ -277,8 +283,8 @@ class CamViewer:
                     self._handle_set_resolution(msg)
                 else:
                     print("cam_popup message not handled")
-        except (BrokenPipeError, EOFError):
-            pass
+        except Exception as e:
+            print(f'cam_win _check_for_new_messages exception: {e}')
 
     def _handle_set_resolution(self, arg):
         self._cv2cr.put(arg)
