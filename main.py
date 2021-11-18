@@ -22,7 +22,7 @@ from RSLogger.user_interface.controls import ExpControls
 from RSLogger.user_interface.key_logger import KeyFlagger
 from RSLogger.user_interface.note_logger import NoteTaker
 from RSLogger.user_interface.log_timers import InfoDisplay
-# from RSLogger.user_interface.usb_cameras.cam_ui import CameraWidget
+from RSLogger.user_interface.usb_cameras.cam_ui import CameraWidget
 
 
 class Main:
@@ -70,7 +70,7 @@ class Main:
                          'key_flag': KeyFlagger(self._win, self._widget_frame),
                          'note': NoteTaker(self._widget_frame, self.queues['main']),
                          'info': InfoDisplay(self._widget_frame, self.queues['main']),
-                         # 'cam': CameraWidget(self._win, self._widget_frame, self.queues['main']),
+                         'cam': CameraWidget(self._win, self._widget_frame, self.queues['main']),
                          }
 
         # Devices
