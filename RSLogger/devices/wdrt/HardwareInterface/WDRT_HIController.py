@@ -84,61 +84,62 @@ class WDRTController:
         while True:
             while not self._q_in.empty():
                 msg = self._q_in.get()
-                cmd = msg.split('>')[1]
-                args = msg.split('>')[2:]
+                if self._HW_interface.xcvr and self._HW_interface.devices:
+                    cmd = msg.split('>')[1]
+                    args = msg.split('>')[2:]
 
-                # DRT COMMANDS -> wDRT
-                # -- get_cfg: Request configuration from wDRT unit
-                if cmd == "get_cfg":
-                    self._HW_interface.config_request(args[0])
-                # -- get_bat: Request current battery state from wDRT unit
-                elif cmd == "get_bat":
-                    self._HW_interface.get_battery(args[0])
-                # -- stm_on: Request wDRT unit turn on stimulus
-                elif cmd == "stm_on":
-                    self._HW_interface.stim_on(args[0])
-                # -- stm_off: Request wDRT unit turn off stimulus
-                elif cmd == "stm_off":
-                    self._HW_interface.stim_off(args[0])
-                # -- set_cfg: Pass new configuration to wDRT unit
-                elif cmd == "set_cfg":
-                    args = args[0].split(',')
-                    self._HW_interface.set_custom(args[:-1], args[-1])
-                # -- set_iso: Request wDRT unit to set configuration to ISO 17488
-                elif cmd == "set_iso":
-                    self._HW_interface.set_iso(args[0])
-                # -- net_scn: Clear known devices
-                elif cmd == "net_scn":
-                    self._XB_connect.clear_network()
-                    self._HW_interface.devices.clear()
-                # -- vrb_on: set hardware to send stim state, button state, and RT information
-                elif cmd == "vrb_on":
-                    self._HW_interface.verbose_on(args[0])
-                # -- vrb_off: only send results
-                elif cmd == "vrb_off":
-                    self._HW_interface.verbose_off(args[0])
+                    # DRT COMMANDS -> wDRT
+                    # -- get_cfg: Request configuration from wDRT unit
+                    if cmd == "get_cfg":
+                        self._HW_interface.config_request(args[0])
+                    # -- get_bat: Request current battery state from wDRT unit
+                    elif cmd == "get_bat":
+                        self._HW_interface.get_battery(args[0])
+                    # -- stm_on: Request wDRT unit turn on stimulus
+                    elif cmd == "stm_on":
+                        self._HW_interface.stim_on(args[0])
+                    # -- stm_off: Request wDRT unit turn off stimulus
+                    elif cmd == "stm_off":
+                        self._HW_interface.stim_off(args[0])
+                    # -- set_cfg: Pass new configuration to wDRT unit
+                    elif cmd == "set_cfg":
+                        args = args[0].split(',')
+                        self._HW_interface.set_custom(args[:-1], args[-1])
+                    # -- set_iso: Request wDRT unit to set configuration to ISO 17488
+                    elif cmd == "set_iso":
+                        self._HW_interface.set_iso(args[0])
+                    # -- net_scn: Clear known devices
+                    elif cmd == "net_scn":
+                        self._XB_connect.clear_network()
+                        self._HW_interface.devices.clear()
+                    # -- vrb_on: set hardware to send stim state, button state, and RT information
+                    elif cmd == "vrb_on":
+                        self._HW_interface.verbose_on(args[0])
+                    # -- vrb_off: only send results
+                    elif cmd == "vrb_off":
+                        self._HW_interface.verbose_off(args[0])
 
-                # PARENT COMMANDS
-                # -- ctrl.fpath: New file path for saving data
-                elif cmd == "fpath":
-                    self.data.fpath = f"{args[0]}/wDRT.txt"
-                # -- ctrl.log_init: Initialize data logger
-                elif cmd == "init":
-                    # self._q_out.put("init>")
-                    self._XB_connect.stop_network_scan()
-                # -- ctrl.log_close: Finalize wDRT logs
-                elif cmd == "close":
-                    # self._q_out.put("close>")
-                    self._XB_connect.start_network_scan()
-                # -- ctrl.data_record: Start recording data from wDRT devices
-                elif cmd == "start":
-                    self._HW_interface.data_record()
-                    # self._q_out.put("record>")
-                # -- ctrl.data_pause: Pause wDRT device data collection
-                elif cmd == "stop":
-                    self._HW_interface.data_pause()
-                    # self._q_out.put("pause>")
-                else:
-                    print(f"wdrt HI_Controller _queue_monitor command not handled: {cmd}")
+                    # PARENT COMMANDS
+                    # -- ctrl.fpath: New file path for saving data
+                    elif cmd == "fpath":
+                        self.data.fpath = f"{args[0]}/wDRT.txt"
+                    # -- ctrl.log_init: Initialize data logger
+                    elif cmd == "init":
+                        # self._q_out.put("init>")
+                        self._XB_connect.stop_network_scan()
+                    # -- ctrl.log_close: Finalize wDRT logs
+                    elif cmd == "close":
+                        # self._q_out.put("close>")
+                        self._XB_connect.start_network_scan()
+                    # -- ctrl.data_record: Start recording data from wDRT devices
+                    elif cmd == "start":
+                        self._HW_interface.data_record()
+                        # self._q_out.put("record>")
+                    # -- ctrl.data_pause: Pause wDRT device data collection
+                    elif cmd == "stop":
+                        self._HW_interface.data_pause()
+                        # self._q_out.put("pause>")
+                    else:
+                        print(f"wdrt HI_Controller _queue_monitor command not handled: {cmd}")
 
             await asyncio.sleep(.001)
