@@ -55,7 +55,7 @@ class WDRTModel:
             try:
                 if unit:
                     self.xcvr.send_data(unit, msg)
-                    await asyncio.sleep(.1)
+                    await asyncio.sleep(0.0001)
                 else:
                     try:
                         for dev in self.devices:

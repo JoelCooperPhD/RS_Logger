@@ -70,7 +70,7 @@ class SFTController:
                     except SerialException:
                         pass
 
-            await asyncio.sleep(.01)
+            await asyncio.sleep(0.0001)
 
     async def _queue_monitor(self):
         while 1:
@@ -89,7 +89,7 @@ class SFTController:
                         self._file_path = val
                     else:
                         asyncio.create_task(self._message_device(self._connected_sft_devices[val], key))
-            await asyncio.sleep(.01)
+            await asyncio.sleep(0.0001)
 
     def _log_results(self, data_packet):
         def _write(_path, _results):

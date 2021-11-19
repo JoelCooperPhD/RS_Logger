@@ -66,7 +66,7 @@ class VOGController:
                     except SerialException:
                         pass
 
-            await asyncio.sleep(.01)
+            await asyncio.sleep(0.0001)
 
     async def _queue_monitor(self):
         while 1:
@@ -88,7 +88,7 @@ class VOGController:
                         asyncio.create_task(self._message_device(self._connected_vog_devices[val], key))
                     else:
                         asyncio.create_task(self._message_device(self._connected_vog_devices[val], key))
-            await asyncio.sleep(.01)
+            await asyncio.sleep(0.0001)
 
     def _log_results(self, port, timestamp, data):
         d = data.split(',')
@@ -121,7 +121,7 @@ class VOGController:
         elif cmd == 'nhtsa':
             for msg in ['set_lowerISI 3000', 'set_upperISI 5000', 'set_stimDur 1000', 'set_intensity 255']:
                 serial_conn.write(str.encode(f'{msg}\n'))
-                await asyncio.sleep(0)
+                await asyncio.sleep(0.0001)
         elif cmd == 'get_config':
             for msg in ['get_deviceVer', 'get_configName', 'get_configMaxOpen', 'get_configMaxClose',
                         'get_configDebounce', 'get_configClickMode', 'get_configButtonControl']:
@@ -135,7 +135,7 @@ class VOGController:
                 serial_conn.write(packet)
         else:
             print(f'VOG_HIController {cmd} not handled')
-        await asyncio.sleep(0)
+        await asyncio.sleep(0.0001)
 
     @staticmethod
     async def _send(serial_conn, msg):

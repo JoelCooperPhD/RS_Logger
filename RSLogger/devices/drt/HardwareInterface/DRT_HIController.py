@@ -74,7 +74,7 @@ class DRTController:
                                 self._q_out.put(f'ui_drt>{msg}')
                     except SerialException:
                         pass
-            await asyncio.sleep(.01)
+            await asyncio.sleep(0.0001)
 
     async def _queue_monitor(self):
         while 1:
@@ -93,7 +93,7 @@ class DRTController:
                         self._file_path = val
                     else:
                         asyncio.create_task(self._message_device(self._connected_drt_devices[val], key))
-            await asyncio.sleep(.01)
+            await asyncio.sleep(0.0001)
 
     def _log_results(self, port, timestamp):
         if len(self._clicks):
@@ -131,11 +131,11 @@ class DRTController:
             elif cmd == 'iso':
                 for msg in ['set_lowerISI 3000', 'set_upperISI 5000', 'set_stimDur 1000', 'set_intensity 255']:
                     serial_conn.write(str.encode(f'{msg}\n'))
-                    await asyncio.sleep(0)
+                    await asyncio.sleep(0.0001)
         except Exception as e:
             print(f"DRT message_device exception: {e}")
 
-        await asyncio.sleep(0)
+        await asyncio.sleep(0.0001)
 
     def _exit_async_loop(self):
         self._run = False

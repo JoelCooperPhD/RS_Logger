@@ -116,7 +116,7 @@ class Main:
                                     self.queues[q].put(f'{q}>{key}>{val}')
                     else:
                         self.queues[address].put(msg)
-            await asyncio.sleep(.01)
+            await asyncio.sleep(.0001)
 
     def _update_file_paths(self, file_path):
         for w in self._widgets:

@@ -11,7 +11,7 @@ class Master:
             with open(fpath, 'a') as outfile:
                 outfile.writelines(data)
         except (PermissionError, OSError):
-            sleep(.05)
+            sleep(0.05)
             self._threaded_write(fpath, data)
             print("Permission Error, retrying")
 

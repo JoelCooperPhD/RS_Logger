@@ -142,4 +142,4 @@ class WDRTController:
                     else:
                         print(f"wdrt HI_Controller _queue_monitor command not handled: {cmd}")
 
-            await asyncio.sleep(.001)
+            await asyncio.sleep(0.0001)
