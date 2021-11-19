@@ -23,12 +23,12 @@ class wDRT:
             'get_bat': self.get_bat,
             'get_rtc': self.get_rtc,
             'set_rtc': self.set_rtc,
-            
+
             'set_vrb': self.set_verbose,
         }
         # Serial
         self.serial = serial
-        
+
         # Debug
         self.debug = False
 
@@ -37,7 +37,7 @@ class wDRT:
 
         # Config
         self.cn = config.Configurator('wDRT/config.jsn')
-        
+
         # DRT - The standard DRT
         self.drt = drt.DRT(self.cn.config)
 
@@ -73,7 +73,7 @@ class wDRT:
                 msg = msg_l.pop(0)
                 if "dta" in msg:
                     msg += ",{}\n".format(self.battery.percent())
-                    self.mmc.write("wDRT,{},,{}".format(self.xb.name_NI, msg[4:]))
+                    self.mmc.write("wDRT_{},,,{}".format(self.xb.name_NI, msg[4:]))
                     asyncio.create_task(self.xb.transmit(msg))
                 elif self.verbose:
                     asyncio.create_task(self.xb.transmit(msg))
@@ -90,7 +90,7 @@ class wDRT:
         while True:
             cmd = await self.xb.new_cmd()
             self.parse_cmd(cmd)
-  
+
     def parse_cmd(self, cmd):
         if ">" in cmd:
             kv = cmd.split(">")
@@ -98,7 +98,6 @@ class wDRT:
                 self.events.get(kv[0], lambda: print("Invalid CB"))(kv[1])
             else:
                 self.events.get(kv[0], lambda: print("Invalid CB"))()
-        
 
     # Config File
     def get_cfg(self):
@@ -120,7 +119,7 @@ class wDRT:
 
     def dta_pse(self):
         self.drt.stop()
-        
+
     def set_verbose(self, arg):
         self.verbose = True if arg == '1' else False
 
@@ -132,7 +131,7 @@ class wDRT:
     def set_rtc(self, dt: str):
         rtc_tuple = tuple([int(i) for i in dt.split(',')])
         self.rtc.datetime(rtc_tuple)
-        
+
         if self.debug:
             self.get_rtc()
 
@@ -146,7 +145,7 @@ class wDRT:
         percent = self.battery.percent()
         msg = f"bty>{percent}"
         asyncio.create_task(self.xb.transmit(msg))
-        
+
     # Button Runner - execute drt.start and drt.stop commands from button presses
     async def button_runner(self):
         down_t = 0
@@ -160,3 +159,4 @@ class wDRT:
                     asyncio.create_task(self.drt.start())
                 down_t = 0
             await asyncio.sleep(1)
+
