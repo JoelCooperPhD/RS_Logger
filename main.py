@@ -52,10 +52,12 @@ class Main:
 
         # UserInterface Thread - This is the main thread where a tkinter loop is used
         self._win: Tk = Tk()
+        self._win.withdraw()  # hide the window
 
         self._file_path = [None]
 
         self._win.resizable(True, True)
+        self._win.geometry("816x105")
         self._win.minsize(816, 105)
         self._win.title("Red Scientific Data Logger")
         path_to_icon = path.abspath(path.join(path.dirname(__file__), 'rs_icon.ico'))
@@ -81,6 +83,7 @@ class Main:
                          }
 
         # Tkinter loop
+        self._win.after(0, self._win.deiconify)
         self._win.mainloop()
 
     def async_controller_thread(self):
