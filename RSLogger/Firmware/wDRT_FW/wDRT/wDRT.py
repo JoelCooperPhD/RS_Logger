@@ -46,7 +46,7 @@ class wDRT:
         self.utc = None
 
         # MMC Save - The flash module stuck to the bottom of the unit
-        self.headers = "Device, Unit,, Block_ms, Trial, Reaction Time, Responses, UTC, Battery\n"
+        self.headers = "Device_Unit,,, Block_ms, Trial, Reaction Time, Responses, UTC, Battery\n"
         self.mmc = mmc.MMC()
 
         # Battery
