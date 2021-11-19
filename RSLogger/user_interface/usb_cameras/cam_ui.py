@@ -62,18 +62,24 @@ class CameraWidget:
     ########################
     # Controls
     def handle_log_init(self, val):
-        for c in self._cam_parent_pipe:
-            self._cam_parent_pipe[c].send(f"FNM>{self._file_path}")
-            self._cam_parent_pipe[c].send("RCD>1")
-        for c in self._cam_lf.winfo_children():
-            c.configure(state="disabled")
+        try:
+            for c in self._cam_parent_pipe:
+                self._cam_parent_pipe[c].send(f"FNM>{self._file_path}")
+                self._cam_parent_pipe[c].send("RCD>1")
+            for c in self._cam_lf.winfo_children():
+                c.configure(state="disabled")
+        except Exception as e:
+            print(e)
 
     def handle_log_close(self, val):
-        self.log_running = False
-        for c in self._cam_parent_pipe:
-            self._cam_parent_pipe[c].send("RCD>0")
-        for c in self._cam_lf.winfo_children():
-            c.configure(state="normal")
+        try:
+            self.log_running = False
+            for c in self._cam_parent_pipe:
+                self._cam_parent_pipe[c].send("RCD>0")
+            for c in self._cam_lf.winfo_children():
+                c.configure(state="normal")
+        except Exception as e:
+            print(e)
 
     def handle_data_record(self, val):
         self.record_running = True
