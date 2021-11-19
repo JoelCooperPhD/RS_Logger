@@ -1,6 +1,6 @@
 from threading import Thread
 from RSLogger.devices.common_utilities.HardwareInterface import USBConnect, Results
-import asyncio
+from asyncio import create_task, sleep
 from queue import SimpleQueue
 from serial.serialutil import SerialException
 from time import time
@@ -26,10 +26,10 @@ class SFTController:
         self._cond_name = ""
 
     def run(self):
-        asyncio.create_task(self._connection_manager.update())
-        asyncio.create_task(self._connect_event())
-        asyncio.create_task(self._handle_messages_from_sft_devices())
-        asyncio.create_task(self._queue_monitor())
+        create_task(self._connection_manager.update())
+        create_task(self._connect_event())
+        create_task(self._handle_messages_from_sft_devices())
+        create_task(self._queue_monitor())
 
     async def _connect_event(self):
         while True:
@@ -70,7 +70,7 @@ class SFTController:
                     except SerialException:
                         pass
 
-            await asyncio.sleep(0.0001)
+            await sleep(0.0001)
 
     async def _queue_monitor(self):
         while 1:
@@ -84,12 +84,12 @@ class SFTController:
                             self._cond_name = key.split(':')[1]
                         else:
                             for val in self._connected_sft_devices:
-                                asyncio.create_task(self._message_device(self._connected_sft_devices[val], key))
+                                create_task(self._message_device(self._connected_sft_devices[val], key))
                     elif key == 'fpath':
                         self._file_path = val
                     else:
-                        asyncio.create_task(self._message_device(self._connected_sft_devices[val], key))
-            await asyncio.sleep(0.0001)
+                        create_task(self._message_device(self._connected_sft_devices[val], key))
+            await sleep(0.0001)
 
     def _log_results(self, data_packet):
         def _write(_path, _results):

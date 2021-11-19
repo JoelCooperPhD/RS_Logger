@@ -1,10 +1,8 @@
-import asyncio
+from asyncio import create_task, sleep
 from RSLogger.devices.wdrt.HardwareInterface import WDRT_HIResults, WDRT_HIxbee, WDRT_HIModel
 from queue import SimpleQueue
 from digi.xbee.devices import XBeeMessage, RemoteRaw802Device
-import time
-
-from RSLogger.devices.common_utilities.HardwareInterface import USBConnect
+from time import gmtime
 
 
 class WDRTController:
@@ -19,10 +17,10 @@ class WDRTController:
         self.data = WDRT_HIResults.Master()
 
     def run(self):
-        asyncio.create_task(self._sync_xcvr())
-        asyncio.create_task(self._sync_network())
-        asyncio.create_task(self._handle_messages_from_xcvr())
-        asyncio.create_task(self._handle_messages_between_threads())
+        create_task(self._sync_xcvr())
+        create_task(self._sync_network())
+        create_task(self._handle_messages_from_xcvr())
+        create_task(self._handle_messages_between_threads())
 
     # Xbee connect
     async def _sync_xcvr(self):
@@ -36,7 +34,7 @@ class WDRTController:
             devices = await self._XB_connect.networked_devices_q.get()
 
             self._HW_interface.devices = devices
-            tt = time.gmtime()
+            tt = gmtime()
             time_gmt = f"{tt[0]},{tt[1]},{tt[2]},{tt[6]},{tt[3]},{tt[4]},{tt[5]},123"
             self._HW_interface.set_rtc(time_gmt)
             dvc_str = ','.join([d.get_node_id() for d in devices])
@@ -61,7 +59,7 @@ class WDRTController:
                 self._q_out.put(f"ui_wdrt>stm>{args} {n_id}")
             # -- dta: End of trial data frame
             elif cmd == 'dta':
-                asyncio.create_task(self.data.write(n_id, args, msg.timestamp))
+                create_task(self.data.write(n_id, args, msg.timestamp))
                 self._q_out.put(f"ui_wdrt>dta>{n_id},{args}")
             # -- dvc: New device string
             elif cmd == 'dvc':
@@ -142,4 +140,4 @@ class WDRTController:
                     else:
                         print(f"wdrt HI_Controller _queue_monitor command not handled: {cmd}")
 
-            await asyncio.sleep(0.0001)
+            await sleep(0.0001)

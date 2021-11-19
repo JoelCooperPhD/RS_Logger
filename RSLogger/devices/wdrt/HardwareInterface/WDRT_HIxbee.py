@@ -1,5 +1,5 @@
 from serial.tools.list_ports import comports
-import asyncio
+from asyncio import Queue, create_task, sleep, get_running_loop
 from digi.xbee.devices import XBeeDevice, XBeeNetwork, NetworkDiscoveryStatus
 
 class ConnectionManager:
@@ -16,20 +16,20 @@ class ConnectionManager:
         self._devices_pid = '6015'
 
         # These queues pass the xcvr and remote units respectively
-        self.attached_xcvr_q = asyncio.Queue()
-        self.networked_devices_q = asyncio.Queue()
+        self.attached_xcvr_q = Queue()
+        self.networked_devices_q = Queue()
 
         # All messages from xb units are passed via this queue
-        self.xb_msg_q = asyncio.Queue()
+        self.xb_msg_q = Queue()
 
-        asyncio.create_task(self._scan_for_xcvr())
+        create_task(self._scan_for_xcvr())
 
     ####################################################
     # Xbee Dongle
     async def _scan_for_xcvr(self):
         ports_old = list()
         self._xcvr = None
-        loop = asyncio.get_running_loop()
+        loop = get_running_loop()
         while True:
             ports = await loop.run_in_executor(None, comports)
             ports = [p.name for p in ports if self._devices_pid in p.hwid]
@@ -49,7 +49,7 @@ class ConnectionManager:
 
             ports_old = ports
 
-            await asyncio.sleep(1)
+            await sleep(1)
 
     def _msg_received(self, msg):
         self.xb_msg_q.put_nowait(msg)

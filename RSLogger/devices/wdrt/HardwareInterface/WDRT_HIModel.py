@@ -1,4 +1,4 @@
-import asyncio
+from asyncio import create_task, sleep
 from digi.xbee.devices import XBeeDevice, RemoteRaw802Device, TransmitException
 
 
@@ -7,39 +7,38 @@ class WDRTModel:
         self.xcvr = None
         self.devices = None
 
-
     def data_record(self):
-        asyncio.create_task(self.write_msg(f'dta_rcd>'))
+        create_task(self.write_msg(f'dta_rcd>'))
 
     def data_pause(self):
-        asyncio.create_task(self.write_msg(f'dta_pse>'))
+        create_task(self.write_msg(f'dta_pse>'))
 
     def config_request(self, unit_id):
-        asyncio.create_task(self.write_msg(f'get_cfg>',  self.get_unit(unit_id)))
+        create_task(self.write_msg(f'get_cfg>',  self.get_unit(unit_id)))
 
     def set_rtc(self, time_str):
-        asyncio.create_task(self.write_msg(f'set_rtc>{time_str}'))
+        create_task(self.write_msg(f'set_rtc>{time_str}'))
 
     def get_battery(self, unit_id):
-        asyncio.create_task(self.write_msg("get_bat>",  self.get_unit(unit_id)))
+        create_task(self.write_msg("get_bat>",  self.get_unit(unit_id)))
 
     def stim_on(self, unit_id):
-        asyncio.create_task(self.write_msg(f'set_stm>1', self.get_unit(unit_id)))
+        create_task(self.write_msg(f'set_stm>1', self.get_unit(unit_id)))
 
     def stim_off(self, unit_id):
-        asyncio.create_task(self.write_msg(f'set_stm>0', self.get_unit(unit_id)))
+        create_task(self.write_msg(f'set_stm>0', self.get_unit(unit_id)))
 
     def verbose_on(self, unit_id):
-        asyncio.create_task(self.write_msg(f'set_vrb>1', self.get_unit(unit_id)))
+        create_task(self.write_msg(f'set_vrb>1', self.get_unit(unit_id)))
 
     def verbose_off(self, unit_id):
-        asyncio.create_task(self.write_msg(f'set_vrb>0', self.get_unit(unit_id)))
+        create_task(self.write_msg(f'set_vrb>0', self.get_unit(unit_id)))
 
     def set_iso(self, unit_id):
-        asyncio.create_task(self.write_msg(f'set_iso>', self.get_unit(unit_id)))
+        create_task(self.write_msg(f'set_iso>', self.get_unit(unit_id)))
 
     def set_custom(self, vals, unit_id):
-        asyncio.create_task(self.write_msg(f'set_cfg>{vals}', self.get_unit(unit_id)))
+        create_task(self.write_msg(f'set_cfg>{vals}', self.get_unit(unit_id)))
 
     def get_unit(self, unit_id):
         if unit_id:
@@ -55,7 +54,7 @@ class WDRTModel:
             try:
                 if unit:
                     self.xcvr.send_data(unit, msg)
-                    await asyncio.sleep(0.0001)
+                    await sleep(0.0001)
                 else:
                     try:
                         for dev in self.devices:

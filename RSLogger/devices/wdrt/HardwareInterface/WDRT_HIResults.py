@@ -1,10 +1,10 @@
-import asyncio
+from asyncio import get_running_loop
 from time import sleep
 
 class Master:
     def __init__(self):
         self.fpath = None
-        self.loop = asyncio.get_running_loop()
+        self.loop = get_running_loop()
 
     def _threaded_write(self, fpath, data):
         try:
