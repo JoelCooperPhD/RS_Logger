@@ -1,4 +1,5 @@
-from tkinter import StringVar, LEFT, filedialog
+import os
+from tkinter import StringVar, LEFT, filedialog, messagebox
 from tkinter.ttk import Button, Label, Entry, LabelFrame
 from PIL import Image, ImageTk
 from queue import SimpleQueue
@@ -30,8 +31,8 @@ class ExpControls:
 
         # Record / Pause button
         self._record_running = False
-        record_path = path.abspath(path.join(path.dirname(__file__), '../../_utilities/record.png'))
-        pause_path = path.abspath(path.join(path.dirname(__file__), '../../_utilities/pause.png'))
+        record_path = path.abspath(path.join(path.dirname(__file__), '../../img/record.png'))
+        pause_path = path.abspath(path.join(path.dirname(__file__), '../../img/pause.png'))
 
         self._record_img = ImageTk.PhotoImage(Image.open(record_path))
         self._pause_img = ImageTk.PhotoImage(Image.open(pause_path))
@@ -86,10 +87,22 @@ class ExpControls:
 
     # File Paths
     def _ask_file_dialog(self):
+        title_ = "Folder NOT empty Warning!!!"
+        message_ = "The selected folder is NOT empty." \
+                   " Any Log files will be APPENDED and any video OVERWRITTEN.\n\n Do you wish to continue?"
         file_path = filedialog.askdirectory()
         if file_path:
-            self._file_path = file_path
-            self._q_out.put(f'main>fpath>{file_path}')
+            ans = ''
+            file_count = len(os.listdir(path=file_path))
+            if file_count != 0:
+                ans = messagebox.askquestion(
+                    title=title_,
+                    message=message_)
+            if ans == 'yes' or file_count == 0:
+                self._file_path = file_path
+                self._q_out.put(f'main>fpath>{file_path}')
+            else:
+                self._file_path = None
         else:
             self._file_path = None
 
