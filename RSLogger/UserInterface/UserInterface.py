@@ -1,4 +1,5 @@
 import urllib.request
+from urllib.error import URLError
 import webbrowser
 from tkinter import Tk, BOTH, messagebox
 from tkinter.ttk import Frame
@@ -96,8 +97,11 @@ class LoggerUI:
                 if ans == 'yes':
                     url = f"https://github.com/redscientific/RS_Logger/raw/master/dist/Output/RSLogger_v{version}.exe"
                     webbrowser.open_new(url)
-        except Exception as e:
-            print(e)
+        except URLError:
+            messagebox.showwarning(title="No Internet Connection!",
+                                   message="Your software may be out of date.\n\n"
+                                           "Please go to redscientific.com to check for updates.")
+
 
 
 
