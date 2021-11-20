@@ -29,7 +29,7 @@ class LoggerUI:
 
         self.win.resizable(True, True)
         self.win.minsize(816, 105)
-        self.win.title("Red Scientific Data Logger")
+        self.win.title(f"RS Logger version {__version__}")
         path_to_icon = path.abspath(path.join(path.dirname(__file__), '../img/rs_icon.ico'))
         self.win.iconbitmap(path_to_icon)
 
