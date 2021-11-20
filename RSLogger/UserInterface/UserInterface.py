@@ -1,6 +1,10 @@
-from tkinter import Tk, BOTH
+import urllib.request
+import webbrowser
+from tkinter import Tk, BOTH, messagebox
 from tkinter.ttk import Frame
 from os import path
+
+from main import __version__
 
 # User Interface
 from RSLogger.UserInterface.SFT_UI import SFT_UIController
@@ -26,7 +30,7 @@ class LoggerUI:
         self.win.resizable(True, True)
         self.win.minsize(816, 105)
         self.win.title("Red Scientific Data Logger")
-        path_to_icon = path.abspath(path.join(path.dirname(__file__), '../_utilities/rs_icon.ico'))
+        path_to_icon = path.abspath(path.join(path.dirname(__file__), '../img/rs_icon.ico'))
         self.win.iconbitmap(path_to_icon)
 
         # Widgets
@@ -49,6 +53,8 @@ class LoggerUI:
                          }
 
         self._queue_monitor()
+
+        self.check_version()
 
         # Tkinter loop
         self.win.after(0, self.win.deiconify)
@@ -74,6 +80,24 @@ class LoggerUI:
                 except AttributeError:
                     pass
 
-
         self.win.after(10, self._queue_monitor)
+
+    def check_version(self):
+        try:
+            version = urllib.request.urlopen("https://raw.githubusercontent.com/redscientific/RS_Logger/master/version.txt")
+            version = version.read().decode('utf-8')
+            if version == __version__:
+                print("True")
+            else:
+                ans = messagebox.askquestion(title="Notification",
+                                    message=f"You are running RSLogger version {__version__}\n\n"
+                                            f"The most recent version is {version}\n\n"
+                                            f"would you like to download the most recent version now?")
+                if ans == 'yes':
+                    url = f"https://github.com/redscientific/RS_Logger/raw/master/dist/Output/RSLogger_v{version}.exe"
+                    webbrowser.open_new(url)
+        except Exception as e:
+            print(e)
+
+
 

@@ -73,10 +73,6 @@ class WDRTUIController:
             elif arg == 'fpath':
                 self._update_file_path(kvals[2:])
 
-            elif 'cond' in arg:
-                print(arg)
-                # self._update_condition_name(arg)
-
         self._win.after(10, self._listen_for_incoming_messages)
 
     def _update_devices(self, devices=None):

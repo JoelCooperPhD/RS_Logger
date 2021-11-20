@@ -5,6 +5,8 @@ from multiprocessing import freeze_support
 from RSLogger.UserInterface import UserInterface
 from RSLogger.HardwareInterface import HardwareInterface
 
+__version__ = '0.1.2'
+
 # Inter-thread communication queue dictionary
 queues = {'main': SimpleQueue(),
           'ui_logger': SimpleQueue(),
