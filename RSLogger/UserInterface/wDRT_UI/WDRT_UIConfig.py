@@ -24,6 +24,7 @@ class WDRTConfigWin:
         self.uid = uid
 
         win = Toplevel()
+        win.withdraw()
         win.grab_set()
         win.title("")
         path_to_icon = path.abspath(path.join(path.dirname(__file__), '../../../rs_icon.ico'))
@@ -59,6 +60,8 @@ class WDRTConfigWin:
         # ISO
         button_iso = Button(lf, text="Upload ISO", command=self._iso_clicked)
         button_iso.grid(row=11, column=0, columnspan=3, pady=(0, 5), padx=2, sticky="NEWS")
+
+        win.after(0, win.deiconify())
 
     @staticmethod
     def _filter_entry(val, default_value,  lower, upper):

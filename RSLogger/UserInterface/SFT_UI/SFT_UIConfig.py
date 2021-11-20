@@ -39,6 +39,7 @@ class SFTConfigWin:
         self._active_tab = uid
 
         win = Toplevel()
+        win.withdraw()
         win.grab_set()
         win.title("")
         path_to_icon = path.abspath(path.join(path.dirname(__file__), '../../../rs_icon.ico'))
@@ -123,6 +124,7 @@ class SFTConfigWin:
         # Upload
         button_upload = Button(win, text="Upload Configuration", command=self._upload_clicked)
         button_upload.pack(expand=True, fill=BOTH, pady=5, padx=3)
+        win.after(0, win.deiconify())
 
     @staticmethod
     def _filter_entry(val, default_value,  lower, upper):

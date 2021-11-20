@@ -25,6 +25,7 @@ class VOGConfigWin:
         self._active_tab = uid
 
         win = Toplevel()
+        win.withdraw()
         win.grab_set()
         win.title("")
 
@@ -102,6 +103,8 @@ class VOGConfigWin:
 
         button_direct = Button(f, text="Direct", command=self._set_direct_cb)
         button_direct.grid(row=0, column=3, sticky="NEWS")
+
+        win.after(0, win.deiconify())
 
     @staticmethod
     def _filter_entry(val, default_value,  lower, upper):

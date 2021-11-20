@@ -17,8 +17,11 @@ class DRTConfigWin:
         self._active_tab = uid
 
         win = Toplevel()
+        win.withdraw()
+
         win.grab_set()
         win.title("")
+
 
         path_to_icon = path.abspath(path.join(path.dirname(__file__), '../../../rs_icon.ico'))
         win.iconbitmap(path_to_icon)
@@ -69,6 +72,8 @@ class DRTConfigWin:
         # ISO
         button_iso = Button(lf2, text="ISO", command=self._set_iso_cb)
         button_iso.grid(row=0, column=0, pady=5, padx=20, sticky="NEWS")
+
+        win.after(0, win.deiconify)
 
     @staticmethod
     def _filter_entry(val, default_value,  lower, upper):
