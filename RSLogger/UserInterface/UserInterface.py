@@ -85,14 +85,14 @@ class LoggerUI:
     def check_version(self):
         try:
             version = urllib.request.urlopen("https://raw.githubusercontent.com/redscientific/RS_Logger/master/version.txt")
-            version = version.read().decode('utf-8')
-            if version == __version__:
-                print("True")
-            else:
-                ans = messagebox.askquestion(title="Notification",
-                                    message=f"You are running RSLogger version {__version__}\n\n"
-                                            f"The most recent version is {version}\n\n"
-                                            f"would you like to download the most recent version now?")
+            version = str(version.read().decode('utf-8'))
+            version = version.strip()
+            if version != __version__:
+                ans = messagebox.askquestion(
+                    title="Notification",
+                    message=f"You are running RSLogger version {__version__}\n\n"
+                            f"The most recent version is {version}\n\n"
+                            f"would you like to download the most recent version now?")
                 if ans == 'yes':
                     url = f"https://github.com/redscientific/RS_Logger/raw/master/dist/Output/RSLogger_v{version}.exe"
                     webbrowser.open_new(url)
