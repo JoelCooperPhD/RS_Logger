@@ -68,17 +68,17 @@ class VOGConfigWin:
         Entry(lf, textvariable=self._UISettings["configDebounce"], width=7).grid(row=4, column=1, sticky="W")
 
         # Separator
-        Separator(lf).grid(row=5, column=0, columnspan=3, sticky="NEWS", pady=5)
+        # Separator(lf).grid(row=5, column=0, columnspan=3, sticky="NEWS", pady=5)
 
         # Button Mode
-        Label(lf, text="Click Mode:").grid(row=6, column=0, sticky="NEWS")
-        button_mode = OptionMenu(lf, self._UISettings['configClickMode'], *self.click_mode)
-        button_mode.grid(row=6, column=2, sticky="EW", columnspan=2)
+        # Label(lf, text="Click Mode:").grid(row=6, column=0, sticky="NEWS")
+        # button_mode = OptionMenu(lf, self._UISettings['configClickMode'], *self.click_mode)
+        # button_mode.grid(row=6, column=2, sticky="EW", columnspan=2)
 
         # Control Mode
-        Label(lf, text="Button Control Mode:").grid(row=7, column=0, sticky="NEWS")
-        control_mode = OptionMenu(lf, self._UISettings['buttonControl'], *self.button_control)
-        control_mode.grid(row=7, column=2, sticky="EW", columnspan=2)
+        # Label(lf, text="Button Control Mode:").grid(row=7, column=0, sticky="NEWS")
+        # control_mode = OptionMenu(lf, self._UISettings['buttonControl'], *self.button_control)
+        # control_mode.grid(row=7, column=2, sticky="EW", columnspan=2)
 
         # Separator
         Separator(lf).grid(row=8, column=0, columnspan=3, sticky="NEWS", pady=5)

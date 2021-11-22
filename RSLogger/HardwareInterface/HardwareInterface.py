@@ -29,19 +29,22 @@ class LoggerHI:
     async def main_message_router(self):
         while 1:
             while not self.queues['main'].empty():
-                msg = self.queues['main'].get()
-                if msg == 'exit':
-                    print('Main: Handle Exit Stub')
-                else:
-                    address, key, val = msg.split('>')
-
-                    if address == 'main':
-                        if val == 'ALL' or key == 'fpath':
-                            for q in self.queues:
-                                if q != 'main':
-                                    self.queues[q].put(f'{q}>{key}>{val}')
+                try:
+                    msg = self.queues['main'].get()
+                    if msg == 'exit':
+                        print('Main: Handle Exit Stub')
                     else:
-                        self.queues[address].put(msg)
+                        address, key, val = msg.split('>')
+
+                        if address == 'main':
+                            if val == 'ALL' or key == 'fpath':
+                                for q in self.queues:
+                                    if q != 'main':
+                                        self.queues[q].put(f'{q}>{key}>{val}')
+                        else:
+                            self.queues[address].put(msg)
+                except ValueError:
+                    print(f'Hardware Interface Value Error in main_message_router')
             await sleep(.0001)
     
 

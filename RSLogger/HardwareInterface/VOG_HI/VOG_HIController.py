@@ -54,6 +54,7 @@ class VOGController:
                         if self._connected_vog_devices[port].inWaiting():
                             timestamp = time()
                             msg = self._connected_vog_devices[port].read_until(b'\r\n')
+                            print(msg)
                             msg = str(msg, 'utf-8').strip()
                             if msg in ['peekOpen', 'peekClose']:
                                 pass
