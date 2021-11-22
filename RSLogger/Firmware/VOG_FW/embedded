@@ -604,7 +604,6 @@ void loop()
       break;
 
     case 2: //Button controls "glance"
-      Serial.println("glancing");
       if (isOpen && openTimeHasExpired())
       {
         vog_close();
