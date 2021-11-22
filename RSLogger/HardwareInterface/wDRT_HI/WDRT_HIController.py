@@ -15,6 +15,7 @@ class WDRTController:
 
         # Writer
         self.data = WDRT_HIResults.Master()
+        self._cond_name = ''
 
     def run(self):
         create_task(self._sync_xcvr())
