@@ -83,7 +83,7 @@ stimulus_port.value = True
 ###################################################################
 ###################################################################
 # CONFIG
-cfg = {lowerISI : 3000, upperISI : 5000, stimDur: 1000, intensity: 100, name: 'sDRT', buildDate: '2/23/2022', version: '1.2'}
+cfg = {lowerISI : 3000, upperISI : 5000, stimDur: 1000, intensity: 255, name: 'sDRT', buildDate: '2/23/2022', version: '1.2'}
 
 def read_cfg():
     with open(config+period+txt, 'r') as infile:
@@ -125,7 +125,7 @@ def parse_msg(msg):
         elif start in msg: begin()
         elif stop  in msg: end()
         elif on    in msg:
-            stimulus.duty_cycle = int((cfg[intensity] *  65535) / 100)
+            stimulus.duty_cycle = int((cfg[intensity] *  65535) / 255)
             print(stm_1)
         elif off   in msg:
             stimulus.duty_cycle = 0
@@ -176,14 +176,14 @@ def begin():
 def next_trial():
     global trial_counter, trial_start_time, trial_counter, reaction_time, click_count, responded, stim_cutoff_time, trial_cutoff_time
     time_now = int(time.monotonic() * 1000)
-    stimulus.duty_cycle = int((cfg[intensity] *  65535) / 100)
+    stimulus.duty_cycle = int((cfg[intensity] *  65535) / 255)
     dotstar[0] = (255,0,0)
     print(stm_1)
     trial_start_time = time_now
 
-    stimulus_port.value=0
+    stimulus_port.value = 0
     time.sleep(.0005)
-    stimulus_port.value=1
+    stimulus_port.value = 1
 
     trial_counter += 1
     reaction_time = -1
@@ -203,6 +203,7 @@ def end():
     exp_running = False
     stimulustime_now = False
     dotstar[0] = (0,0,255)
+    stimulus.duty_cycle = 0
     print(stm_0)
 
 ###################################################################
@@ -233,8 +234,8 @@ while True:
                 print(stm_0)
                 responded = True
             if time_now - last_response > 50:
-                print(clk_)
                 click_count += 1
+                print(clk_ + str(click_count))
             last_response = time_now
 
         if time_now >= stim_cutoff_time and stimulus.duty_cycle > 0:
