@@ -53,7 +53,7 @@ class DRTController:
                 for port in self._connected_drt_devices:
                     try:
                         if self._connected_drt_devices[port].inWaiting():
-                            msg = self._connected_drt_devices[port].read_until(b'\r\n').strip()
+                            msg = self._connected_drt_devices[port].readline()
                             timestamp = time()
                             msg = str(msg, 'utf-8').strip()
 
@@ -124,12 +124,13 @@ class DRTController:
     async def _message_device(serial_conn, cmd):
         try:
             if cmd in ['start', 'stop']:
-                serial_conn.write(str.encode(f'exp_{cmd}\n'))
+                message = f'exp_{cmd}\n\r'
+                serial_conn.write(str.encode(message))
             elif any([c in cmd for c in ['get', 'set', 'stim']]):
-                serial_conn.write(str.encode(f'{cmd}\n'))
+                serial_conn.write(str.encode(f'{cmd}\n\r'))
             elif cmd == 'iso':
                 for msg in ['set_lowerISI 3000', 'set_upperISI 5000', 'set_stimDur 1000', 'set_intensity 255']:
-                    serial_conn.write(str.encode(f'{msg}\n'))
+                    serial_conn.write(str.encode(f'{msg}\n\r'))
                     await sleep(0.0001)
         except Exception as e:
             print(f"DRT message_device exception: {e}")

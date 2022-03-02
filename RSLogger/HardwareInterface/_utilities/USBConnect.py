@@ -52,7 +52,7 @@ class ConnectionManager:
         to_add = {k: self._known_rs_devices[k] for k in set(self._known_rs_devices) - set(self.paired_devices)}
         try:
             for port in to_add:
-                self.paired_devices[port] = serial.Serial(port, self._baud)
+                self.paired_devices[port] = serial.Serial(port, self._baud, timeout=.5)
         except (FileNotFoundError, SerialException):
             pass
 
