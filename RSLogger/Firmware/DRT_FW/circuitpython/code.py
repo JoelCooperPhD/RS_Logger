@@ -9,6 +9,10 @@ gc.collect()
 
 ###################################################################
 ###################################################################
+# Constants
+DEBOUNCE_MILLIS = 50
+PORT_ON_TIME = 0.0005
+
 # STRING DICTIONARY
 lowerISI  ='lowerISI'
 upperISI  ='upperISI'
@@ -182,7 +186,7 @@ def next_trial():
     trial_start_time = time_now
 
     stimulus_port.value = 0
-    time.sleep(.0005)
+    time.sleep(PORT_ON_TIME)
     stimulus_port.value = 1
 
     trial_counter += 1
@@ -226,14 +230,14 @@ while True:
                 reaction_time = time_now - trial_start_time
 
                 response_port.value=0
-                time.sleep(.0005)
+                time.sleep(PORT_ON_TIME)
                 response_port.value=1
 
                 stimulus.duty_cycle = 0
                 dotstar[0] = (0,0,0)
                 print(stm_0)
                 responded = True
-            if time_now - last_response > 50:
+            if time_now - last_response > DEBOUNCE_MILLIS:
                 click_count += 1
                 print(clk_ + str(click_count))
             last_response = time_now
