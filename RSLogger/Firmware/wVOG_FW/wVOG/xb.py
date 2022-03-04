@@ -15,7 +15,7 @@ class XB:
 
         # Commands
         self._cmd = None
-        self._cmd_event = Event()
+        self._message_callback = None
 
         # UART
         self._uart = pyb.UART(1, 921600)
@@ -29,12 +29,13 @@ class XB:
         self._AT_lock = Lock()
         self._dest_addr = None
 
+        asyncio.create_task(self._listen_for_new_messages())
         asyncio.create_task(self._sync_dest_addr())
         asyncio.create_task(self._get_xb_name())
 
     ##################
     # UART
-    async def run(self):
+    async def _listen_for_new_messages(self):
         while True:
             msg = await self._reader.read(-1)
             if msg[3:4] == b'\x90':
@@ -132,15 +133,16 @@ class XB:
     def _API_0x90(self, msg):
         try:
             self._cmd = msg[15:-1].decode('utf-8')
-            self._cmd_event.set()
+            self._handle_incoming_message(self._cmd)
         except UnicodeError:
             if self._debug:
                 print("Xbee: Unicode Error")
+                
+    def register_incoming_message_cb(self, callback):
+        self._message_callback = callback
         
-    async def new_cmd(self):  # Await this to return command when available
-        await self._cmd_event.wait()
-        self._cmd_event.clear()
-
-        return self._cmd
+    def _handle_incoming_message(self, cmd):
+        if self._message_callback:
+            self._message_callback(cmd)
 
 
