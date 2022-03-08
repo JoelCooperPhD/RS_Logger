@@ -1,1 +1,1 @@
-{"MODE": 1, "OPEN": 1500, "DBNC": 45, "CLOSE": 1500, "OPAQ": 0, "CLER": 90}
+{"open_ms": 1500, "open": 1400, "close_ms": 1500, "debounce": 55, "opacity": 0, "type": "peek", "clarity": 100}
