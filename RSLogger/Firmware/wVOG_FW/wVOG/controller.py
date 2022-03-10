@@ -115,4 +115,8 @@ class WirelessVOG:
     def stop_experiment(self, val):
         if   val == "peek": self.exp_peek.end_trial()
         elif val == "cycle": self.exp_cycle.end_trial()
-        elelf._
+
+    ################################################
+    def broadcast(self, msg):
+        self.serial.write(msg+'\n')
+        asyncio.create_task(self.xb.transmit(msg+'\n'))
