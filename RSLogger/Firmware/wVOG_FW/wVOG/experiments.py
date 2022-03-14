@@ -5,10 +5,9 @@ import time
 
 
 class Peek:
-    def __init__(self, config=None, results_cb=None, start_clear=True):
+    def __init__(self, config=None, results_cb=None):
         self._cfg = config
         self._results_cb = results_cb
-        self._start_clear = start_clear
 
         self._start_t = time.ticks_ms()
 
@@ -25,9 +24,6 @@ class Peek:
         # Toggle Timer
         self._ab_timer = timers.ABTimeAccumulator()
 
-        # Results
-        self._results = None
-
         # Experiment
         self._exp_async_loop = None
 
@@ -35,9 +31,10 @@ class Peek:
         self._exp_async_loop = asyncio.create_task(self._exp_loop())
 
     def end_trial(self):
-        self._ab_timer.stop()
+        results = self._ab_timer.stop()
         self._lenses.opaque()
 
+        self._send_results(results)
         self._exp_async_loop.cancel()
 
     async def _exp_loop(self):
@@ -47,12 +44,12 @@ class Peek:
         now = time.ticks_ms()
         self._start_t = now
 
-        if self._start_clear:
+        if self._cfg["start"]:
             self._ab_timer.start(now, start_closed=False)
             request_to_open = True
         else:
-            self._results = self._ab_timer.start(now, start_closed=False)
-            print(self._results)
+            results = self._ab_timer.start(now, start_closed=False)
+            self._send_results(results)
             request_to_open = False
         clear_to_open = True
 
@@ -60,7 +57,6 @@ class Peek:
             time_now = time.ticks_ms()
 
             # Check if enough time has passed since lenses closed
-
             if not clear_to_open and not self._lenses_open:
                 close_ms_time_elapsed = time.ticks_diff(time_now, close_time) >= int(self._cfg['close_ms'])
                 if close_ms_time_elapsed:
@@ -70,7 +66,7 @@ class Peek:
             if not self._lenses_open and not request_to_open and self._valid_press(response_state_old):  # Open Lens
                 request_to_open = True
 
-            # Check if lenses are close dand should be open
+            # Check if lenses are closed and should be open
             if request_to_open and clear_to_open:
                 self._open()
                 self._transition_ms = time_now
@@ -90,18 +86,26 @@ class Peek:
             await asyncio.sleep(0)
 
     def _open(self):
-        self._results = self._ab_timer.toggle()
+        results = self._ab_timer.toggle()
         self._lenses.clear()
         self._lenses_open = True
 
-        print(self._results)
+        self._send_results(results)
 
     def _close(self):
-        self._results = self._ab_timer.toggle()
+        results = self._ab_timer.toggle()
         self._lenses.opaque()
         self._lenses_open = False
 
-        print(self._results)
+        self._send_results(results)
+
+    def _send_results(self, dta):
+        if self._cfg['data']:  # Send all if data
+            results_string = ','.join([str(i) for i in dta])
+            self._results_cb("dta>" + results_string)
+        elif dta[0] == 'X':  # Else just send last transition
+            results_string = ','.join([str(i) for i in dta])
+            self._results_cb("dta>" + results_string)
 
     def _elapsed(self, duration, now_ms):
         elapsed = time.ticks_diff(now_ms, self._transition_ms)

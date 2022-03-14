@@ -47,7 +47,6 @@ class Countdown:
         self._duration = duration
         self._callback = callback
         self._stop = False
-        self.run = True
 
     @property
     def duration(self):
@@ -58,13 +57,18 @@ class Countdown:
         if isinstance(val, int) and val >= 0:
             self._duration = val
 
-    async def start(self, duration=None):
-        self._stop = False
+    async def start(self, start_t=None, duration=None, init_us=None):
         if duration:
             self._duration = duration
-        start_t = ticks_ms()
-        while self.run:
+        if not start_t:
+            start_t = ticks_ms()
+        print(ticks_diff(ticks_us(), init_us))
+        while True:
             elapsed = ticks_diff(ticks_ms(), start_t)
+            if elapsed >= self._duration:
+                self._callback(elapsed)
+                break
+            await asyncio.sleep(0)
 
 
 class ABTimeAccumulator:
@@ -75,7 +79,8 @@ class ABTimeAccumulator:
         self._change_ms = 0
 
         # time accumulators
-        self._accumulator = [0, 0]
+        self._accumulator = [int(), int()]
+        self._data = [str(), int(), int(), int()]
 
         # state tracker
         self._i = False
@@ -83,11 +88,8 @@ class ABTimeAccumulator:
     def start(self, now=None, start_closed=False):
         if not now:
             now = ticks_ms()
-        self._start_ms = now
-        self._toggle_ms = now
-
+        self._start_ms, self._toggle_ms = now, now
         self._accumulator = [0, 0]
-        self._data = ['a', 0, 0, 0]
 
         self._i = start_closed
         return self._state(now)
@@ -96,10 +98,11 @@ class ABTimeAccumulator:
         now = ticks_ms()
         self._update_accumulator(now)
 
-        return self._state(now, stop=True)
+        return self._state(now, tag='X')
 
-    def toggle(self):
-        now = ticks_ms()
+    def toggle(self, now=None):
+        if not now:
+            now = ticks_ms()
 
         self._update_accumulator(now)
 
@@ -112,11 +115,11 @@ class ABTimeAccumulator:
         elapsed = ticks_diff(now, self._toggle_ms)
         self._accumulator[self._i] += elapsed
 
-    def _state(self, now, stop=False):
-        if stop:
-            self._data[0] = 'x'
+    def _state(self, now, tag=None):
+        if tag:
+            self._data[0] = tag
         else:
-            self._data[0] = 'b' if self._i else 'a'
+            self._data[0] = '1' if self._i else '0'
 
         self._data[1] = ticks_diff(now, self._start_ms)
         self._data[2:4] = self._accumulator
