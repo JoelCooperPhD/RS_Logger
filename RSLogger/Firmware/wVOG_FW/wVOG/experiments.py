@@ -102,10 +102,10 @@ class Peek:
     def _send_results(self, dta):
         if self._cfg['data']:  # Send all if data
             results_string = ','.join([str(i) for i in dta])
-            self._results_cb("dta>" + results_string)
+            self._results_cb(results_string)
         elif dta[0] == 'X':  # Else just send last transition
             results_string = ','.join([str(i) for i in dta])
-            self._results_cb("dta>" + results_string)
+            self._results_cb(results_string)
 
     def _elapsed(self, duration, now_ms):
         elapsed = time.ticks_diff(now_ms, self._transition_ms)
