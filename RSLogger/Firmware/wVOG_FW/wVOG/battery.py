@@ -4,6 +4,7 @@ from array import array
 import uasyncio as asyncio
 from time import ticks_ms, ticks_diff
 
+
 class LipoReader:
     def __init__(self, pin='X8'):
         self._bat_pin = ADC(Pin(pin))
@@ -42,7 +43,7 @@ class LipoReader:
 
     ######################
     # Main Methods
-    
+
     def percent(self):
         prct = round(((self.voltage() - self._vcut) / (self._vmax - self._vcut)) * 100)
         if prct > 100:
@@ -52,8 +53,9 @@ class LipoReader:
         return prct
 
     def voltage(self):
-        pin_val = sum([self._bat_pin.read() for i in range(50)])/ 50
+        pin_val = sum([self._bat_pin.read() for i in range(50)]) / 50
         return ((pin_val / self._max_adc) * self._vref) * 1.24
+
 
 
 

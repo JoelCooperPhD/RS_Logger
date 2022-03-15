@@ -56,7 +56,7 @@ class VOG:
         response_ms = 0
         old_state = 0
         debounced = True
-        debounce_dur = self._cfg['debounce']
+        debounce_dur = int(self._cfg['debounce'])
 
         while True:
             now_ms = time.ticks_ms()
@@ -101,7 +101,7 @@ class VOG:
             if type == "cycle": self.begin_trial()
 
     def _send_results(self, dta):
-        if self._cfg['data']:  # Send all if data
+        if int(self._cfg['data']):  # Send all if data
             results_string = ','.join([str(i) for i in dta])
             self._results_cb(results_string)
         elif dta[0] == 'X':  # Else just send last transition
@@ -114,8 +114,8 @@ class VOG:
 
     async def _exp_loop(self):
         exp_type = self._cfg['type']
-        open_ms = self._cfg['open_ms']
-        close_ms = self._cfg['close_ms']
+        open_ms = int(self._cfg['open_ms'])
+        close_ms = int(self._cfg['close_ms'])
         transition_time = 0
 
         while True:
@@ -124,8 +124,8 @@ class VOG:
 
                 # Run this code once at trial startup
                 if not self._ab_timer.running:
-                    self._send_results(self._ab_timer.start(time_now, start_closed=self._cfg["start"]))
-                    if self._cfg["start"]:
+                    self._send_results(self._ab_timer.start(time_now, start_closed=int(self._cfg["start"])))
+                    if int(self._cfg["start"]):
                         self._lenses.clear()
                         self._lenses_open = True
                     transition_time = time_now
@@ -150,3 +150,4 @@ class VOG:
                         transition_time = time_now
 
             await asyncio.sleep(0)
+

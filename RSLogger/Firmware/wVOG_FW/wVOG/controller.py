@@ -31,7 +31,10 @@ class WirelessVOG:
 
         # Experiments
         self.exp_running = False
-        self.exp_peek = experiments.Peek(self.cfg.config, self.send_results)
+        self.exp = experiments.VOG(self.cfg.config, self.send_results)
+
+        # Trial
+        self.trial_running = False
 
     def update(self):
         await asyncio.gather(
@@ -122,7 +125,8 @@ class WirelessVOG:
     def set_config(self, kv):
         # Example: 'set>cfg>open:1500'
         key, val = kv.split(":")
-        # Example: 'set>open>1400' or 'set>debounce>45'
+        # Example: 'set>cfg
+        print(kv.split(":"))
         self.cfg.update(f"{key}:{val}")
         self.broadcast(f'cfg>{key}:{self.cfg.config[key]}')
 
@@ -150,36 +154,30 @@ class WirelessVOG:
             self.end_trial()
 
     def begin_experiment(self):
-        self.trl_n = 0
         self.exp_running = True
-        self.broadcast("starting exp...")
+
+        self.trl_n = 0
+        self.exp.begin_experiment()
 
     def end_experiment(self):
+        if self.trial_running:
+            self.end_trial()
         self.exp_running = False
-        self.broadcast("stopping exp...")
+
+        self.exp.end_experiment()
 
     def begin_trial(self):
         if not self.exp_running:
             self.begin_experiment()
         self.trial_running = True
-        self.trl_n += 1
 
-        if self.cfg.config['type'] == "peek":
-            self.exp_peek.begin_trial()
-        elif self.cfg.config['type'] == "cycle":
-            self.exp_cycle.begin_trial()
-        elif self.cfg.config['type'] == "direct":
-            self.exp_direct.begin_trial()
+        self.trl_n += 1
+        self.exp.begin_trial()
 
     def end_trial(self):
         self.trial_running = False
 
-        if self.cfg.config['type'] == "peek":
-            self.exp_peek.end_trial()
-        elif self.cfg.config['type'] == "cycle":
-            self.exp_cycle.end_trial()
-        elif self.cfg.config['type'] == "direct":
-            self.exp_direct.end_trial()
+        self.exp.end_trial()
 
     ################################################
     #
