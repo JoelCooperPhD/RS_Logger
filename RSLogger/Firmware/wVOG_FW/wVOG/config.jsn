@@ -1,1 +1,1 @@
-{"open_ms": 1500, "open": 1400, "close_ms": 1500, "debounce": 55, "opacity": 0, "type": "peek", "clarity": 100, "start": 0, "data": 0}
+{"close_ms": 1500, "debounce": 55, "open_ms": 1500, "clarity": 100, "data": 1, "opacity": 0, "open": 1400, "start": 0, "type": "peek"}
