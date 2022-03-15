@@ -84,20 +84,21 @@ class ABTimeAccumulator:
 
         # state tracker
         self._i = False
+        self.running = False
 
     def start(self, now=None, start_closed=False):
         if not now:
             now = ticks_ms()
         self._start_ms, self._toggle_ms = now, now
         self._accumulator = [0, 0]
-
+        self.running = True
         self._i = start_closed
         return self._state(now)
 
     def stop(self):
         now = ticks_ms()
         self._update_accumulator(now)
-
+        self.running = False
         return self._state(now, tag='X')
 
     def toggle(self, now=None):
