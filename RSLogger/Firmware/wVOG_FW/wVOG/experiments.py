@@ -4,15 +4,12 @@ from wVOG import lenses, timers
 import time
 
 
-class Peek:
+class VOG:
     def __init__(self, config=None, results_cb=None):
         self._cfg = config
         self._results_cb = results_cb
 
-        self._start_t = time.ticks_ms()
-
         # Lenses
-        self._transition_ms = 0
         self._lenses_open = False
         self._lenses = lenses.Lenses()
 
@@ -20,68 +17,63 @@ class Peek:
         self._debounced = True
         self._resp_value_old = 0
         self._response = Pin('Y9', mode=Pin.IN, pull=Pin.PULL_UP)
+        asyncio.create_task(self._response_listener())
 
         # Toggle Timer
         self._ab_timer = timers.ABTimeAccumulator()
 
         # Experiment
-        self._exp_async_loop = None
+        self._exp_task = None
+
+        # Trial
+        self._trial_running = False
+        self._request_peek = False
+
+    #############################################
+    # Public Methods
+    #############################################
+    def begin_experiment(self):
+        self._exp_task = asyncio.create_task(self._exp_loop())
+
+    def end_experiment(self):
+        self._exp_task.cancel()
 
     def begin_trial(self):
-        self._exp_async_loop = asyncio.create_task(self._exp_loop())
+        self._trial_running = True
 
     def end_trial(self):
+        self._trial_running = False
+
         results = self._ab_timer.stop()
         self._lenses.opaque()
-
+        self._lenses_open = False
         self._send_results(results)
-        self._exp_async_loop.cancel()
 
-    async def _exp_loop(self):
-        close_time = 0
-        response_state_old = self._response.value()
-
-        now = time.ticks_ms()
-        self._start_t = now
-
-        if self._cfg["start"]:
-            self._ab_timer.start(now, start_closed=False)
-            request_to_open = True
-        else:
-            results = self._ab_timer.start(now, start_closed=False)
-            self._send_results(results)
-            request_to_open = False
-        clear_to_open = True
+    #############################################
+    # Private Utility Functions
+    #############################################
+    async def _response_listener(self):
+        response_ms = 0
+        old_state = 0
+        debounced = True
+        debounce_dur = self._cfg['debounce']
 
         while True:
-            time_now = time.ticks_ms()
+            now_ms = time.ticks_ms()
 
-            # Check if enough time has passed since lenses closed
-            if not clear_to_open and not self._lenses_open:
-                close_ms_time_elapsed = time.ticks_diff(time_now, close_time) >= int(self._cfg['close_ms'])
-                if close_ms_time_elapsed:
-                    clear_to_open = True
+            if debounced:
+                state = self._response.value()
+                clicked = old_state - state == 1
+                old_state = state
 
-            # Check switch
-            if not self._lenses_open and not request_to_open and self._valid_press(response_state_old):  # Open Lens
-                request_to_open = True
+                if clicked and debounced:
+                    debounced = False
+                    response_ms = now_ms
+                    self._handle_valid_response()
+            else:
 
-            # Check if lenses are closed and should be open
-            if request_to_open and clear_to_open:
-                self._open()
-                self._transition_ms = time_now
-                clear_to_open = False
-                request_to_open = False
-
-            # Check if lenses are open and should be closed
-            if self._lenses_open and self._elapsed(self._cfg['open_ms'], time_now):  # Is the open time expired?
-                self._close()
-                close_time = time_now
-
-            # Check if button has been debounced
-            if not self._debounced and self._elapsed(self._cfg['debounce'],
-                                                     time_now):  # Is the debounced lockout expired?
-                self._debounced = True
+                if time.ticks_diff(now_ms, response_ms) >= debounce_dur:
+                    debounced = True
 
             await asyncio.sleep(0)
 
@@ -96,8 +88,17 @@ class Peek:
         results = self._ab_timer.toggle()
         self._lenses.opaque()
         self._lenses_open = False
-
         self._send_results(results)
+
+    def _handle_valid_response(self):
+        type = self._cfg["type"]
+        if self._trial_running:
+            if type == "cycle":
+                self.end_trial()
+            elif type == "peek":
+                self._request_peek = True
+        else:
+            if type == "cycle": self.begin_trial()
 
     def _send_results(self, dta):
         if self._cfg['data']:  # Send all if data
@@ -107,22 +108,45 @@ class Peek:
             results_string = ','.join([str(i) for i in dta])
             self._results_cb(results_string)
 
-    def _elapsed(self, duration, now_ms):
-        elapsed = time.ticks_diff(now_ms, self._transition_ms)
-        if elapsed >= duration:
-            return True
-        else:
-            return False
+    #############################################
+    # TRIAL TYPES -- CORE LOOPING FUNCTIONALITY
+    #############################################
 
-    def _valid_press(self, prior):
-        resp_value = self._response.value()
-        clicked = self._resp_value_old - resp_value == 1
-        self._resp_value_old = resp_value
-        if clicked and self._debounced:
-            return True
-        else:
-            return False
+    async def _exp_loop(self):
+        exp_type = self._cfg['type']
+        open_ms = self._cfg['open_ms']
+        close_ms = self._cfg['close_ms']
+        transition_time = 0
 
-        return state
+        while True:
+            if self._trial_running:
+                time_now = time.ticks_ms()
 
+                # Run this code once at trial startup
+                if not self._ab_timer.running:
+                    self._send_results(self._ab_timer.start(time_now, start_closed=self._cfg["start"]))
+                    if self._cfg["start"]:
+                        self._lenses.clear()
+                        self._lenses_open = True
+                    transition_time = time_now
 
+                delta = time.ticks_diff(time_now, transition_time)
+
+                # Check if lenses are open and should be closed
+                if self._lenses_open:
+                    if delta >= open_ms:  # Is the open time expired?
+                        self._close()
+                        transition_time = time_now
+
+                # Check if lenses are closed and should be open
+                elif delta >= close_ms:
+                    if exp_type == 'peek':
+                        if self._request_peek:
+                            self._open()
+                            self._request_peek = False
+                            transition_time = time_now
+                    else:
+                        self._open()
+                        transition_time = time_now
+
+            await asyncio.sleep(0)
