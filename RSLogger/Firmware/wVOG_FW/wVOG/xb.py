@@ -6,11 +6,11 @@ from uasyncio.lock import Lock
 
 class XB:
     def __init__(self, debug=False):
-        
+
         self._debug = debug
 
         self.name_NI = None
-        
+
         self.ACK = False
 
         # Commands
@@ -29,12 +29,16 @@ class XB:
         self._AT_lock = Lock()
         self._dest_addr = None
 
+        asyncio.create_task(self._initialize())
+
+    ##################
+    # UART
+    async def _initialize(self):
+        await asyncio.sleep(1)
         asyncio.create_task(self._listen_for_new_messages())
         asyncio.create_task(self._sync_dest_addr())
         asyncio.create_task(self._get_xb_name())
 
-    ##################
-    # UART
     async def _listen_for_new_messages(self):
         while True:
             msg = await self._reader.read(-1)
@@ -64,12 +68,11 @@ class XB:
         DL: Destination Low Address
         '''
         async with self._AT_lock:
-            
             packet = self._AT_packetize(cmd)
             asyncio.create_task(self._send_AT_frame(packet))
-            
+
             await self._AT_event.wait()
-            
+
             self._AT_event.clear()
         return self._AT
 
@@ -127,7 +130,8 @@ class XB:
         packet = typ + fid + dest_64 + dest_16 + br + opt + cmd  # Completed packet
         csum = bytes([255 - (sum(packet) & 0xFF)])  # Checksum
         mlen = bytes([0x00, len(packet)])  # Packet Length
-        return start + mlen + packet + csum
+        to_send = start + mlen + packet + csum
+        return to_send
 
     # ---- Receive Packet Callback :0x90
     def _API_0x90(self, msg):
@@ -137,12 +141,13 @@ class XB:
         except UnicodeError:
             if self._debug:
                 print("Xbee: Unicode Error")
-                
+
     def register_incoming_message_cb(self, callback):
         self._message_callback = callback
-        
+
     def _handle_incoming_message(self, cmd):
         if self._message_callback:
             self._message_callback(cmd)
+
 
 
