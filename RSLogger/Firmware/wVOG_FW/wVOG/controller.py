@@ -1,6 +1,6 @@
 import uasyncio as asyncio
 from wVOG import xb, config, lenses, battery, mmc, experiments, timers
-from pyb import RTC
+from pyb import RTC, USB_VCP, Pin, LED
 from time import time
 
 
@@ -13,6 +13,10 @@ class WirelessVOG:
 
         # Battery
         self.battery = battery.LipoReader()
+
+        # USB
+        self.usb_attached = False
+        self.usb_detect = Pin('X1', mode=Pin.IN, pull=Pin.PULL_DOWN)
 
         # MMC Save - The flash module stuck to the bottom of the unit
         self.headers = "Device_Unit,,, Block_ms, Trial, Reaction Time, Responses, UTC, Battery\n"
@@ -39,6 +43,7 @@ class WirelessVOG:
     def update(self):
         await asyncio.gather(
             self.handle_serial_msg(),
+            self.usb_attached_poller(),
         )
 
     ################################################
@@ -178,6 +183,14 @@ class WirelessVOG:
         self.trial_running = False
 
         self.exp.end_trial()
+
+    ################################################
+    # USB attached
+    async def usb_attached_poller(self):
+        while True:
+            self.usb_attached = self.usb_detect.value()
+            self.broadcast(f"USB Attached: {self.usb_attached}\r")
+            await asyncio.sleep(1)
 
     ################################################
     #
