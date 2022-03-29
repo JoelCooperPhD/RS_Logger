@@ -51,112 +51,106 @@ class WirelessVOG:
     async def handle_serial_msg(self):
         while True:
             if self.serial.any():
-                cmd = self.serial.read()
-                cmd = cmd.strip().decode('utf-8')
-                self.parse_cmd(cmd)
+                msg = self.serial.read()
+                msg = msg.strip().decode('utf-8')
+                self.parse_cmd(msg)
             await asyncio.sleep(.01)
 
-    def handle_xb_msg(self, cmd):
-        self.parse_cmd(cmd)
+    def handle_xb_msg(self, msg):
+        self.parse_cmd(msg)
 
-    def parse_cmd(self, cmd):
-        try:
-            action, key, val = cmd.split(">")
+    def parse_cmd(self, msg):
+        if ":" in msg:
+            cmd, val = msg.split(":")
+        else:
+            cmd, val = msg, ''
 
-            if action == 'do':
-                self.handle_do(key, val)
-            elif action == 'get':
-                self.handle_get(key, val)
-            elif action == 'set':
-                self.handle_set(key, val)
+        # Lenses: a, b, or x = both
+        if cmd in ['a', 'b', 'x']:
+            self.update_lens(cmd, val)
 
-        except ValueError:
-            print("ERROR: Malformed command")
+        # Experiment / Trial
+        elif cmd == 'exp':
+            self.experiment(val)
+        elif cmd == 'trl':
+            self.trial(val)
+
+        # Configuration
+        elif cmd == 'cfg':
+            self.get_full_configuration()
+        elif cmd in self.cfg.config.keys():
+            self.update_config(cmd, val)
+
+        elif cmd == 'rtc':
+            self.update_rtc(val)
+        elif cmd == 'bat':
+            self.get_battery()
+
+        else:
+            self.broadcast("Unknown command")
 
     ################################################
-    # Handle Incoming Commands
+    # Lenses
+    def update_lens(self, lens, state):
+        # x:1 -> lenses clear
+        # x:0 -> lenses opaque
+        # a:1, b:1 -> a or b clear
+        # a:0, b:0 -> a or b opaque
 
-    #### DO Commands
-    def handle_do(self, key, val):
-        if key == 'lens':
-            self.update_lens_states(key, val)
-        elif key == 'start':
-            self.start(val)
-        elif key == 'stop':
-            self.stop(val)
+        if state == '1':
+            if lens == 'x':
+                self.lenses.clear()
+            elif lens in ['a', 'b']:
+                self.lenses.clear(lens)
+        elif state == '0':
+            if lens == 'x':
+                self.lenses.opaque()
+            elif lens in ['a', 'b']:
+                self.lenses.opaque(lens)
 
-    def update_lens_states(self, key, val):
-        # 'do>lens>[open, close]:[a, b]'  :Example - 'do>lens>close:' or 'do>lens>open:a'
-        key, val = val.split(":")
-        lenses = ['a', 'b']
-        if val in lenses: lenses = val
+    #### Config
+    def get_full_configuration(self):
+        # cfg
+        self.broadcast(f'cfg:{self.cfg.config}')
 
-        if key == 'open':
-            self.lenses.clear(lenses)
-        elif key == 'close':
-            self.lenses.opaque(lenses)
+    def update_config(self, key, val):
+        # opn: ms lenses in open or clear state
+        # cls: ms lenses in closed or opaque state
+        # dbc: ms switch debounce
+        # typ: type of experiment. Options are 'cycle', 'peek', 'eblind', 'direct'
+        # dta:
+        # srt:
+        # drk: opacity value between 0-100 when opaque
+        # clr: opacity value between 0-100 when clear
 
-    #### GET Commands
-    def handle_get(self, key, val):
-        if key == 'cfg':
-            self.get_config(val)
-        elif key == 'bat':
-            self.get_battery()
-        elif key == 'rtc':
-            self.get_rtc()
+        if val != '':
+            self.cfg.update(f"{key}:{val}")
+        self.broadcast(f'{key}:{self.cfg.config[key]}')
 
-    def get_config(self, val):
-        # Example: 'get>cfg>' or 'get>cfg>open'
-        if val in self.cfg.config.keys():
-            self.broadcast(f'cfg>{val}:{self.cfg.config[val]}')
-        else:
-            self.broadcast(f'cfg>{self.cfg.get_config_str()}')
+    #### RTC
+    def update_rtc(self, dt):
+        if dt != '':
+            rtc_tuple = tuple([int(i) for i in dt.split(',')])
+            self.rtc.datetime(rtc_tuple)
 
-    def get_rtc(self):
         r = self.rtc.datetime()
-        msg = "rtc>" + ','.join([str(v) for v in r])
+        msg = "rtc:" + ','.join([str(v) for v in r])
         self.broadcast(msg)
 
+    #### Battery
     def get_battery(self):
-        self.broadcast(f'bty>{self.battery.percent()}')
-
-    #### SET Commands - Sets configurations in the config.jsn file with the same names
-    def handle_set(self, key, val):
-        if key == 'cfg':
-            self.set_config(val)
-        elif key == 'rtc':
-            self.set_rtc(val)
-
-    def set_config(self, kv):
-        # Example: 'set>cfg>open:1500'
-        key, val = kv.split(":")
-        # Example: 'set>cfg
-        print(kv.split(":"))
-        self.cfg.update(f"{key}:{val}")
-        self.broadcast(f'cfg>{key}:{self.cfg.config[key]}')
-
-    # Time
-    def set_rtc(self, dt: str):
-        rtc_tuple = tuple([int(i) for i in dt.split(',')])
-        self.rtc.datetime(rtc_tuple)
-
-        if self.debug:
-            self.get_rtc()
+        self.broadcast(f'bty:{self.battery.percent()}')
 
     ################################################
-    # Experiments
-    # Peek
-    def start(self, val):
-        if val == "exp":
-            self.begin_experiment()
-        elif val == "trl":
-            self.begin_trial()
+    # Experiment
+    def experiment(self, val):
+        # exp:1 -> start
+        # exp:0 -> stop
 
-    def stop(self, val):
-        if val == "exp":
+        if val == '1':
+            self.begin_experiment()
+        elif val == '0':
             self.end_experiment()
-        elif val == "trl":
-            self.end_trial()
 
     def begin_experiment(self):
         self.exp_running = True
@@ -170,6 +164,16 @@ class WirelessVOG:
         self.exp_running = False
 
         self.exp.end_experiment()
+
+    # Tial
+    def trial(self, val):
+        # trl:1 -> start
+        # trl:0 -> stop
+
+        if val == '1':
+            self.begin_trial()
+        elif val == '0':
+            self.end_trial()
 
     def begin_trial(self):
         if not self.exp_running:
@@ -187,17 +191,31 @@ class WirelessVOG:
     ################################################
     # USB attached
     async def usb_attached_poller(self):
+        attached_prior = False
+        attached = False
         while True:
-            self.usb_attached = self.usb_detect.value()
-            self.broadcast(f"USB Attached: {self.usb_attached}\r")
+            attached = self.usb_detect.value()
+            if attached and not attached_prior:
+                self.attach_event()
+            if not attached and attached_prior:
+                self.detatch_event()
+            attached_prior = attached
             await asyncio.sleep(1)
+
+    def attach_event(self):
+        self.usb_attached = True
+        self.broadcast("Attached")
+
+    def detatch_event(self):
+        self.usb_attached = False
+        self.broadcast("Removed")
 
     ################################################
     #
     def send_results(self, dta):
         xb_name = f"wVOG_{self.xb.name_NI}"
         utc = time() + 946684800
-        msg = f"dta>{xb_name},{utc},{self.trl_n},{dta}"
+        msg = f"dta:{xb_name},{utc},{self.trl_n},{dta}"
         self.broadcast(msg)
 
     def broadcast(self, msg):
