@@ -55,19 +55,19 @@ class Lenses:
 
     ###################################################
     # Lens control
-    def clear(self, lenses=['b->a', 'a->b']):
-        if 'b->a' in lenses:
+    def clear(self, lenses=['a', 'b']):
+        if 'a' in lenses:
             self._lens_a.value(1)
-        if 'a->b' in lenses:
+        if 'b' in lenses:
             self._lens_b.value(1)
         return True
 
-    def opaque(self, lenses=['b->a', 'a->b']):
+    def opaque(self, lenses=['a', 'b']):
         self._toggle_timer.callback(None)
 
-        if 'b->a' in lenses:
+        if 'a' in lenses:
             self._lens_a.value(0)
-        if 'a->b' in lenses:
+        if 'b' in lenses:
             self._lens_b.value(0)
 
         self._toggle_timer.callback(self._toggle_xformer)
