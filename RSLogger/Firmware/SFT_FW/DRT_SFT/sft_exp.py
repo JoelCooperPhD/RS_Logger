@@ -6,14 +6,13 @@ class StimulusSelector:
     def __init__(self, config):
         # Probability of zero, one, two, or three stimuli being presented
         self.cn = config
-    
+
     def draw(self):
         n = self.HowManyStimuli()
         stim = self.WhichStimuli(n)
         draw = self.HowSalient(stim)
         return draw
-        
-        
+
     def HowManyStimuli(self):
         '''
         "HMS:0": 0.2, -20% chance of 0 stimuli being shown
@@ -21,7 +20,7 @@ class StimulusSelector:
         "HMS:2": 0.5,
         "HMS:3": 0.1,
         '''
-        val = int(random.random() * 100)
+        val = random.random() * 100
         cum_prob = self.cn['HMS:0'] + self.cn['HMS:1'] + self.cn['HMS:2'] + self.cn['HMS:3']
         o = self.cn['HMS:0'] * 100 // cum_prob
         l = o + self.cn['HMS:1'] * 100 // cum_prob
@@ -34,9 +33,9 @@ class StimulusSelector:
             return 1
         elif l < val <= m:
             return 2
-        elif m <  val <= h:
+        elif m < val <= h:
             return 3
-            
+
     def WhichStimuli(self, count):
         '''
         "WS:LED": 0.5, - 50% chance A or B will be shown. C is off
@@ -44,27 +43,26 @@ class StimulusSelector:
         "WS:AUD": 0,
         '''
         selected = list()
-        stimuli = {'LED': self.cn['WS:LED'], 'VIB': self.cn['WS:VIB'], 'AUD': self.cn['WS:AUD']}
-        
+        stimuli = {'AUD': self.cn['WS:AUD'], 'VIB': self.cn['WS:VIB'], 'LED': self.cn['WS:LED']}
+
         for c in range(count):
-            rn = int(random.random() * 100)
+            rn = random.random() * 100
             low = 0
             high = 0
             to_remove = None
             cum_prob = sum(stimuli.values())
 
             for key in stimuli:
-                high += (stimuli[key]*100) // cum_prob
+                high += (stimuli[key]) * 100 / cum_prob
                 if low < rn <= high:
                     selected.append(key)
                     to_remove = key
-                low += high
+                low = high
             if to_remove:
                 stimuli.pop(to_remove)
-        
+
         return selected
 
-    
     def HowSalient(self, stimuli):
         '''
         "HS:LED": 0.5, - 50% low salience / 50% High Saliance
@@ -91,12 +89,3 @@ class StimulusSelector:
                     else:
                         salience.append('AUD.H')
         return salience
-                
-        
-        
-        
-        
-        
-    
-    
-    
