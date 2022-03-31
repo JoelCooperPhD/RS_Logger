@@ -117,8 +117,6 @@ def update_cfg(kv):
 ###################################################################
 ###################################################################
 # MESSAGE HANDLING
-
-
 def parse_msg(msg):
     try:
         kv = msg.split(' ')
@@ -175,6 +173,7 @@ def begin():
     trial_counter = 0
     dotstar[0] = (0, 0, 0)
     exp_start_time = int(time.monotonic() * 1000)
+    time.sleep(4)
     next_trial()
 
 def next_trial():
@@ -236,6 +235,7 @@ while True:
                 stimulus.duty_cycle = 0
                 dotstar[0] = (0,0,0)
                 print(stm_0)
+                send_results()
                 responded = True
             if time_now - last_response > DEBOUNCE_MILLIS:
                 click_count += 1
@@ -248,7 +248,8 @@ while True:
             print(stm_0)
 
         if time_now >= trial_cutoff_time:
-            send_results()
+            if not responded:
+                send_results()
             if exp_running:
                 next_trial()
 
@@ -257,15 +258,3 @@ while True:
     while supervisor.runtime.serial_bytes_available:
         new_msg = input()
         parse_msg(new_msg)
-
-
-    '''
-    # Timing Diagnostics
-    loops += 1
-    if time_now >= next_print:
-        end = int(time.monotonic() * 1000)
-        print("Start: {}, End: {}, Next: {}, Delta: {}, Loops: {}".format(time_now, end, next_print, end-time_now, loops))
-        next_print = time_now + 1000
-        loops = 0
-    '''
-
