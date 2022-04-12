@@ -101,7 +101,7 @@ class VOG:
             if type == "cycle": self.begin_trial()
 
     def _send_results(self, dta):
-        if int(self._cfg['data']):  # Send all if data
+        if int(self._cfg['dta']):  # Send all if data
             results_string = ','.join([str(i) for i in dta])
             self._results_cb(results_string)
         elif dta[0] == 'X':  # Else just send last transition
@@ -113,7 +113,7 @@ class VOG:
     #############################################
 
     async def _exp_loop(self):
-        exp_type = self._cfg['type']
+        exp_type = self._cfg['typ']
         open_ms = int(self._cfg['opn'])
         close_ms = int(self._cfg['cls'])
         transition_time = 0
