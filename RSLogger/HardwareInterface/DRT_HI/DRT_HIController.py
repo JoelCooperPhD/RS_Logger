@@ -56,6 +56,7 @@ class DRTController:
                             msg = self._connected_drt_devices[port].readline()
                             timestamp = time()
                             msg = str(msg, 'utf-8').strip()
+                            print(msg)
 
                             key, val = msg.split('>')
 

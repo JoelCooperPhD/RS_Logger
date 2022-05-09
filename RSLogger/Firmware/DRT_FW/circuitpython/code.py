@@ -181,6 +181,7 @@ def next_trial():
     time_now = int(time.monotonic() * 1000)
     stimulus.duty_cycle = int((cfg[intensity] *  65535) / 255)
     dotstar[0] = (255,0,0)
+    print(end_)
     print(stm_1)
     trial_start_time = time_now
 
@@ -199,12 +200,10 @@ def next_trial():
 def send_results():
     start_millis = trial_start_time - exp_start_time
     print(trl_ + str(start_millis) + comma + str(trial_counter) + comma + str(reaction_time))
-    print(end_)
 
 def end():
     global exp_running
     exp_running = False
-    stimulustime_now = False
     dotstar[0] = (0,0,255)
     stimulus.duty_cycle = 0
     print(stm_0)
