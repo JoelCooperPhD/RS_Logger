@@ -21,7 +21,10 @@ queues = {'main': SimpleQueue(),
           'ui_vog': SimpleQueue(),
 
           'hi_wdrt': SimpleQueue(),
-          'ui_wdrt': SimpleQueue()
+          'ui_wdrt': SimpleQueue(),
+
+          'hi_wvog': SimpleQueue(),
+          'ui_wvog': SimpleQueue()
           }
 
 

@@ -150,5 +150,3 @@ class VOG:
                         transition_time = time_now
 
             await asyncio.sleep(0)
-
-

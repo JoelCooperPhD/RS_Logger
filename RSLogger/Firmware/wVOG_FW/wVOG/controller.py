@@ -87,7 +87,7 @@ class WirelessVOG:
             self.get_battery()
 
         else:
-            self.broadcast("Unknown command")
+            self.broadcast(f"Unknown command: {msg}")
 
     ################################################
     # Lenses
@@ -118,8 +118,8 @@ class WirelessVOG:
         # cls: ms lenses in closed or opaque state
         # dbc: ms switch debounce
         # typ: type of experiment. Options are 'cycle', 'peek', 'eblind', 'direct'
-        # dta:
-        # srt:
+        # dta: send data at each transition of dta:1 else send at end of trial
+        # srt: start clear or opaque. If srt:1 then start clear else opaque
         # drk: opacity value between 0-100 when opaque
         # clr: opacity value between 0-100 when clear
 
@@ -221,3 +221,4 @@ class WirelessVOG:
     def broadcast(self, msg):
         self.serial.write(msg + '\n')
         asyncio.create_task(self.xb.transmit(msg + '\n'))
+

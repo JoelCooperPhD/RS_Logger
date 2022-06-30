@@ -5,6 +5,7 @@ from RSLogger.HardwareInterface.SFT_HI import SFT_HIController
 from RSLogger.HardwareInterface.DRT_HI import DRT_HIController
 from RSLogger.HardwareInterface.VOG_HI import VOG_HIController
 from RSLogger.HardwareInterface.wDRT_HI import WDRT_HIController
+from RSLogger.HardwareInterface.wVOG_HI import WVOG_HIController
 
 
 class LoggerHI:
@@ -19,6 +20,7 @@ class LoggerHI:
         devices = {'SFT':  SFT_HIController.SFTController(self.queues['main'], self.queues['hi_sft']),
                    'DRT':  DRT_HIController.DRTController(self.queues['main'], self.queues['hi_drt']),
                    'WDRT': WDRT_HIController.WDRTController(self.queues['main'], self.queues['hi_wdrt']),
+                   'WVOG': WVOG_HIController.WVOGController(self.queues['main'], self.queues['hi_wvog']),
                    'VOG':  VOG_HIController.VOGController(self.queues['main'], self.queues['hi_vog'])
                    }
         for d in devices:
