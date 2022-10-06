@@ -26,6 +26,11 @@ class wDRT:
 
             'set_vrb': self.set_verbose,
         }
+        
+        # USB
+        self.usb_attached = False
+        self.usb_detect = Pin('X1', mode=Pin.IN, pull=Pin.PULL_DOWN)
+        
         # Serial
         self.serial = serial
 
@@ -47,7 +52,7 @@ class wDRT:
 
         # MMC Save - The flash module stuck to the bottom of the unit
         self.headers = "Device_Unit,,, Block_ms, Trial, Reaction Time, Responses, UTC, Battery\n"
-        self.mmc = mmc.MMC()
+        self.mmc = mmc.MMC(self.delayed_broadcast)
 
         # Battery
         self.battery = battery.LipoReader()
@@ -55,14 +60,20 @@ class wDRT:
         # Xbee
         self.xb = xbee.Xbee(self.debug)
 
+    async def delayed_broadcast(self, msg):
+        while not self.xb._dest_addr:
+            await asyncio.sleep(.001)
+        self.broadcast(msg)
+
     # Asyncio Runner
     async def update(self):
         asyncio.create_task(self.button_runner())
         await asyncio.gather(
+            self.usb_attached_poller(),
             self.xb.run(),
             self.handle_serial_msg(),
-            self.handle_xb_msg(),
             self.handle_drt_msg(),
+            self.handle_xb_msg(),
         )
 
     # Event Handlers
@@ -72,11 +83,12 @@ class wDRT:
             while len(msg_l):
                 msg = msg_l.pop(0)
                 if "dta" in msg:
-                    msg += ",{}\n".format(self.battery.percent())
-                    self.mmc.write("wDRT_{},,,{}".format(self.xb.name_NI, msg[4:]))
-                    asyncio.create_task(self.xb.transmit(msg))
+                    msg += ",{}".format(self.battery.percent())
+                    if self.mmc.present:
+                        self.mmc.write("wDRT_{},,,{}".format(self.xb.name_NI, msg[4:]))
+                    self.broadcast(msg)
                 elif self.verbose:
-                    asyncio.create_task(self.xb.transmit(msg))
+                    self.broadcast(msg)
 
     async def handle_serial_msg(self):
         while True:
@@ -102,7 +114,7 @@ class wDRT:
     # Config File
     def get_cfg(self):
         msg = f"cfg>{self.cn.get_config_str()}"
-        asyncio.create_task(self.xb.transmit(msg))
+        self.broadcast(msg)
 
     def set_cfg(self, arg):
         self.cn.update(arg)
@@ -114,7 +126,8 @@ class wDRT:
 
     # Experiment
     def dta_rcd(self):
-        self.mmc.init(self.headers)
+        if self.mmc.present:
+            self.mmc.init(self.headers)
         asyncio.create_task(self.drt.start())
 
     def dta_pse(self):
@@ -138,13 +151,13 @@ class wDRT:
     def get_rtc(self):
         r = self.rtc.datetime()
         msg = "rtc>" + ','.join([str(v) for v in r])
-        asyncio.create_task(self.xb.transmit(msg))
+        self.broadcast(msg)
 
     # Battery
     def get_bat(self):
         percent = self.battery.percent()
         msg = f"bty>{percent}"
-        asyncio.create_task(self.xb.transmit(msg))
+        self.broadcast(msg)
 
     # Button Runner - execute drt.start and drt.stop commands from button presses
     async def button_runner(self):
@@ -155,8 +168,37 @@ class wDRT:
                 if self.drt.running:
                     self.drt.stop()
                 else:
-                    self.mmc.init(self.headers)
+                    if self.mmc.present:
+                        self.mmc.init(self.headers)
                     asyncio.create_task(self.drt.start())
                 down_t = 0
             await asyncio.sleep(1)
+            
 
+    
+    ################################################
+    # USB attached
+    async def usb_attached_poller(self):
+        attached_prior = False
+        attached = False
+        while True:
+            # self.broadcast(self.usb_detect.value())
+            attached = self.usb_detect.value()
+            if attached and not attached_prior:
+                self.attach_event()
+            if not attached and attached_prior:
+                self.detatch_event()
+            attached_prior = attached
+            await asyncio.sleep(1)
+            
+    def attach_event(self):
+        self.usb_attached = True
+
+    def detatch_event(self):
+        self.usb_attached = False
+        
+    ################################################
+    # USB attached
+    def broadcast(self, msg):
+        self.serial.write(str(msg) + '\n')
+        asyncio.create_task(self.xb.transmit(str(msg) + '\n'))

@@ -49,6 +49,7 @@ class DRT:
             self._stm_timer.run = True
             self._trl_timer.run = True
             asyncio.create_task(self._run_block())
+            self._rt_sw.stop()
             self._msg.append("stm>0")
 
     def stop(self):

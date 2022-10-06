@@ -1,28 +1,41 @@
 from pyb import RTC, MMCard
 import os
 import micropython
+from uasyncio import create_task, sleep
+from pyb import usb_mode
 
 micropython.alloc_emergency_exception_buf(100)
 
 
 class MMC:
-    def __init__(self):
-
+    def __init__(self, delayed_broadcast):
+        self._broadcast = delayed_broadcast
         self.mmc = MMCard()
         self.mmc_present = False
-        if self.mmc.info():
-            self.mount_mmc()
-            self.fname = None
-            self.rtc = RTC()
+        
+        if 'MSC' in usb_mode():
+            self.mmc.power(1)
 
-    def mount_mmc(self):
+            if self.mmc.info():
+                self.fname = None
+                self.rtc = RTC()
+                
+                create_task(self.mount_mmc())
+                self.present = True
+
+    async def mount_mmc(self):
+        while 1:
+            if self.mmc.info():
+                break
+            await sleep(1)
         try:
             os.mount(self.mmc, '/mmc')
             self.mmc_present = True
-        except:
-            from utilities import mmc_format
-            mmc_format.mmc_format()
-            print("Reformatted MMC.\nReset wVOG")
+        except Exception as e:
+            print(f'MMC Error: {e}')
+            # from utilities import mmc_format
+            # mmc_format.mmc_format()
+            
 
     def init(self, header):
         if self.mmc_present:
