@@ -98,8 +98,8 @@ class WDRTConfigWin:
                     fnc = self._var.get(new_key, None)
                     if fnc:
                         fnc.set(int(kv[1]))
-            except:
-                print("WDRT config KV error")
+            except Exception as e:
+                print(f"WDRT UI config KV error: {e}")
 
     # Custom upload
     def _custom_clicked(self):

@@ -147,7 +147,6 @@ class WVOGUIController:
                     self.devices[self._active_tab]['plot'].clear_all()
             except Exception as e:
                 pass
-                # print(f"vController _tab_changed_cb: {e}")
 
     def _lens_change_cb(self, lens, state):
         self._q_2_hi.put(f"wVOG,{self._active_tab}>{lens}_{state}>")

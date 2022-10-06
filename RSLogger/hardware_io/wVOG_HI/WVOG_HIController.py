@@ -1,9 +1,9 @@
-from asyncio import sleep
+from time import sleep
 from queue import SimpleQueue
 from serial import Serial
 from threading import Thread
 
-from digi.xbee.devices import XBeeDevice, RemoteRaw802Device, TransmitException
+from digi.xbee.devices import XBeeDevice, RemoteRaw802Device
 
 
 class WVOGController:
@@ -78,11 +78,8 @@ class WVOGController:
 
     @staticmethod
     def _send(socket, cmd, xcvr: XBeeDevice = None):
-        try:
-            if xcvr:
-                socket: RemoteRaw802Device
-                xcvr.send_data(socket, cmd)
-            else:
-                socket.write(str.encode(f'{cmd}\n'))
-        except (PermissionError, TransmitException) as e:
-            print(e)
+        if xcvr:
+            socket: RemoteRaw802Device
+            xcvr.send_data(socket, cmd)
+        else:
+            socket.write(str.encode(f'{cmd}\n'))

@@ -2,7 +2,6 @@ from asyncio import sleep
 from queue import SimpleQueue
 from serial import Serial
 from threading import Thread
-from time import gmtime
 
 from digi.xbee.devices import XBeeDevice, RemoteRaw802Device
 
@@ -40,11 +39,6 @@ class WDRTController:
             self._cond_name = val.split(':')[0]
 
         elif 'dta' in key    : self._log_to_csv(socket, val)
-
-    def _set_rtc(self, socket, xcvr):
-        tt = gmtime()
-        time_gmt = f"{tt[0]},{tt[1]},{tt[2]},{tt[6]},{tt[3]},{tt[4]},{tt[5]},123"
-        self._send(socket, f'set_rtc>{time_gmt}', xcvr)
 
     def _threaded_write(self, fpath, data):
         try:

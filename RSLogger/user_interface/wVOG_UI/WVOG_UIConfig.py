@@ -72,12 +72,12 @@ class VOGConfigWin:
         Separator(lf).grid(row=5, column=0, columnspan=3, sticky="NEWS", pady=5)
 
         # Button Mode
-        open_state = Checkbutton(lf, text="Start Clear", command=self._start_clear_clicked,
+        open_state = Checkbutton(lf, text="Start Clear",
                                   variable=self._UISettings['startOpen'], onvalue=1, offvalue=0)
         open_state.grid(row=6, column=0, sticky="EW", columnspan=2)
 
         # Control Mode
-        control_mode = Checkbutton(lf, text="Verbose Output:", command=self._verbose_outoput_clicked,
+        control_mode = Checkbutton(lf, text="Verbose Output:",
                                   variable=self._UISettings['printCycle'], onvalue=1, offvalue=0)
         control_mode.grid(row=6, column=1, sticky="EW", columnspan=2)
 
@@ -130,17 +130,6 @@ class VOGConfigWin:
             self._UISettings["closeDuration"].set('2147483647')
             self._UISettings["openDuration"].set('0')
             self._infSettings['openInf'].set(0)
-
-    def _start_clear_clicked(self):
-        if self._UISettings['startOpen'].get() == '1':
-            print(self._UISettings['startOpen'].get())
-        else:
-            print(self._UISettings['startOpen'].get())
-
-    def _verbose_outoput_clicked(self):
-        print("handling verbose output clicked")
-        if self._UISettings['printCycle'].get() == '1':
-            pass
 
     def _set_custom(self):
         self._push_settings_to_device()
@@ -208,19 +197,19 @@ class VOGConfigWin:
 
         vals = vals.split(',')
         for kv in vals:
-            try:
-                kv = kv.split(":")
-                if len(kv) == 2:
-                    new_key = recode_config(kv[0].strip(' '))
-                    fnc = self._UISettings.get(new_key, None)
-                    if fnc:
-                        fnc.set(kv[1])
-                        if new_key == 'openDuration':
-                            self._infSettings['openInf'].set(1) if kv[1] == '2147483647' \
-                                else self._infSettings['openInf'].set(0)
-                        elif new_key == 'closeDuration':
-                            self._UISettings['closeInf'].set(1) if kv[1] == '2147483647' \
-                                else self._UISettings['closeInf'].set(0)
+            # try:
+            kv = kv.split(":")
+            if len(kv) == 2:
+                new_key = recode_config(kv[0].strip(' '))
+                fnc = self._UISettings.get(new_key, None)
+                if fnc:
+                    fnc.set(kv[1])
+                    if new_key == 'openDuration':
+                        self._infSettings['openInf'].set(1) if kv[1] == '2147483647' \
+                            else self._infSettings['openInf'].set(0)
+                    elif new_key == 'closeDuration':
+                        self._infSettings['closeInf'].set(1) if kv[1] == '2147483647' \
+                            else self._infSettings['closeInf'].set(0)
 
-            except:
-                print(f"WDRT config KV error: {kv}")
+            # except:
+                # print(f"WVOG config KV error: {kv}")
