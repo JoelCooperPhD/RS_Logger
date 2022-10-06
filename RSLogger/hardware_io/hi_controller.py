@@ -107,6 +107,7 @@ class HWRoot:
                 key, val = re.split(r"[|>]", msg)
 
                 if key in ['dta', 'trl', 'data']:
+                    if val[0] == ',': val = val[1:]
                     val = f'{timestamp},{val}'
 
                 if msg:
