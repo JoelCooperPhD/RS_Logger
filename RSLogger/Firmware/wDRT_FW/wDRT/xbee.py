@@ -97,7 +97,8 @@ class Xbee:
     # Transmit Status
     def _API_0x8B(self, msg):
         if msg[8:9] != b'\x00':
-            print("Message not delivered")
+            pass
+            # print("Message not delivered")
 
     ##################
     # Transmit Request
@@ -126,7 +127,6 @@ class Xbee:
         try:
             self._cmd = msg[15:-1].decode('utf-8')
             self._cmd_event.set()
-            print(self._cmd)
         except UnicodeError:
             if self._debug:
                 print("Xbee: Unicode Error")

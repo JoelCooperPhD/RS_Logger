@@ -1,22 +1,38 @@
 from pyb import RTC, MMCard
 import os
 import micropython
+from uasyncio import create_task
+from pyb import usb_mode
+from uasyncio import create_task
 
 micropython.alloc_emergency_exception_buf(100)
 
 
 class MMC:
-    def __init__(self):
+    def __init__(self, delayed_broadcast):
+        self.delayed_broadcast = delayed_broadcast
         self.mmc = MMCard()
-        self.mount_mmc()
-        self.fname = None
-        self.rtc = RTC()
+        self.present = False
+        
+        if 'MSC' in usb_mode():
+            self.mmc.power(1)
 
-    def mount_mmc(self):
+            if self.mmc.info():
+                self.fname = None
+                self.rtc = RTC()
+                
+                create_task(self.mount_mmc())
+                self.present = True
+
+    async def mount_mmc(self):
+        while 1:
+            if self.mmc.info():
+                break
+            await sleep(1)
         try:
             os.mount(self.mmc, '/mmc')
         except:
-            print("Failed to mount")
+            pass
 
     def init(self, header):
         max_v = "0"

@@ -1,8 +1,9 @@
 import uasyncio as asyncio
 from wVOG import xb, config, lenses, battery, mmc, experiments, timers
 from pyb import RTC, USB_VCP, Pin, LED
-from time import time
+from time import time, sleep
 
+cfg_template = {"clr": "100", "cls": "1500", "dbc": "20", "srt": "1", "opn": "1500", "dta": "0", "drk": "0", "typ": "cycle"}
 
 class WirelessVOG:
     def __init__(self, serial):
@@ -13,18 +14,14 @@ class WirelessVOG:
 
         # Battery
         self.battery = battery.LipoReader()
-
-        # USB
-        self.usb_attached = False
-        self.usb_detect = Pin('X1', mode=Pin.IN, pull=Pin.PULL_DOWN)
-
-        # MMC Save - The flash module stuck to the bottom of the unit
-        self.headers = "Device_Unit,,, Block_ms, Trial, Reaction Time, Responses, UTC, Battery\n"
-        self.mmc = mmc.MMC()
-
+        
         # XB
         self.xb = xb.XB()
         self.xb.register_incoming_message_cb(self.handle_xb_msg)
+
+        # MMC Save - The flash module stuck to the bottom of the unit
+        self.headers = "Device_Unit,Controls Label,Host UTC,Trial,X,Total Task Time Time,Total Shutter Closed Time,Total Shutter Open Time,Battery Percent, Device UTC\n"
+        self.mmc = mmc.MMC(self.delayed_broadcast)
 
         # Realtime Clock
         self.rtc = RTC()
@@ -32,22 +29,25 @@ class WirelessVOG:
 
         # Config
         self.cfg = config.Configurator('wVOG/config.jsn')
+        self.verify_cfg()
 
         # Experiments
         self.exp_running = False
-        self.exp = experiments.VOG(self.cfg.config, self.send_results)
+        self.exp = experiments.VOG(self.cfg.config, self.send_results, self.update_lens, self.broadcast)
 
         # Trial
         self.trial_running = False
-
-    def update(self):
-        await asyncio.gather(
-            self.handle_serial_msg(),
-            self.usb_attached_poller(),
-        )
+        
+        asyncio.create_task(self.handle_serial_msg())
+        
 
     ################################################
     # Listen for incoming messages
+    async def delayed_broadcast(self, msg):
+        while not self.xb._dest_addr:
+            await asyncio.sleep(.001)
+        self.broadcast(msg)
+    
     async def handle_serial_msg(self):
         while True:
             if self.serial.any():
@@ -60,8 +60,8 @@ class WirelessVOG:
         self.parse_cmd(msg)
 
     def parse_cmd(self, msg):
-        if ":" in msg:
-            cmd, val = msg.split(":")
+        if ">" in msg:
+            cmd, val = msg.split(">")
         else:
             cmd, val = msg, ''
 
@@ -78,8 +78,8 @@ class WirelessVOG:
         # Configuration
         elif cmd == 'cfg':
             self.get_full_configuration()
-        elif cmd in self.cfg.config.keys():
-            self.update_config(cmd, val)
+        elif cmd == 'set':
+            self.update_config(val)
 
         elif cmd == 'rtc':
             self.update_rtc(val)
@@ -91,18 +91,19 @@ class WirelessVOG:
 
     ################################################
     # Lenses
-    def update_lens(self, lens, state):
+    def update_lens(self, lens, state, broadcast = True):
         # x:1 -> lenses clear
         # x:0 -> lenses opaque
         # a:1, b:1 -> a or b clear
         # a:0, b:0 -> a or b opaque
-
-        if state == '1':
+        if broadcast:
+            self.broadcast(f'{lens}>{str(int(state))}')
+        if int(state):
             if lens == 'x':
                 self.lenses.clear()
             elif lens in ['a', 'b']:
                 self.lenses.clear(lens)
-        elif state == '0':
+        else:
             if lens == 'x':
                 self.lenses.opaque()
             elif lens in ['a', 'b']:
@@ -111,9 +112,10 @@ class WirelessVOG:
     #### Config
     def get_full_configuration(self):
         # cfg
-        self.broadcast(f'cfg:{self.cfg.config}')
+        cfg_str = self.cfg.get_config_str()
+        self.broadcast(f'cfg>{cfg_str}')
 
-    def update_config(self, key, val):
+    def update_config(self, val):
         # opn: ms lenses in open or clear state
         # cls: ms lenses in closed or opaque state
         # dbc: ms switch debounce
@@ -124,9 +126,12 @@ class WirelessVOG:
         # clr: opacity value between 0-100 when clear
 
         if val != '':
-            self.cfg.update(f"{key}:{val}")
-        self.broadcast(f'{key}:{self.cfg.config[key]}')
-
+            kvs = val.split(',')
+            for kv in kvs:
+                self.cfg.update(kv)
+            cfg_str = self.cfg.get_config_str()
+            self.broadcast(f'cfg>{cfg_str}')
+            
     #### RTC
     def update_rtc(self, dt):
         if dt != '':
@@ -134,12 +139,12 @@ class WirelessVOG:
             self.rtc.datetime(rtc_tuple)
 
         r = self.rtc.datetime()
-        msg = "rtc:" + ','.join([str(v) for v in r])
+        msg = "rtc>" + ','.join([str(v) for v in r])
         self.broadcast(msg)
 
     #### Battery
     def get_battery(self):
-        self.broadcast(f'bty:{self.battery.percent()}')
+        self.broadcast(f'bty>{self.battery.percent()}')
 
     ################################################
     # Experiment
@@ -154,6 +159,8 @@ class WirelessVOG:
 
     def begin_experiment(self):
         self.exp_running = True
+        if self.mmc.mmc_present:
+            self.mmc.init(self.headers)
 
         self.trl_n = 0
         self.exp.begin_experiment()
@@ -189,35 +196,25 @@ class WirelessVOG:
         self.exp.end_trial()
 
     ################################################
-    # USB attached
-    async def usb_attached_poller(self):
-        attached_prior = False
-        attached = False
-        while True:
-            attached = self.usb_detect.value()
-            if attached and not attached_prior:
-                self.attach_event()
-            if not attached and attached_prior:
-                self.detatch_event()
-            attached_prior = attached
-            await asyncio.sleep(1)
-
-    def attach_event(self):
-        self.usb_attached = True
-        self.broadcast("Attached")
-
-    def detatch_event(self):
-        self.usb_attached = False
-        self.broadcast("Removed")
-
-    ################################################
     #
+    def verify_cfg(self):
+        if len(cfg_template) != len(self.cfg.config):
+            self.cfg.update(cfg_template)
+        for key in self.cfg.config:
+            if self.cfg.config[key] == "":
+                self.cfg.update(cfg_template)
+                break
+
     def send_results(self, dta):
-        xb_name = f"wVOG_{self.xb.name_NI}"
+        # xb_name = f"wVOG_{self.xb.name_NI}"
         utc = time() + 946684800
-        msg = f"dta:{xb_name},{utc},{self.trl_n},{dta}"
+        msg = f"dta>,{self.trl_n},{dta},{self.battery.percent()},{utc}"
+        
         self.broadcast(msg)
+        if self.mmc.mmc_present:
+            self.mmc.write(f"{self.xb.name_NI},,{msg[4:]}\n")
 
     def broadcast(self, msg):
-        self.serial.write(msg + '\n')
         asyncio.create_task(self.xb.transmit(msg + '\n'))
+        self.serial.write(msg + '\n')
+        

@@ -1,11 +1,10 @@
 from wVOG import controller
-from uasyncio import run
+from uasyncio import run, get_event_loop
 
-serial = pyb.USB_VCP()
-
-def run_wvog():
-    wvog = controller.WirelessVOG(serial)
-    run(wvog.update())
+async def wVOG():
+    wVOG = controller.WirelessVOG(pyb.USB_VCP())
+    Loop = get_event_loop()
+    await Loop.run_forever()
 
 if __name__ is '__main__':
-    run_wvog()
+    run(wVOG())

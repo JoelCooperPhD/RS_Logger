@@ -86,13 +86,13 @@ class ABTimeAccumulator:
         self._i = False
         self.running = False
 
-    def start(self, now=None, start_closed=False):
+    def start(self, now=None, start_open=True):
         if not now:
             now = ticks_ms()
         self._start_ms, self._toggle_ms = now, now
         self._accumulator = [0, 0]
         self.running = True
-        self._i = start_closed
+        self._i = start_open
         return self._state(now)
 
     def stop(self):

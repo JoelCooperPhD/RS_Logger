@@ -86,8 +86,8 @@ class AuditoryStimulus:
             
         self._volume = val * 127 // 100 
         
-        self._spi.write(b'\x00')
-        self._spi.write((self._volume).to_bytes(1, 'little'))
+        self._spi._log_to_csv(b'\x00')
+        self._spi._log_to_csv((self._volume).to_bytes(1, 'little'))
         
         self._cs.value(1)
     

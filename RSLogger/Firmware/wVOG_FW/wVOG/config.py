@@ -19,16 +19,21 @@ class Configurator:
                 c = cfgs.split(",")
                 for cnf in c:
                     kv = cnf.split(':')
-                    self.config.update({kv[0]: int(kv[1])})
+                    self.config.update({kv[0]: kv[1]})
             except:
                 pass
         elif isinstance(cfgs, dict):
-            self.config.update(cfgs)
+            print("new dict...")
+            self.config = cfgs
         self._save()
 
     def _load(self):
-        with open(self._fname, 'r') as infile:
-            return loads(infile.read())
+        try:
+            with open(self._fname, 'r') as infile:
+                return loads(infile.read())
+        except OSError:
+            with open(self._fname, 'w') as infile:
+                return dict()
 
     def _save(self):
         with open(self._fname, 'w') as outfile:

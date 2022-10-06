@@ -99,6 +99,7 @@ class XB:
                 self._dest_addr = DH + DL
                 break
             await asyncio.sleep_ms(500)
+            
 
     async def _get_xb_name(self):
         n = await asyncio.create_task(self.get_AT(b'NI'))
