@@ -155,7 +155,7 @@ class WDRTUIController:
 
     def _update_stim_data(self, arg, unit_id):
         if self._running:
-            ts, trial_n, rt, clicks, dev_utc, bty = arg.strip().split(',')
+            block_ms, ts, trial_n, rt, clicks, dev_utc, bty = arg.strip().split(',')
             if unit_id == self._active_tab:
                 if rt == "-1":
                     self.devices[unit_id]['plot'].rt_update(unit_id, -.0001)
