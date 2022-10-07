@@ -26,11 +26,13 @@ class wDRT:
 
             'set_vrb': self.set_verbose,
         }
-        
+        self.recording = False
+        self.pausing = False
+
         # USB
         self.usb_attached = False
         self.usb_detect = Pin('X1', mode=Pin.IN, pull=Pin.PULL_DOWN)
-        
+
         # Serial
         self.serial = serial
 
@@ -92,10 +94,13 @@ class wDRT:
 
     async def handle_serial_msg(self):
         while True:
-            if self.serial.any():
-                cmd = self.serial.read()
-                cmd = cmd.strip().decode('utf-8')
-                self.parse_cmd(cmd)
+            try:
+                if self.serial.any():
+                    cmd = self.serial.read()
+                    cmd = cmd.strip().decode('utf-8')
+                    self.parse_cmd(cmd)
+            except:
+                pass
             await asyncio.sleep(0)
 
     async def handle_xb_msg(self):
@@ -125,13 +130,25 @@ class wDRT:
         self.get_cfg()
 
     # Experiment
+
     def dta_rcd(self):
+        if not self.recording:
+            self.recording = True
+            asyncio.create_task(self._dta_rcd())
+
+    async def _dta_rcd(self):
         if self.mmc.present:
             self.mmc.init(self.headers)
-        asyncio.create_task(self.drt.start())
+        await asyncio.create_task(self.drt.start())
 
     def dta_pse(self):
-        self.drt.stop()
+        if self.recording and not self.pausing:
+            asyncio.create_task(self._dta_pse())
+
+    async def _dta_pse(self):
+        await asyncio.create_task(self.drt.stop())
+        self.recording = False
+        self.pausing = False
 
     def set_verbose(self, arg):
         self.verbose = True if arg == '1' else False
@@ -173,9 +190,7 @@ class wDRT:
                     asyncio.create_task(self.drt.start())
                 down_t = 0
             await asyncio.sleep(1)
-            
 
-    
     ################################################
     # USB attached
     async def usb_attached_poller(self):
@@ -190,15 +205,16 @@ class wDRT:
                 self.detatch_event()
             attached_prior = attached
             await asyncio.sleep(1)
-            
+
     def attach_event(self):
         self.usb_attached = True
 
     def detatch_event(self):
         self.usb_attached = False
-        
+
     ################################################
     # USB attached
     def broadcast(self, msg):
         self.serial.write(str(msg) + '\n')
         asyncio.create_task(self.xb.transmit(str(msg) + '\n'))
+
