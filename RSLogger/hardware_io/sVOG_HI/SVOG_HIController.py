@@ -31,6 +31,8 @@ class SVOGController:
 
         elif key == 'nhtsa'           : self._set_cfg_nhtsa(serial_device)
 
+        elif key == 'cond'            : self._cond_name = val
+
         elif key == 'data'            : self._log_results(serial_device.port, val)
 
     def _get_cfg(self, serial_conn):
