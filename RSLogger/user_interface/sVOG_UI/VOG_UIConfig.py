@@ -142,7 +142,6 @@ class VOGConfigWin:
         self._q_out.put(f"sVOG,{self._active_tab}>{vals}>")
 
     def update_fields(self, key, val):
-        print(f'key: {key} val: {val}')
         if key == 'configClickMode':
             val = self.click_mode[int(val)]
         elif key == 'configButtonControl' or key == 'buttonControl':

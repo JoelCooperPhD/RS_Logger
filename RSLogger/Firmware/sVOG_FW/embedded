@@ -1,5 +1,6 @@
-#include <EEPROM.h>
 #include <Arduino.h>
+#include <EEPROM.h>
+
 #define lens_pin 6
 #define button_pin 2
 
