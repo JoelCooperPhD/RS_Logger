@@ -1,5 +1,5 @@
-from json import loads, dumps
-
+import json
+import uos as os
 
 class Configurator:
     def __init__(self, fname):
@@ -9,8 +9,7 @@ class Configurator:
     def get_config_str(self):
         cnf = ""
         for i in self.config:
-            cnf += i + ":"
-            cnf += str(self.config[i]) + ","
+            cnf += "{}:{},".format(i, self.config[i])
         return cnf[:-1]
 
     def update(self, cfgs):
@@ -21,21 +20,25 @@ class Configurator:
                     kv = cnf.split(':')
                     self.config.update({kv[0]: kv[1]})
             except:
-                pass
+                print("Error: Invalid configuration string.")
         elif isinstance(cfgs, dict):
-            print("new dict...")
             self.config = cfgs
+        else:
+            print("Error: Invalid input for updating configuration.")
         self._save()
 
     def _load(self):
-        try:
+        if self._fname in os.listdir():
             with open(self._fname, 'r') as infile:
-                return loads(infile.read())
-        except OSError:
+                try:
+                    return json.loads(infile.read())
+                except ValueError:
+                    print("Error: Configuration file contains invalid JSON.")
+                    return dict()
+        else:
             with open(self._fname, 'w') as infile:
                 return dict()
 
     def _save(self):
         with open(self._fname, 'w') as outfile:
-            outfile.write(dumps(self.config))
-
+            outfile.write(json.dumps(self.config))

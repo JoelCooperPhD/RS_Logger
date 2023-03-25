@@ -8,50 +8,86 @@ micropython.alloc_emergency_exception_buf(100)
 
 
 class MMC:
-    def __init__(self, delayed_broadcast):
-        self._broadcast = delayed_broadcast
+    """
+    A class that interfaces with the solid state memory attached to the botton of the pyboard using an MMCard object.
+
+    Attributes:
+        mmc (MMCard): An instance of the MMCard class used to interface with the memory card.
+        mmc_present (bool): A flag indicating whether the memory card is present.
+        filename (str): The name of the file to write data to.
+        rtc (RTC): An instance of the RTC class used to get the current date and time.
+    """
+
+    def __init__(self):
+        """
+        Initializes the MMC class and checks if the memory card is present.
+        """
         self.mmc = MMCard()
         self.mmc_present = False
-        
+
+        # Check if the USB device is in mass storage device mode and power on the memory card if available
         if 'MSC' in usb_mode():
             self.mmc.power(1)
 
+            # Check if the memory card is present
             if self.mmc.info():
-                self.fname = None
+                self.filename = None
                 self.rtc = RTC()
-                
+
+                # Start a coroutine to mount the memory card
                 create_task(self.mount_mmc())
-                self.present = True
+
+                self.mmc_present = True
 
     async def mount_mmc(self):
-        while 1:
+        """
+        Coroutine that mounts the memory card.
+        """
+        while True:
             if self.mmc.info():
                 break
             await sleep(1)
         try:
             os.mount(self.mmc, '/mmc')
             self.mmc_present = True
+            
         except Exception as e:
             print(f'MMC Error: {e}')
             # from utilities import mmc_format
             # mmc_format.mmc_format()
-            
 
     def init(self, header):
-        if self.mmc_present:
-            max_v = "0"
-            rtc = self.rtc.datetime()
-            dt = "{}-{}-{}".format(rtc[0], rtc[1], rtc[2])
-            for f in os.listdir('/mmc'):
-                kv = f.split("_")
-                if kv[0].isdigit() and int(kv[0]) >= int(max_v):
-                    max_v = str(int(kv[0]) + 1)
+        """
+        Initializes a new file to write data to.
 
-            self.fname = "/mmc/{}_{}.txt".format(max_v, dt)
-            with open(self.fname, 'w') as outfile:
+        Args:
+            header (str): The header text to write to the file.
+        """
+        if self.mmc_present:
+            max_version = "0"
+            rtc = self.rtc.datetime()
+            date_str = "{}-{}-{}".format(rtc[0], rtc[1], rtc[2])
+
+            # Check for existing files and get the highest version number
+            for file in os.listdir('/mmc'):
+                key_value = file.split("_")
+                if key_value[0].isdigit() and int(key_value[0]) >= int(max_version):
+                    max_version = str(int(key_value[0]) + 1)
+
+            # Create a filename with the highest version number and current date
+            self.filename = "/mmc/{}_{}.txt".format(max_version, date_str)
+
+            # Write the header to the file
+            with open(self.filename, 'w') as outfile:
                 outfile.write(header)
 
     def write(self, data):
+        """
+        Writes data to the file specified by the filename attribute.
+
+        Args:
+            data (str): The data to write to the file.
+        """
         if self.mmc_present:
-            with open(self.fname, 'a') as outfile:
+            with open(self.filename, 'a') as outfile:
                 outfile.write(data)

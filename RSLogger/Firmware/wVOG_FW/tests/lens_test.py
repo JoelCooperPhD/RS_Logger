@@ -1,62 +1,60 @@
 import uasyncio as asyncio
-import time
 from wVOG.lenses import Lenses
 
-
 class LensTest:
-    def __init__(self, verbose=False):
+    def __init__(self, verbose=False, delay=1.0):
         self._verbose = verbose
         self._lenses = Lenses()
+        self._delay = delay
     
-    def run_test(self, repeats=5):
+    async def run_test(self, repeats=5):
         print("Initiating lens test\n")
-        await asyncio.create_task(self._toggle(times=repeats, lenses=['a', 'b']))
-        await asyncio.create_task(self._toggle(times=repeats, lenses=['a']))
-        await asyncio.create_task(self._toggle(times=repeats, lenses=['b']))
-        await asyncio.create_task(self._wink(times=repeats, wink='a'))
-        await asyncio.create_task(self._wink(times=repeats, wink='b'))
-        
-        self._lenses.clear()
-        await asyncio.sleep(.5)
-        self._lenses.opaque()
-        await asyncio.sleep(.5)
-        
+
+        scenarios = [
+            ("Toggle both lenses", [Lenses.LENS_A, Lenses.LENS_B]),
+            ("Toggle lens A", [Lenses.LENS_A]),
+            ("Toggle lens B", [Lenses.LENS_B]),
+            ("Wink lens A", Lenses.LENS_A),
+            ("Wink lens B", Lenses.LENS_B),
+        ]
+
+        for description, lenses in scenarios:
+            print(f"Scenario: {description}")
+            if isinstance(lenses, list):
+                await self._toggle(times=repeats, lenses=lenses)
+            else:
+                await self._wink(times=repeats, wink=lenses)
+            print()
+
         print("\nLens test complete\n")
-        
-    async def _toggle(self, times, lenses=['a', 'b']):
+
+    async def _toggle(self, times, lenses):
         for i in range(times):
             if self._verbose:
                 print(f"Toggle {lenses}: {i+1} / {times}")
-                
+
             self._lenses.clear(lenses)
-            await asyncio.sleep(.5)
-            
+            await asyncio.sleep(self._delay)
+
             self._lenses.opaque(lenses)
-            await asyncio.sleep(.5)
-    
-    async def _wink(self, times, wink='a'):
-        _open = 'a' if wink == 'b' else 'b'
-        _close = 'a' if wink == 'a' else 'b'
-        
-        self._lenses.clear(['a', 'b'])
-        
+            await asyncio.sleep(self._delay)
+
+    async def _wink(self, times, wink):
+        _open = Lenses.LENS_A if wink == Lenses.LENS_B else Lenses.LENS_B
+        _close = Lenses.LENS_A if wink == Lenses.LENS_A else Lenses.LENS_B
+
+        self._lenses.clear([Lenses.LENS_A, Lenses.LENS_B])
+
         for i in range(times):
             if self._verbose:
                 print(f"Wink {wink}: {i+1} / {times}")
-            
-            await asyncio.sleep(.5)
+
+            await asyncio.sleep(self._delay)
             self._lenses.opaque(_close)
             self._lenses.clear(_open)
-            
-            await asyncio.sleep(.5)
-            self._lenses.clear(['a', 'b'])
-            
 
+            await asyncio.sleep(self._delay)
+            self._lenses.clear([Lenses.LENS_A, Lenses.LENS_B])
 
-################################################
-# Test call example. Copy and paste into REPL
-'''
-from uasyncio import run
-from tests.lens_test import LensTest
-run(LensTest(verbose = True).run_test(5))
-'''
+if __name__ == "__main__":
+    asyncio.run(LensTest(verbose=True, delay=1.0).run_test(5))
