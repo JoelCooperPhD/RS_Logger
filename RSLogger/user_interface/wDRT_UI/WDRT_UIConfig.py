@@ -4,10 +4,13 @@ from queue import SimpleQueue
 from math import ceil
 from PIL import Image, ImageTk
 from os import path
+from time import time_ns
 
 
 class WDRTConfigWin:
-    def __init__(self):
+    def __init__(self, debug=True):
+        self._debug = debug
+        if self._debug: print(f"{time_ns()} WDRT_UIConfig.__init__")
         self._var = {"name": StringVar(), "lowerISI": StringVar(),
                      "upperISI": StringVar(), "stimDur": StringVar(),
                      "debounce": StringVar(), "intensity": StringVar(),
@@ -20,6 +23,7 @@ class WDRTConfigWin:
         self._custom_cb = None
 
     def show(self, uid):
+        if self._debug: print(f"{time_ns()} WDRT_UIConfig.show")
         self.uid = uid
 
         win = Toplevel()
@@ -35,7 +39,6 @@ class WDRTConfigWin:
         lf = LabelFrame(win, text="Runtime Parameters")
         lf.grid(row=0, column=0, sticky="NEWS", pady=1, padx=2)
         lf.grid_columnconfigure(1, weight=1)
-
         # Open Duration
         Label(lf, text="Upper ISI (ms):").grid(row=5, column=0, sticky="NEWS", pady=1)
         Entry(lf, textvariable=self._var['upperISI'], width=7).grid(row=5, column=2, sticky="W", pady=1)
@@ -60,10 +63,10 @@ class WDRTConfigWin:
         button_iso = Button(lf, text="Upload ISO", command=self._iso_clicked)
         button_iso.grid(row=11, column=0, columnspan=3, pady=(0, 5), padx=2, sticky="NEWS")
 
-        win.after(0, win.deiconify())
+        win.deiconify()
 
-    @staticmethod
-    def _filter_entry(val, default_value,  lower, upper):
+    def _filter_entry(self, val, default_value,  lower, upper):
+        if self._debug: print(f"{time_ns()} WDRT_UIConfig._filter_entry")
         if val.isnumeric():
             val = int(val)
             if val < lower or val > upper:
@@ -73,6 +76,7 @@ class WDRTConfigWin:
         return val
 
     def _clear_fields(self):
+        if self._debug: print(f"{time_ns()} WDRT_UIConfig._clear_fields")
         self._var['stimDur'].set("")
         self._var['lowerISI'].set("")
         self._var['upperISI'].set("")
@@ -80,6 +84,7 @@ class WDRTConfigWin:
         self._var['intensity'].set("")
 
     def parse_config(self, vals):
+        if self._debug: print(f"{time_ns()} WDRT_UIConfig.parse_config {vals}")
         def recode_config(key):
             return {
                 'ONTM': 'stimDur',
@@ -103,6 +108,7 @@ class WDRTConfigWin:
 
     # Custom upload
     def _custom_clicked(self):
+        if self._debug: print(f"{time_ns()} WDRT_UIConfig._custom_clicked")
         low = self._filter_entry(self._var['lowerISI'].get(), 3000, 0, 65535)
         high = self._filter_entry(self._var['upperISI'].get(), 5000, low, 65535)
         intensity = ceil(self._filter_entry(self._var['intensity'].get(), 100, 0, 100))
@@ -114,13 +120,16 @@ class WDRTConfigWin:
         self._custom_cb(msg)
 
     def register_custom_cb(self, cb):
+        if self._debug: print(f"{time_ns()} WDRT_UIConfig.register_custom_cb")
         self._custom_cb = cb
 
     # ISO upload
     def _iso_clicked(self):
+        if self._debug: print(f"{time_ns()} WDRT_UIConfig._iso_clicked")
         self._clear_fields()
         self._iso_cb()
 
     def register_iso_cb(self, cb):
+        if self._debug: print(f"{time_ns()} WDRT_UIConfig.register_iso_cb")
         self._iso_cb = cb
 
