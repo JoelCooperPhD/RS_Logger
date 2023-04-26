@@ -2,12 +2,17 @@ from asyncio import sleep
 from queue import SimpleQueue
 from serial import Serial
 from threading import Thread
+import re
+from time import time_ns
 
 from digi.xbee.devices import XBeeDevice, RemoteRaw802Device
 
 
 class WDRTController:
-    def __init__(self, q_out):
+    def __init__(self, q_out, debug=True):
+        self._debug = debug
+        if self._debug: print("WDRT_HIController.__init__")
+
         self._q_2_ui: SimpleQueue = q_out
 
         # Writer
@@ -33,7 +38,7 @@ class WDRTController:
         elif key == "start"  : self._send(socket, 'dta_rcd>', xcvr)
         elif key == "stop"   : self._send(socket, 'dta_pse>', xcvr)
 
-        elif key == "fpath"  : self._file_path = f"{val}/DRT.txt"
+        elif key == "fpath"  : self._set_file_path(socket, f"{val}/DRT.txt")
 
         elif 'cond' in key   :
             self._cond_name = val.split(':')[0]
@@ -55,11 +60,12 @@ class WDRTController:
                 with open(_path, 'a') as writer:
                     writer.write(_results + '\n')
             except (PermissionError, FileNotFoundError):
-                pass
+                print(f'path: {_path}, data: {_results}')
 
         if self._file_path:
             if isinstance(unit_id, RemoteRaw802Device):
-                unit_id = unit_id.get_node_id().split('_')[1]
+                match = re.match(r"(\w+)\s*[_ ]?\s*(\d+)", unit_id.get_node_id())
+                unit_id = match.groups()[1]
             elif isinstance(unit_id, Serial):
                 unit_id: Serial
                 unit_id = unit_id.port
@@ -68,6 +74,15 @@ class WDRTController:
             file_path = f"{self._file_path}"
             t = Thread(target=_write, args=(file_path, packet))
             t.start()
+
+    def _set_file_path(self, unit_id, path):
+        self._file_path = f"{path}"
+        headers = "Device_Unit,Label,Data_Receive_sec.ms, Block_ms, Trial, Reaction Time, Responses, UTC, Battery"
+        try:
+            with open(path, 'a') as writer:
+                writer.write(headers + '\n')
+        except (PermissionError, FileNotFoundError):
+            if self._debug: print(f'{time_ns()} WDRT_HIController {path}, {headers}')
 
     def _send(self, socket, cmd, xcvr: XBeeDevice = None):
         if xcvr:

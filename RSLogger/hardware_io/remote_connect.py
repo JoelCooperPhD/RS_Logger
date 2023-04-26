@@ -1,4 +1,5 @@
-from digi.xbee.devices import XBeeNetwork, NetworkDiscoveryStatus, XBeeMessage, XBeeDevice
+from digi.xbee.devices import XBeeNetwork, NetworkDiscoveryStatus, XBeeMessage
+import re
 
 
 class RemoteConnectionManager:
@@ -20,9 +21,12 @@ class RemoteConnectionManager:
 
     def _msg_received(self, msg: XBeeMessage):
         if msg:
-            device_type, dev_id = msg.remote_device.get_node_id().split('_')
-            msg_ = msg.data
-            self._msg_callback(device_type, dev_id, msg.data, msg.timestamp)
+            id = msg.remote_device.get_node_id()
+            if id:
+                pattern = r"(\w+)\s*[_ ]?\s*(\d+)"
+                match = re.match(pattern, id)
+                device_type, dev_id = match.groups()[0], match.groups()[1]
+                self._msg_callback(device_type, dev_id, msg.data, msg.timestamp)
 
     ####################################################
     # Remote Xbee devices

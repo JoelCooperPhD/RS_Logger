@@ -5,7 +5,7 @@ from uasyncio.lock import Lock
 
 
 class Xbee:
-    def __init__(self, debug):
+    def __init__(self, debug=False):
         
         self._debug = debug
 
@@ -34,17 +34,24 @@ class Xbee:
     # UART
     async def run(self):
         while True:
+            if self._debug: print(f"xbee.run: awaiting msg")
             msg = await self._reader.read(-1)
-            if msg[3:4] == b'\x90':
+            cmd = msg[3:4]
+            if cmd == b'\x90':
                 self._API_0x90(msg)  # Receive Packet
-            elif msg[3:4] == b'\x88':
+            elif cmd == b'\x91':
+                self._API_0x91(msg) # Receive Packet
+            elif cmd == b'\x8A':
+                self._API_0x8A(msg)
+            elif cmd == b'\x88':
                 self._API_0x88(msg)  # AT Command Response
-            elif msg[3:4] == b'\x8b':
+            elif cmd == b'\x8b':
                 self._API_0x8B(msg)  # Transmit Status
             else:
-                print("Message not handled: {}".format(msg[3:4]))
+                if self._debug: print(f"xbee.run: Message not handled {cmd} {msg}")
 
     async def _send_AT_frame(self, cmd):
+        if self._debug: print(f"xbee._send_AT_frame: {cmd}")
         async with self._uart_lock:
             await asyncio.create_task(self._writer.awrite(cmd))
 
@@ -58,6 +65,7 @@ class Xbee:
         DH: Destitination High Address
         DL: Destination Low Address
         '''
+        if self._debug: print(f"xbee._get_AT: {cmd}")
         async with self._AT_lock:
             packet = self._AT_packetize(cmd)
             asyncio.create_task(self._send_AT_frame(packet))
@@ -65,13 +73,9 @@ class Xbee:
             self._AT_event.clear()
         return self._AT
 
-    # ---- AT Command Response Callback
-    def _API_0x88(self, arg):
-        self._AT = arg[8:-1]
-        self._AT_event.set()
-
     # ---- AT helper
     def _AT_packetize(self, cmd):
+        if self._debug: print(f"xbee._AT_packetize: {cmd}")
         start = b'\x7E'  # Start byte
         typ = b'\x08'  # Frame type
         fid = b'\x01'  # Frame ID
@@ -82,6 +86,7 @@ class Xbee:
 
     async def _sync_dest_addr(self):
         while True:  # Wait until the radio has found a controller
+            if self._debug: print(f"xbee._sync_dest_addr")
             if b'\x00' == await asyncio.create_task(self.get_AT(b'AI')):
                 DH = await asyncio.create_task(self.get_AT(b'DH'))
                 DL = await asyncio.create_task(self.get_AT(b'DL'))
@@ -90,26 +95,22 @@ class Xbee:
             await asyncio.sleep_ms(500)
 
     async def _get_xb_name(self):
+        if self._debug: print(f"xbee._get_xb_name")
         n = await asyncio.create_task(self.get_AT(b'NI'))
         self.name_NI = n.decode('utf-8').strip()
-
-    ##################
-    # Transmit Status
-    def _API_0x8B(self, msg):
-        if msg[8:9] != b'\x00':
-            pass
-            # print("Message not delivered")
 
     ##################
     # Transmit Request
     # ----send: 0x10
     async def transmit(self, msg):
+        if self._debug: print(f"xbee.transmit: {msg}")
         if self._dest_addr:
             packet = self._xmit_packetize(msg)
             asyncio.create_task(self._send_AT_frame(packet))
             await asyncio.sleep(0)
 
     def _xmit_packetize(self, cmd):
+        if self._debug: print(f"xbee._xmit_packetize: {cmd}")
         start = b'\x7E'  # Start byte
         typ = b'\x10'  # Frame type
         fid = b'\x01'  # Frame ID
@@ -122,16 +123,43 @@ class Xbee:
         mlen = bytes([0x00, len(packet)])  # Packet Length
         return start + mlen + packet + csum
 
-    # ---- Receive Packet Callback :0x90
+    # ---- Receive Packet Callback
+    def _API_0x88(self, arg):
+        if self._debug: print(f"xbee._API_0x88: {arg}")
+        self._AT = arg[8:-1]
+        self._AT_event.set()
+        
+    def _API_0x8B(self, msg):
+        if self._debug: print(f"xbee._API_0x8B: {msg}")
+        if msg[8:9] != b'\x00':
+            if self._debug: print(f"xbee._API_0x8B: MESSAGE NOT DELIVERED")
+            
     def _API_0x90(self, msg):
+        if self._debug: print(f"xbee._API_0x90: {msg}")
         try:
             self._cmd = msg[15:-1].decode('utf-8')
             self._cmd_event.set()
         except UnicodeError:
             if self._debug:
-                print("Xbee: Unicode Error")
+                print("xbee: Unicode Error")
+                
+    def _API_0x91(self, msg):
+        if self._debug: print(f"xbee._API_0x91: {msg}")
+        try:
+            cmd = msg[21:-1]
+            self._cmd = cmd.decode('utf-8')
+            self._cmd_event.set()
+        except UnicodeError:
+            if self._debug:
+                print("xbee: Unicode Error")
+                
+    def _API_0x8A(self, msg): # Modem status update
+        if self._debug: print(f"xbee._API_0x8A: {msg}")
+        else:
+            pass
         
     async def new_cmd(self):  # Await this to return command when available
+        if self._debug: print(f"xbee.new_cmd")
         await self._cmd_event.wait()
         self._cmd_event.clear()
 

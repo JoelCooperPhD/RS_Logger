@@ -97,9 +97,6 @@ class VOG:
                 if time.ticks_diff(now_ms, response_ms) >= debounce_dur:
                     debounced = True
 
-
-                    
-
             await asyncio.sleep(0)
 
     def _toggle_lenses(self, now_ms, results = None):

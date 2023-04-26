@@ -55,13 +55,3 @@ class LipoReader:
     def voltage(self):
         pin_val = sum([self._bat_pin.read() for i in range(50)]) / 50
         return ((pin_val / self._max_adc) * self._vref) * 1.24
-
-
-
-
-
-
-
-
-
-

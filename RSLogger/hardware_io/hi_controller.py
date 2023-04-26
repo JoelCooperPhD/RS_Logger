@@ -124,8 +124,14 @@ class HWRoot:
 
         # Split up remote devices and populate xb_devices
         for d in remote_devices:
-            SH_SL, dev, num = re.split(' - |_', str(d))
-            self._xb_devices[dev][num] = d
+            d: RemoteRaw802Device
+            pattern = r'(\w+)[\s_]*(\d+)'
+            match = re.match(pattern, d.get_node_id())
+            if match:
+                dev, num = match.groups()
+                if dev not in self._xb_devices:
+                    self._xb_devices[dev] = {}
+                self._xb_devices[dev][num] = d
 
         for dev in self._xb_devices:
             ports = list(self._xb_devices[dev].keys())

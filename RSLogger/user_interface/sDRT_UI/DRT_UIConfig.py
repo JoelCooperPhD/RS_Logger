@@ -73,7 +73,7 @@ class DRTConfigWin:
         button_iso = Button(lf2, text="ISO", command=self._set_iso_cb)
         button_iso.grid(row=0, column=0, pady=5, padx=20, sticky="NEWS")
 
-        win.after(0, win.deiconify)
+        win.deiconify()
 
     @staticmethod
     def _filter_entry(val, default_value,  lower, upper):
