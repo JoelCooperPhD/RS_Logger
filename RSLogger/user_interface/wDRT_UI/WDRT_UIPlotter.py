@@ -5,6 +5,8 @@ import numpy as np
 import time
 
 
+
+
 class Plotter:
     def __init__(self, frame):
         # Chart
@@ -105,11 +107,11 @@ class Plotter:
         self._plt[1].set_xlim([-62, 2])
 
         # RUN ANIMATION
-        if self._ani is None:
+        if not self._ani:
             self._ani = animation.FuncAnimation(self._fig,
                                                 self._animate,
                                                 init_func=lambda prt=unit_id: self._init_animation(prt),
-                                                interval=10, blit=True)
+                                                interval=10, blit=True, cache_frame_data = False)
 
         self._unit_ids.update([unit_id])
 

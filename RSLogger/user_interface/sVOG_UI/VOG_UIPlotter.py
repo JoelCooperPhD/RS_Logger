@@ -118,7 +118,7 @@ class Plotter:
             self._ani = animation.FuncAnimation(self._fig,
                                                 self._animate,
                                                 init_func=lambda prt=unit_id: self._init_animation(prt),
-                                                interval=10, blit=True)
+                                                interval=10, blit=True, cache_frame_data=False)
 
         self._unit_ids.update([unit_id])
 
