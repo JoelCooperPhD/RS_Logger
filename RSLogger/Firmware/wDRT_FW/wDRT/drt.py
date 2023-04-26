@@ -1,5 +1,5 @@
 import uasyncio as asyncio
-from time import sleep_ms
+from time import sleep_ms, ticks_us
 from uasyncio import Event
 from wDRT.timers import Countdown, Stopwatch
 from wDRT.stimuli import DRTStimulus
@@ -10,7 +10,9 @@ import gc
 
 
 class DRT:
-    def __init__(self, cfg):
+    def __init__(self, cfg, debug=False):
+        self._debug = debug
+        if self._debug: print("{} drt.__init___".format(ticks_us()))
         # self._cfg = {'ONTM': 1000, 'ISIL': 3000, 'ISIH': 5000, 'DBNC': 100, 'SPCT': 100}
         self._cfg = cfg
 
@@ -42,6 +44,7 @@ class DRT:
 
     async def start(self):
         if not self.running:
+            if self._debug: print("{} drt.start".format(ticks_us()))
             self.running = True
             self.stm.pulse()
             await asyncio.sleep_ms(self._new_duration())
@@ -55,6 +58,7 @@ class DRT:
     async def stop(self):
         if self.running:
             if not self.stopping:
+                if self._debug: print("{} drt.stop".format(ticks_us()))
                 self.stopping = True
                 self._stm_timer.run = False
                 self._trl_timer.run = False
@@ -63,6 +67,7 @@ class DRT:
                 self.stopping = False
 
     async def _run_block(self):
+        if self._debug: print("{} drt._run_block".format(ticks_us()))
         self._trl_n = 0
         self._blk_ms.start()
         while self.running and not self.stopping:
@@ -70,6 +75,7 @@ class DRT:
         self.stm.turn_off()
 
     async def _run_trial(self):
+        if self._debug: print("{} drt._run_trial".format(ticks_us()))
         # Initialize
         self.resp.reset()
         self._rt = -1
@@ -89,6 +95,7 @@ class DRT:
         )
 
     def _first_response_cb(self, e):
+        if self._debug: print("{} drt._first_response_cb".format(ticks_us()))
         self._rt = self._rt_sw.stop(e)
 
         if self.stm.turn_off():
@@ -97,15 +104,18 @@ class DRT:
         self._new_msg.set()
 
     def _click_cnt_cb(self):
+        if self._debug: print("{} drt._click_cnt_cb".format(ticks_us()))
         self._msg.append("clk>{}".format(self.resp.closure_cnt))
         self._new_msg.set()
 
     def _stim_on_dur_expired_cb(self, e):
+        if self._debug: print("{} drt._stim_on_dur_expired_cb".format(ticks_us()))
         if self.stm.turn_off():
             self._msg.append("stm>0")
             self._new_msg.set()
 
     def _trial_over_cb(self, blk_run_ms):
+        if self._debug: print("{} drt._trial_over_cb".format(ticks_us()))
         self._stop_utc = time() + 946684800
         self._msg.append("dta>{},{},{},{},{}".format(self._blk_ms.read(), self._trl_n, self._rt, self.resp.closure_cnt,
                                                      self._stop_utc))
@@ -113,15 +123,18 @@ class DRT:
         self._new_msg.set()
 
     def _memory_check(self):
+        if self._debug: print("{} drt._memory_check".format(ticks_us()))
         if gc.mem_free() < 20_000:
             gc.collect()
 
     def _new_duration(self):
+        if self._debug: print("{} drt._new_duration".format(ticks_us()))
         return randrange(self._cfg['ISIL'], self._cfg['ISIH'])
 
     async def new_msg(self):
         while True:
             await self._new_msg.wait()
+            if self._debug: print("{} drt.new_message".format(ticks_us()))
             self._new_msg.clear()
 
             return self._msg

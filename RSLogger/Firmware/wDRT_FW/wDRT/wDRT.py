@@ -9,7 +9,9 @@ from wDRT import battery, xbee, switch, config, mmc, drt
 
 
 class wDRT:
-    def __init__(self, serial):
+    def __init__(self, serial, debug=False):
+        self._debug = debug
+        
         self.events = {
             'get_cfg': self.get_cfg,
             'set_cfg': self.set_cfg,
@@ -30,14 +32,10 @@ class wDRT:
         self.pausing = False
 
         # USB
-        self.usb_attached = False
         self.usb_detect = Pin('X1', mode=Pin.IN, pull=Pin.PULL_DOWN)
 
         # Serial
         self.serial = serial
-
-        # Debug
-        self.debug = False
 
         # Experiment
         self.verbose = True
@@ -60,7 +58,7 @@ class wDRT:
         self.battery = battery.LipoReader()
 
         # Xbee
-        self.xb = xbee.Xbee(self.debug)
+        self.xb = xbee.Xbee()
 
     async def delayed_broadcast(self, msg):
         while not self.xb._dest_addr:
@@ -71,7 +69,6 @@ class wDRT:
     async def update(self):
         asyncio.create_task(self.button_runner())
         await asyncio.gather(
-            self.usb_attached_poller(),
             self.xb.run(),
             self.handle_serial_msg(),
             self.handle_drt_msg(),
@@ -87,7 +84,7 @@ class wDRT:
                 if "dta" in msg:
                     msg += ",{}".format(self.battery.percent())
                     if self.mmc.present:
-                        self.mmc.write("wDRT_{},,,{}".format(self.xb.name_NI, msg[4:]))
+                        self.mmc.write("{},,,{}\n".format(self.xb.name_NI, msg[4:]))
                     self.broadcast(msg)
                 elif self.verbose:
                     self.broadcast(msg)
@@ -109,8 +106,10 @@ class wDRT:
             self.parse_cmd(cmd)
 
     def parse_cmd(self, cmd):
+        if self._debug: print(f"parse_cmd: {cmd}")
         if ">" in cmd:
             kv = cmd.split(">")
+            
             if len(kv[1]):
                 self.events.get(kv[0], lambda: print("Invalid CB"))(kv[1])
             else:
@@ -130,8 +129,8 @@ class wDRT:
         self.get_cfg()
 
     # Experiment
-
     def dta_rcd(self):
+        if self._debug: print("wDRT.dta_rcd")
         if not self.recording:
             self.recording = True
             asyncio.create_task(self._dta_rcd())
@@ -140,38 +139,43 @@ class wDRT:
         if self.mmc.present:
             self.mmc.init(self.headers)
         await asyncio.create_task(self.drt.start())
+        if self._debug: print("wDRT._dta_rcd")
 
     def dta_pse(self):
+        if self._debug: print("wDRT.dta_pse")
         if self.recording and not self.pausing:
             asyncio.create_task(self._dta_pse())
 
     async def _dta_pse(self):
         await asyncio.create_task(self.drt.stop())
+        if self._debug: print("wDRT._dta_pse")
         self.recording = False
         self.pausing = False
 
     def set_verbose(self, arg):
+        if self._debug: print(f"wDRT.set_verbose {arg}")
         self.verbose = True if arg == '1' else False
 
     # Stimulus
     def set_stm(self, arg):
+        if self._debug: print(f"wDRT.set_stm: {arg}")
         self.drt.stm.turn_on() if arg == '1' else self.drt.stm.turn_off()
 
     # Time
     def set_rtc(self, dt: str):
+        if self._debug: print(f"wDRT.set_rtc: {dt}")
         rtc_tuple = tuple([int(i) for i in dt.split(',')])
         self.rtc.datetime(rtc_tuple)
 
-        if self.debug:
-            self.get_rtc()
-
     def get_rtc(self):
+        if self._debug: print(f"wDRT.get_rtc")
         r = self.rtc.datetime()
         msg = "rtc>" + ','.join([str(v) for v in r])
         self.broadcast(msg)
 
     # Battery
     def get_bat(self):
+        if self._debug: print("wDRT.get_bat")
         percent = self.battery.percent()
         msg = f"bty>{percent}"
         self.broadcast(msg)
@@ -180,6 +184,7 @@ class wDRT:
     async def button_runner(self):
         down_t = 0
         while True:
+            if self._debug: print("wDRT.button_runner")
             down_t = down_t + 1 if self.drt.resp.value() == 0 else 0
             if down_t == 5:
                 if self.drt.running:
@@ -192,28 +197,6 @@ class wDRT:
             await asyncio.sleep(1)
 
     ################################################
-    # USB attached
-    async def usb_attached_poller(self):
-        attached_prior = False
-        attached = False
-        while True:
-            # self.broadcast(self.usb_detect.value())
-            attached = self.usb_detect.value()
-            if attached and not attached_prior:
-                self.attach_event()
-            if not attached and attached_prior:
-                self.detatch_event()
-            attached_prior = attached
-            await asyncio.sleep(1)
-
-    def attach_event(self):
-        self.usb_attached = True
-
-    def detatch_event(self):
-        self.usb_attached = False
-
-    ################################################
-    # USB attached
     def broadcast(self, msg):
         self.serial.write(str(msg) + '\n')
         asyncio.create_task(self.xb.transmit(str(msg) + '\n'))
