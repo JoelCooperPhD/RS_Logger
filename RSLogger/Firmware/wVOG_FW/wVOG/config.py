@@ -1,18 +1,49 @@
 import json
 import uos as os
+from time import ticks_us
 
 class Configurator:
-    def __init__(self, fname):
+    """
+    Class to manage configuration settings.
+    This class handles the loading, updating, and saving of configuration settings stored in a JSON file.
+    """
+    def __init__(self, fname, debug=True):
+        """
+        Initializes the Configurator with a specified configuration file.
+
+        Args:
+            fname (str): The name of the configuration file.
+            debug (bool): If True, debug information is printed. Defaults to False.
+        """
+        self._debug = debug
+        if self._debug: print(f'{ticks_us()} Configurator.__init__')
+        
         self._fname = fname
         self.config = self._load()
 
     def get_config_str(self):
+        """
+        Returns the configuration settings as a string.
+
+        Returns:
+            str: The configuration settings in key-value format separated by commas.
+        """
+        if self._debug: print(f'{ticks_us()} Configurator.get_config_str')
+        
         cnf = ""
         for i in self.config:
             cnf += "{}:{},".format(i, self.config[i])
         return cnf[:-1]
 
     def update(self, cfgs):
+        """
+        Updates the configuration settings.
+
+        Args:
+            cfgs (str or dict): A string or dictionary containing the new configuration settings.
+        """
+        if self._debug: print(f'{ticks_us()} Configurator.update got:{cfgs}')
+        
         if isinstance(cfgs, str):
             try:
                 c = cfgs.split(",")
@@ -28,7 +59,16 @@ class Configurator:
         self._save()
 
     def _load(self):
-        if self._fname in os.listdir():
+        """
+        Loads the configuration settings from the specified file.
+
+        Returns:
+            dict: A dictionary containing the configuration settings.
+        """
+        if self._debug: print(f'{ticks_us()} Configurator._load')
+        
+        if os.stat(self._fname):
+            print('exists')
             with open(self._fname, 'r') as infile:
                 try:
                     return json.loads(infile.read())
@@ -40,5 +80,10 @@ class Configurator:
                 return dict()
 
     def _save(self):
+        """
+        Saves the current configuration settings to the specified file.
+        """
+        if self._debug: print(f'{ticks_us()} Configurator._save')
+        
         with open(self._fname, 'w') as outfile:
             outfile.write(json.dumps(self.config))

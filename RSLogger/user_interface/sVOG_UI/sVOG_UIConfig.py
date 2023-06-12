@@ -10,8 +10,7 @@ class VOGConfigWin:
         self._q_out = q_out
         self._UISettings = {"deviceVer": StringVar(), "configName": StringVar(), "configMaxOpen": StringVar(),
                             "configMaxClose": StringVar(), "configDebounce": StringVar(),
-                            "configClickMode": StringVar(), "buttonControl": StringVar(),
-                            "openInf": IntVar(), "closeInf": IntVar()}
+                            "configClickMode": StringVar(), "buttonControl": StringVar()}
 
         self.button_control = ("Trial", "Lens", "Peek")
         self.click_mode = ("Hold", "Click")
@@ -46,23 +45,15 @@ class VOGConfigWin:
 
         # Open Duration
         Label(lf, text="Open Duration (ms):").grid(row=2, column=0, sticky="NEWS")
-        Entry(lf, textvariable=self._UISettings["configMaxOpen"], width=7).grid(row=2, column=1, sticky="W")
-
-        cb_open_inf = Checkbutton(lf, text="INF", command=self._open_inf_clicked,
-                                  variable=self._UISettings['openInf'], onvalue=1, offvalue=0)
-        cb_open_inf.grid(row=2, column=2)
+        Entry(lf, textvariable=self._UISettings["configMaxOpen"], width=7).grid(row=2, column=1, columnspan=2, sticky="EW")
 
         # Close Duration
         Label(lf, text="Closed Duration (ms):").grid(row=3, column=0, sticky="NEWS")
-        Entry(lf, textvariable=self._UISettings["configMaxClose"], width=7).grid(row=3, column=1, sticky="W")
-
-        cb_close_inf = Checkbutton(lf, text="INF", command=self._close_inf_clicked,
-                                   variable=self._UISettings['closeInf'], onvalue=1, offvalue=0)
-        cb_close_inf.grid(row=3, column=2)
+        Entry(lf, textvariable=self._UISettings["configMaxClose"], width=7).grid(row=3, column=1, columnspan=2, sticky="EW")
 
         # Debounce
-        Label(lf, text="Debounce Time (ms):").grid(row=4, column=0, sticky="NEWS")
-        Entry(lf, textvariable=self._UISettings["configDebounce"], width=7).grid(row=4, column=1, sticky="W")
+        # Label(lf, text="Debounce Time (ms):").grid(row=4, column=0, sticky="NEWS")
+        # Entry(lf, textvariable=self._UISettings["configDebounce"], width=7).grid(row=4, column=1, columnspan=2, sticky="EW")
 
         # Separator
         Separator(lf).grid(row=8, column=0, columnspan=3, sticky="NEWS", pady=5)
@@ -115,11 +106,13 @@ class VOGConfigWin:
             self._UISettings['openInf'].set(0)
 
     def _set_custom(self):
-        clk_mode = {'Hold': '0', 'Click': '1'}[self._UISettings['configClickMode'].get()]
-        btn_mode = {'Trial': '0', 'Lens': '1', 'Peek': '2'}[self._UISettings['buttonControl'].get()]
+        clk_mode = '1'
+        btn_mode = '0'
+        debounce = '20'
 
-        vals = [self._UISettings['configName'].get(), self._UISettings['configMaxOpen'].get(), self._UISettings['configMaxClose'].get(),
-                self._UISettings['configDebounce'].get(), clk_mode, btn_mode]
+        vals = [self._UISettings['configName'].get().strip(), self._UISettings['configMaxOpen'].get().strip(),
+                self._UISettings['configMaxClose'].get().strip(),
+                debounce, clk_mode, btn_mode]
         self._push_config(f'cfg,{",".join(vals)}')
 
     def _set_nhtsa_cb(self):
@@ -139,7 +132,7 @@ class VOGConfigWin:
         self._push_config(f'cfg,{",".join(vals)}')
 
     def _push_config(self, vals):
-        self._q_out.put(f"sVOG,{self._active_tab}>{vals}>")
+        self._q_out.put(f"sVOG>{self._active_tab}>{vals}>")
 
     def update_fields(self, key, val):
         if key == 'configClickMode':
@@ -147,18 +140,8 @@ class VOGConfigWin:
         elif key == 'configButtonControl' or key == 'buttonControl':
             key = 'buttonControl'
             val = self.button_control[int(val)]
-        elif key == 'configMaxOpen':
-            if val == '2147483647':
-                self._UISettings['openInf'].set(1)
-            else:
-                self._UISettings['openInf'].set(0)
         elif key == 'deviceVer':
             if float(val) >= 2.2:
                 self.button_glance.config(state='normal')
-        elif key == 'configMaxClose':
-            if val == '2147483647':
-                self._UISettings['closeInf'].set(1)
-            else:
-                self._UISettings['closeInf'].set(0)
 
         self._UISettings[key].set(val)

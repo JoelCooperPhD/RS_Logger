@@ -3,6 +3,7 @@ from tkinter import Toplevel, StringVar
 from queue import SimpleQueue
 from math import ceil
 from os import path
+from time import sleep
 
 
 class DRTConfigWin:
@@ -87,21 +88,21 @@ class DRTConfigWin:
 
     def _upload_to_device_cb(self):
         low = self._filter_entry(self.UI_settings['lowerISI'].get(), 3000, 0, 65535)
-        self._q_to_hi.put(f"sDRT,{self._active_tab}>set_lowerISI>{low}")
+        self._q_to_hi.put(f"sDRT>{self._active_tab}>set_lowerISI>{low}")
 
         high = self._filter_entry(self.UI_settings['upperISI'].get(), 5000, low, 65535)
-        self._q_to_hi.put(f"sDRT,{self._active_tab}>set_upperISI>{high}")
+        self._q_to_hi.put(f"sDRT>{self._active_tab}>set_upperISI>{high}")
 
         intensity = ceil(self._filter_entry(self.UI_settings['intensity'].get(), 100, 0, 100) * 2.55)
-        self._q_to_hi.put(f"sDRT,{self._active_tab}>set_intensity>{intensity}")
+        self._q_to_hi.put(f"sDRT>{self._active_tab}>set_intensity>{intensity}")
 
         duration = self._filter_entry(self.UI_settings['stimDur'].get(), 1000, 0, 65535)
-        self._q_to_hi.put(f"sDRT,{self._active_tab}>set_stimDur>{duration}")
+        self._q_to_hi.put(f"sDRT>{self._active_tab}>set_stimDur>{duration}")
 
         self._clear_settings()
 
     def _set_iso_cb(self):
-        self._q_to_hi.put(f"sDRT,{self._active_tab}>iso>")
+        self._q_to_hi.put(f"sDRT>{self._active_tab}>iso>")
         self._clear_settings()
 
     def _clear_settings(self):

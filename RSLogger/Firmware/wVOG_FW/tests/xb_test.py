@@ -4,7 +4,7 @@ from wVOG import xb
 
 class XbTest:
     def __init__(self, verbose=True):
-        self._xb = xb.XB(debug=True)
+        self._xb = xb.XB(debug=False)
         self._xb.register_incoming_message_cb(self._handle_xb_msg)
         self._results = []
         self._verbose = verbose

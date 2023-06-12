@@ -8,7 +8,7 @@ from time import time_ns
 
 
 class WDRTConfigWin:
-    def __init__(self, debug=True):
+    def __init__(self, debug=False):
         self._debug = debug
         if self._debug: print(f"{time_ns()} WDRT_UIConfig.__init__")
         self._var = {"name": StringVar(), "lowerISI": StringVar(),

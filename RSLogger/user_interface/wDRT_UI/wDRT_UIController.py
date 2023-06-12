@@ -1,6 +1,6 @@
 from queue import SimpleQueue
 from tkinter import Tk, TclError
-from RSLogger.user_interface.wDRT_UI import WDRT_UIView, WDRT_UIConfig
+from RSLogger.user_interface.wDRT_UI import wDRT_UIView, wDRT_UIConfig
 
 
 class WDRTUIController:
@@ -14,7 +14,7 @@ class WDRTUIController:
         self._running = False
 
         # sDRT_UI
-        self._view = WDRT_UIView.WDRTMainWindow(win)
+        self._view = wDRT_UIView.WDRTMainWindow(win)
         self._view.NB.bind("<<NotebookTabChanged>>", self._tab_changed_cb)
         self._view.register_stim_on_cb(self._stim_on_button_cb)
         self._view.register_stim_off_cb(self._stim_off_button_cb)
@@ -23,7 +23,7 @@ class WDRTUIController:
         self._active_tab = None
 
         # Configure Window
-        self._cnf_win = WDRT_UIConfig.WDRTConfigWin()
+        self._cnf_win = wDRT_UIConfig.WDRTConfigWin()
         self._cnf_win.register_custom_cb(self._custom_button_cb)
         self._cnf_win.register_iso_cb(self._iso_button_cb)
 

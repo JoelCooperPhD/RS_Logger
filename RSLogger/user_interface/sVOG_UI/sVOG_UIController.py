@@ -1,9 +1,12 @@
 from queue import SimpleQueue
 from tkinter import Tk
-from RSLogger.user_interface.sDRT_UI import DRT_UIConfig, DRT_UIView
+
+import numpy as np
+
+from RSLogger.user_interface.sVOG_UI import sVOG_UIView, sVOG_UIConfig
 
 
-class DRTUIController:
+class sVOGUIController:
     def __init__(self, win, q_out):
         self._win: Tk = win
         self._q_out: SimpleQueue = q_out
@@ -14,30 +17,37 @@ class DRTUIController:
         self._running = False
 
         # View
-        # self._win.bind("<<NotebookTabChanged>>", self._drt_tab_changed_cb)
-        self._UIView = DRT_UIView.DRTTabbedControls(self._win)
+        self._UIView = sVOG_UIView.VOGTabbedControls(self._win)
 
         self._UIView.register_configure_clicked_cb(self._configure_button_cb)
         self._UIView.register_stimulus_on_cb(self._stimulus_on_cb)
         self._UIView.register_stimulus_off_cb(self._stimulus_off_cb)
 
         # Configure Window
-        self._cnf_win = DRT_UIConfig.DRTConfigWin(self._q_out)
+        self._cnf_win = sVOG_UIConfig.VOGConfigWin(self._q_out)
 
     def handle_command(self, com, key, val):
         # Tab Events
         if key == 'devices':
             self._update_devices(val)
+        elif key in ['deviceVer', 'configName', 'configMaxOpen',  'configMaxClose',
+                         'configDebounce', 'configClickMode', 'buttonControl', 'configButtonControl']:
+            self._cnf_win.update_fields(key, val)
 
         # Messages from drt hardware
-        elif key == 'cfg':
-            self._update_configuration(f'{com}, {val}')
         elif key == 'stm':
-            self._update_stimulus_plot(f'{com}, {val}')
-        elif key == 'trl':
-            self._update_results(f'{com}, {val}')
-        elif key == 'clk':
-            self._update_response_text(f'{com}, {val}')
+            self._update_stimulus_plot(val)
+
+        elif key == 'data':
+            self._update_tsot_plot(val)
+
+        # Plot Commands
+        elif key == 'clear':
+            self._clear_plot()
+
+        # File Path
+        elif key == 'fpath':
+            pass
 
         # Plot Commands
         elif key == 'clear':
@@ -60,29 +70,38 @@ class DRTUIController:
 
     # Main Controller Events
     def _log_init(self, time_stamp=None):
+        self._running = True
         for d in self.devices:
             self.devices[d]['stm_on'].configure(state='disabled')
             self.devices[d]['stm_off'].configure(state='disabled')
             self.devices[d]['configure'].configure(state='disabled')
             self.devices[self._UIView.NB.tab(self._UIView.NB.select(), "text")]['plot'].clear_all()
 
-    def _log_close(self, time_stamp=None):
-        for d in self.devices:
-            self.devices[d]['stm_on'].configure(state='normal')
-            self.devices[d]['stm_off'].configure(state='normal')
-            self.devices[d]['configure'].configure(state='normal')
-
-    def _data_start(self, time_stamp=None):
-        self._running = True
-        for d in self.devices:
             self.devices[d]['plot'].run = True
             self.devices[d]['plot'].clear_all()
             self._reset_results_text()
 
-    def _data_stop(self, time_stamp=None):
+    def _log_close(self, time_stamp=None):
         self._running = False
         for d in self.devices:
+            self.devices[d]['stm_on'].configure(state='normal')
+            self.devices[d]['stm_off'].configure(state='normal')
+            self.devices[d]['configure'].configure(state='normal')
             self.devices[d]['plot'].run = False
+
+    def _data_start(self, time_stamp=None):
+        if self.devices:
+            for d in self.devices:
+                self.devices[d]['plot'].recording = True
+            port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
+            self.devices[port]['plot'].state_update(port, np.nan)
+
+    def _data_stop(self, time_stamp=None):
+        if self.devices:
+            port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
+            self.devices[port]['plot'].state_update(port, np.nan)
+            for d in self.devices:
+                self.devices[d]['plot'].recording = False
 
     # Tab Events
     def _update_devices(self, devices=None):
@@ -98,7 +117,7 @@ class DRTUIController:
             for id_ in to_add:
                 if id_ not in self.devices:
                     self.devices[id_] = self._UIView.build_tab(id_)
-                    self._q_out.put(f'sDRT,all>stop>1')
+                    self._q_out.put(f'sVOG>all>stop>')
                     pass
 
         to_remove = set(self.devices) - set(units)
@@ -108,58 +127,44 @@ class DRTUIController:
                     self.devices.pop(id_)
                     self._UIView.NB.forget(self._UIView.NB.children[id_.lower()])
 
-    # Messages from drt hardware
-    def _update_configuration(self, args):
-        self._cnf_win.update_fields(args)
-
-    def _update_stimulus_plot(self, arg):
-        port, state = arg.split(',')
+    # Messages from vog hardware
+    def _update_stimulus_plot(self, state):
+        port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
         if self._running:
             self.devices[port]['plot'].state_update(port, state)
 
-            if state == '1':
-                self._update_response_text(f'{port},0')
-
-    def _update_rt_plot(self, arg):
+    def _update_tsot_plot(self, arg):
+        port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
         if self._running:
-            unit_id, rt = arg.split(',')
-            rt = int(rt)
-            rt = -0.1 if rt == -1 else round((int(rt) / 1000), 2)
-            self.devices[unit_id]['plot'].rt_update(unit_id, rt)
+            trial, opened, closed = arg.split(',')
+            opened = int(opened)
+            closed = int(closed)
 
-    def _update_results(self, arg):
-        arg_split = arg.split(',')
+            self.devices[port]['trl_n'].set(trial)
+            self.devices[port]['tsot'].set(opened)
+            self.devices[port]['tsct'].set(closed)
 
-        if len(arg_split) == 5:
-            unit_id, mills, trl_n, clicks, rt = arg_split
-            self._update_response_text(f'{unit_id}, {clicks}')
-        else:
-            unit_id, mills, trl_n, rt = arg_split
+            self.devices[port]['plot'].tsot_update(port, opened)
 
-        self._update_trial_text(unit_id, trl_n)
-        self._update_rt_text(unit_id, rt)
-        self._update_rt_plot(f'{unit_id}, {rt}')
+            self.devices[port]['plot'].tsct_update(port, closed)
 
     def _reset_results_text(self):
         for d in self.devices:
             self._update_trial_text(d, '0')
-            self._update_rt_text(d, '-1')
-            self._update_response_text(f'{d},0')
+            self._update_tsot_text(d, '0')
+            self._update_tsct_text(d, '0')
 
     def _update_trial_text(self, unit_id, cnt):
         if self._running:
             self.devices[unit_id]['trl_n'].set(cnt)
 
-    def _update_rt_text(self, unit_id, rt):
+    def _update_tsot_text(self, unit_id, tsot):
         if self._running:
-            if rt != '-1':
-                rt = round((int(rt) / 1000), 2)
-            self.devices[unit_id]['rt'].set(rt)
+            self.devices[unit_id]['tsot'].set(tsot)
 
-    def _update_response_text(self, msg):
-        unit_id, clicks = msg.split(',')
+    def _update_tsct_text(self, unit_id, tsct):
         if self._running:
-            self.devices[unit_id]['clicks'].set(clicks)
+            self.devices[unit_id]['tsct'].set(tsct)
 
     # Plot Commands
     def _clear_plot(self):
@@ -171,12 +176,15 @@ class DRTUIController:
             self.devices[d]['plot'].run = False
 
     def _stimulus_on_cb(self):
-        self._q_out.put(f"sDRT,{self._UIView.NB.tab(self._UIView.NB.select(), 'text')}>stim_on>")
+        com = self._UIView.NB.tab(self._UIView.NB.select(), 'text')
+        self._q_out.put(f"sVOG>{com}>do_peekOpen>")
 
     def _stimulus_off_cb(self):
-        self._q_out.put(f"sDRT,{self._UIView.NB.tab(self._UIView.NB.select(), 'text')}>stim_off>")
+        com = self._UIView.NB.tab(self._UIView.NB.select(), 'text')
+        self._q_out.put(f"sVOG>{com}>do_peekClose>")
 
     def _configure_button_cb(self):
         self._cnf_win.show(self._UIView.NB.tab(self._UIView.NB.select(), "text"))
-        self._q_out.put(f"sDRT,{self._UIView.NB.tab(self._UIView.NB.select(), 'text')}>get_config>")
+        com = self._UIView.NB.tab(self._UIView.NB.select(), 'text')
+        self._q_out.put(f"sVOG>{com}>get_config>")
 

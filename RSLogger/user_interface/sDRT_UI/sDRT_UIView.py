@@ -1,6 +1,6 @@
 from tkinter.ttk import Label, LabelFrame, Button, Frame, Notebook
 from tkinter import Tk, StringVar, BOTH
-from RSLogger.user_interface.sDRT_UI import DRT_UIPlotter
+from RSLogger.user_interface.sDRT_UI import sDRT_UIPlotter
 
 
 class DRTTabbedControls:
@@ -47,7 +47,7 @@ class DRTTabbedControls:
         self.NB.add(self.tab_f['frame'], text=name)
 
     def _tab_add_plot(self, dev_id):
-        self.tab_f['plot'] = DRT_UIPlotter.Plotter(self.tab_f['frame'])
+        self.tab_f['plot'] = sDRT_UIPlotter.Plotter(self.tab_f['frame'])
         self.tab_f['plot'].set_rt_and_state_lines(dev_id)
 
     def _tab_add_manual_controls(self):

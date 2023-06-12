@@ -12,10 +12,10 @@ from main import __version__
 
 # User Interface
 from RSLogger.user_interface.SFT_UI import SFT_UIController
-from RSLogger.user_interface.sDRT_UI import DRT_UIController
-from RSLogger.user_interface.sVOG_UI import VOG_UIController
-from RSLogger.user_interface.wDRT_UI import WDRT_UIController
-from RSLogger.user_interface.wVOG_UI import WVOG_UIController
+from RSLogger.user_interface.sDRT_UI import sDRT_UIController
+from RSLogger.user_interface.sVOG_UI import sVOG_UIController
+from RSLogger.user_interface.wDRT_UI import wDRT_UIController
+from RSLogger.user_interface.wVOG_UI import wVOG_UIController
 
 # Widgets
 from RSLogger.user_interface.Logger.controls import ExpControls
@@ -56,11 +56,10 @@ class UIController:
         # Devices
         self._device_controllers = {
             # 'sft': SFT_UIController.SFTUIController(self.win, queues['ui_controller'], queues['ui_sft']),
-            'sDRT': DRT_UIController.DRTUIController(self.win, queues['q_2_hi']),
-
-            'wDRT': WDRT_UIController.WDRTUIController(self.win, queues['q_2_hi']),
-            'wVOG': WVOG_UIController.WVOGUIController(self.win, queues['q_2_hi']),
-            'sVOG': VOG_UIController.VOGUIController(self.win, queues['q_2_hi'])
+            'sDRT': sDRT_UIController.sDRTUIController(self.win, queues['q_2_hi']),
+            'wDRT': wDRT_UIController.WDRTUIController(self.win, queues['q_2_hi']),
+            'wVOG': wVOG_UIController.WVOGUIController(self.win, queues['q_2_hi']),
+            'sVOG': sVOG_UIController.sVOGUIController(self.win, queues['q_2_hi'])
         }
 
         self._q_2_ui_messages_listener()
@@ -76,9 +75,7 @@ class UIController:
         while not self._q_2_ui.empty():
 
             msg = self._q_2_ui.get()
-
-            device_port, key, val = msg.split('>')
-            device, port = device_port.split(',')
+            device, port, key, val = msg.split('>')
 
             if device in self._device_controllers.keys():
                 self._device_controllers[device].handle_command(port, key, val)

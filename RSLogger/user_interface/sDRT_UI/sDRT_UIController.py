@@ -1,15 +1,12 @@
 from queue import SimpleQueue
 from tkinter import Tk
-
-import numpy as np
-
-from RSLogger.user_interface.sVOG_UI import VOG_UIView, VOG_UIConfig
+from RSLogger.user_interface.sDRT_UI import sDRT_UIConfig, sDRT_UIView
 
 
-class VOGUIController:
-    def __init__(self, win, q_out):
+class sDRTUIController:
+    def __init__(self, win, q_2_hi):
         self._win: Tk = win
-        self._q_out: SimpleQueue = q_out
+        self._q_2_hi: SimpleQueue = q_2_hi
 
         self.devices = dict()
 
@@ -17,38 +14,30 @@ class VOGUIController:
         self._running = False
 
         # View
-        self._UIView = VOG_UIView.VOGTabbedControls(self._win)
+        # self._win.bind("<<NotebookTabChanged>>", self._drt_tab_changed_cb)
+        self._UIView = sDRT_UIView.DRTTabbedControls(self._win)
 
         self._UIView.register_configure_clicked_cb(self._configure_button_cb)
         self._UIView.register_stimulus_on_cb(self._stimulus_on_cb)
         self._UIView.register_stimulus_off_cb(self._stimulus_off_cb)
 
         # Configure Window
-        self._cnf_win = VOG_UIConfig.VOGConfigWin(self._q_out)
+        self._cnf_win = sDRT_UIConfig.DRTConfigWin(self._q_2_hi)
 
     def handle_command(self, com, key, val):
-
         # Tab Events
         if key == 'devices':
             self._update_devices(val)
-        elif key in ['deviceVer', 'configName', 'configMaxOpen',  'configMaxClose',
-                         'configDebounce', 'configClickMode', 'buttonControl', 'configButtonControl']:
-            self._cnf_win.update_fields(key, val)
 
         # Messages from drt hardware
+        elif key == 'cfg':
+            self._update_configuration(f'{com}, {val}')
         elif key == 'stm':
-            self._update_stimulus_plot(val)
-
-        elif key == 'data':
-            self._update_tsot_plot(val)
-
-        # Plot Commands
-        elif key == 'clear':
-            self._clear_plot()
-
-        # File Path
-        elif key == 'fpath':
-            pass
+            self._update_stimulus_plot(f'{com}, {val}')
+        elif key == 'trl':
+            self._update_results(f'{com}, {val}')
+        elif key == 'clk':
+            self._update_response_text(f'{com}, {val}')
 
         # Plot Commands
         elif key == 'clear':
@@ -71,38 +60,29 @@ class VOGUIController:
 
     # Main Controller Events
     def _log_init(self, time_stamp=None):
-        self._running = True
         for d in self.devices:
             self.devices[d]['stm_on'].configure(state='disabled')
             self.devices[d]['stm_off'].configure(state='disabled')
             self.devices[d]['configure'].configure(state='disabled')
             self.devices[self._UIView.NB.tab(self._UIView.NB.select(), "text")]['plot'].clear_all()
 
-            self.devices[d]['plot'].run = True
-            self.devices[d]['plot'].clear_all()
-            self._reset_results_text()
-
     def _log_close(self, time_stamp=None):
-        self._running = False
         for d in self.devices:
             self.devices[d]['stm_on'].configure(state='normal')
             self.devices[d]['stm_off'].configure(state='normal')
             self.devices[d]['configure'].configure(state='normal')
-            self.devices[d]['plot'].run = False
 
     def _data_start(self, time_stamp=None):
-        if self.devices:
-            for d in self.devices:
-                self.devices[d]['plot'].recording = True
-            port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
-            self.devices[port]['plot'].state_update(port, np.nan)
+        self._running = True
+        for d in self.devices:
+            self.devices[d]['plot'].run = True
+            self.devices[d]['plot'].clear_all()
+            self._reset_results_text()
 
     def _data_stop(self, time_stamp=None):
-        if self.devices:
-            port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
-            self.devices[port]['plot'].state_update(port, np.nan)
-            for d in self.devices:
-                self.devices[d]['plot'].recording = False
+        self._running = False
+        for d in self.devices:
+            self.devices[d]['plot'].run = False
 
     # Tab Events
     def _update_devices(self, devices=None):
@@ -118,7 +98,7 @@ class VOGUIController:
             for id_ in to_add:
                 if id_ not in self.devices:
                     self.devices[id_] = self._UIView.build_tab(id_)
-                    self._q_out.put(f'sVOG,all>stop>')
+                    self._q_2_hi.put(f'sDRT>all>stop>1')
                     pass
 
         to_remove = set(self.devices) - set(units)
@@ -128,44 +108,57 @@ class VOGUIController:
                     self.devices.pop(id_)
                     self._UIView.NB.forget(self._UIView.NB.children[id_.lower()])
 
-    # Messages from vog hardware
-    def _update_stimulus_plot(self, state):
-        port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
+    # Messages from drt hardware
+    def _update_configuration(self, args):
+        self._cnf_win.update_fields(args)
+
+    def _update_stimulus_plot(self, arg):
+        port, state = arg.split(',')
         if self._running:
             self.devices[port]['plot'].state_update(port, state)
 
-    def _update_tsot_plot(self, arg):
-        port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
+            if state == '1':
+                self._update_response_text(f'{port},0')
+
+    def _update_rt_plot(self, arg):
         if self._running:
-            t, trial, opened, closed = arg.split(',')
-            opened = int(opened)
-            closed = int(closed)
+            unit_id, rt = arg.split(',')
+            rt = int(rt)
+            rt = -0.1 if rt == -1 else round((int(rt) / 1000), 2)
+            self.devices[unit_id]['plot'].rt_update(unit_id, rt)
 
-            self.devices[port]['trl_n'].set(trial)
-            self.devices[port]['tsot'].set(opened)
-            self.devices[port]['tsct'].set(closed)
+    def _update_results(self, arg):
+        arg_split = arg.split(',')
 
-            self.devices[port]['plot'].tsot_update(port, opened)
+        if len(arg_split) == 5:
+            unit_id, unix_t, mills, trl_n, rt = arg_split
+        else:
+            unit_id, mills, trl_n, rt = arg_split
 
-            self.devices[port]['plot'].tsct_update(port, closed)
+        self._update_trial_text(unit_id, trl_n)
+        self._update_rt_text(unit_id, rt)
+        self._update_rt_plot(f'{unit_id}, {rt}')
 
     def _reset_results_text(self):
         for d in self.devices:
             self._update_trial_text(d, '0')
-            self._update_tsot_text(d, '0')
-            self._update_tsct_text(d, '0')
+            self._update_rt_text(d, '-1')
+            self._update_response_text(f'{d},0')
 
     def _update_trial_text(self, unit_id, cnt):
         if self._running:
             self.devices[unit_id]['trl_n'].set(cnt)
 
-    def _update_tsot_text(self, unit_id, tsot):
+    def _update_rt_text(self, unit_id, rt):
         if self._running:
-            self.devices[unit_id]['tsot'].set(tsot)
+            if rt != '-1':
+                rt = round((int(rt) / 1000), 2)
+            self.devices[unit_id]['rt'].set(rt)
 
-    def _update_tsct_text(self, unit_id, tsct):
+    def _update_response_text(self, msg):
+        unit_id, clicks = msg.split(',')
         if self._running:
-            self.devices[unit_id]['tsct'].set(tsct)
+            self.devices[unit_id]['clicks'].set(clicks)
 
     # Plot Commands
     def _clear_plot(self):
@@ -177,15 +170,12 @@ class VOGUIController:
             self.devices[d]['plot'].run = False
 
     def _stimulus_on_cb(self):
-        com = self._UIView.NB.tab(self._UIView.NB.select(), 'text')
-        self._q_out.put(f"sVOG,{com}>do_peekOpen>")
+        self._q_2_hi.put(f"sDRT>{self._UIView.NB.tab(self._UIView.NB.select(), 'text')}>stim>on")
 
     def _stimulus_off_cb(self):
-        com = self._UIView.NB.tab(self._UIView.NB.select(), 'text')
-        self._q_out.put(f"sVOG,{com}>do_peekClose>")
+        self._q_2_hi.put(f"sDRT>{self._UIView.NB.tab(self._UIView.NB.select(), 'text')}>stim>off")
 
     def _configure_button_cb(self):
         self._cnf_win.show(self._UIView.NB.tab(self._UIView.NB.select(), "text"))
-        com = self._UIView.NB.tab(self._UIView.NB.select(), 'text')
-        self._q_out.put(f"sVOG,{com}>get_config>")
+        self._q_2_hi.put(f"sDRT>{self._UIView.NB.tab(self._UIView.NB.select(), 'text')}>get_config>")
 

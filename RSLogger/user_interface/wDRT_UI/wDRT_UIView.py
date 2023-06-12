@@ -2,7 +2,7 @@ from tkinter.ttk import Label, LabelFrame, Button
 from tkinter.ttk import Frame, Notebook
 from tkinter import StringVar, BOTH
 from tkinter import Label as tkLabel
-from RSLogger.user_interface.wDRT_UI import WDRT_UIPlotter
+from RSLogger.user_interface.wDRT_UI import wDRT_UIPlotter
 from queue import SimpleQueue
 
 

@@ -8,8 +8,8 @@ from time import time_ns
 from digi.xbee.devices import XBeeDevice, RemoteRaw802Device
 
 
-class WDRTController:
-    def __init__(self, q_out, debug=True):
+class wDRTController:
+    def __init__(self, q_out, debug=False):
         self._debug = debug
         if self._debug: print("WDRT_HIController.__init__")
 

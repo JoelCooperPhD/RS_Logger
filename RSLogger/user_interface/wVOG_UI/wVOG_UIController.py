@@ -1,6 +1,6 @@
 from queue import SimpleQueue
 from tkinter import Tk, TclError
-from RSLogger.user_interface.wVOG_UI import WVOG_UIView, WVOG_UIConfig
+from RSLogger.user_interface.wVOG_UI import wVOG_UIView, wVOG_UIConfig
 from numpy import nan
 
 
@@ -15,7 +15,7 @@ class WVOGUIController:
         self._running = False
 
         # wVOG_UI
-        self._view = WVOG_UIView.wVOGTabbedControls(win)
+        self._view = wVOG_UIView.wVOGTabbedControls(win)
         self._view.NB.bind("<<NotebookTabChanged>>", self._tab_changed_cb)
 
         self._view.register_stimulus_a_toggle_cb(self._stimulus_a_toggle_cb)
@@ -28,7 +28,7 @@ class WVOGUIController:
         self._view.register_rescan_network(self._rescan_network_cb)
 
         # Configure Window
-        self._cnf_win = WVOG_UIConfig.VOGConfigWin(self._q_2_hi)
+        self._cnf_win = wVOG_UIConfig.VOGConfigWin(self._q_2_hi)
 
     def handle_command(self, com, key, val):
         # Tab Events
@@ -141,7 +141,7 @@ class WVOGUIController:
                 # Start new tab and device
                 self._active_tab = self._view.NB.tab(self._view.NB.select(), "text")
                 if not 'COM' in self._active_tab:
-                    self._q_2_hi.put(f"wVOG,{self._active_tab}>get_bat>")
+                    self._q_2_hi.put(f"wVOG>{self._active_tab}>get_bat>")
                 if self._running:
                     self.devices[self._active_tab]['plot'].run = True
                     self.devices[self._active_tab]['plot'].clear_all()
@@ -149,11 +149,11 @@ class WVOGUIController:
                 pass
 
     def _lens_change_cb(self, lens, state):
-        self._q_2_hi.put(f"wVOG,{self._active_tab}>{lens}_{state}>")
+        self._q_2_hi.put(f"wVOG>{self._active_tab}>{lens}_{state}>")
 
     def _configure_button_cb(self):
         self._cnf_win.show(self._active_tab)
-        self._q_2_hi.put(f"wVOG,{self._active_tab}>get_cfg>")
+        self._q_2_hi.put(f"wVOG>{self._active_tab}>get_cfg>")
 
     def _rescan_network_cb(self):
         for c in self._view.NB.winfo_children():
@@ -162,24 +162,23 @@ class WVOGUIController:
             except TclError:
                 pass
         self.devices.clear()
-        self._q_2_hi.put(f"wVOG,{self._active_tab}>net_scn>")
+        self._q_2_hi.put(f"wVOG>{self._active_tab}>net_scn>")
         self._view.hide()
 
     # Messages from vog hardware
     def _update_tsot_plot(self, arg):
-        port = self._view.NB.tab(self._view.NB.select(), "text")
         if self._running:
-            trial, opened, closed = arg.split(',')
-            opened = int(opened)
-            closed = int(closed)
+            port = self._view.NB.tab(self._view.NB.select(), "text")
+            device = self.devices[port]
 
-            self.devices[port]['trl_n'].set(trial)
-            self.devices[port]['tsot'].set(opened)
-            self.devices[port]['tsct'].set(closed)
+            trial, opened, closed = map(int, arg.split(','))
 
-            self.devices[port]['plot'].tsot_update(port, opened)
+            device['trl_n'].set(trial)
+            device['tsot'].set(opened)
+            device['tsct'].set(closed)
 
-            self.devices[port]['plot'].tsct_update(port, closed)
+            device['plot'].tsot_update(port, opened)
+            device['plot'].tsct_update(port, closed)
 
     def _reset_results_text(self):
         for d in self.devices:
@@ -213,28 +212,28 @@ class WVOGUIController:
         com = self._view.NB.tab(self._view.NB.select(), 'text')
         if self.devices[com]['a_toggle']['text'] == 'A Open':
             self.devices[com]['a_toggle']['text'] = 'A Close'
-            self._q_2_hi.put(f"wVOG,{com}>a_on>")
+            self._q_2_hi.put(f"wVOG>{com}>stm_a>1")
         else:
             self.devices[com]['a_toggle']['text'] = 'A Open'
-            self._q_2_hi.put(f"wVOG,{com}>a_off>")
+            self._q_2_hi.put(f"wVOG>{com}>stm>a>0")
 
     def _stimulus_b_toggle_cb(self):
         com = self._view.NB.tab(self._view.NB.select(), 'text')
         if self.devices[com]['b_toggle']['text'] == 'B Open':
             self.devices[com]['b_toggle']['text'] = 'B Close'
-            self._q_2_hi.put(f"wVOG,{com}>b_on>")
+            self._q_2_hi.put(f"wVOG>{com}>stm_b>1")
         else:
             self.devices[com]['b_toggle']['text'] = 'B Open'
-            self._q_2_hi.put(f"wVOG,{com}>b_off>")
+            self._q_2_hi.put(f"wVOG>{com}>stm_b>0")
 
     def _stimulus_ab_toggle_cb(self):
         com = self._view.NB.tab(self._view.NB.select(), 'text')
         if self.devices[com]['ab_toggle']['text'] == 'AB Open':
             self.devices[com]['ab_toggle']['text'] = 'AB Close'
-            self._q_2_hi.put(f"wVOG,{com}>ab_on>")
+            self._q_2_hi.put(f"wVOG>{com}>stm_x>1")
         else:
             self.devices[com]['ab_toggle']['text'] = 'AB Open'
-            self._q_2_hi.put(f"wVOG,{com}>ab_off>")
+            self._q_2_hi.put(f"wVOG>{com}>stm_x>0")
 
     # Plotter
     def _update_stim_state(self, arg, unit_id):
@@ -268,10 +267,10 @@ class WVOGUIController:
     # Configuration Window
     # ---- Registered Callbacks
     def _custom_button_cb(self, msg):
-        self._q_2_hi.put(f"wVOG,{self._active_tab}>set_cfg>{msg}")
+        self._q_2_hi.put(f"wVOG>{self._active_tab}>set_cfg>{msg}")
 
     def _nhtsa_button_cb(self):
-        self._q_2_hi.put(f"wVOG,{self._active_tab}>set_nhtsa>")
+        self._q_2_hi.put(f"wVOG>{self._active_tab}>set_nhtsa>")
 
     # ---- msg from wVOG unit
     def _update_configuration(self, args):
