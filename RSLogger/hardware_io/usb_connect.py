@@ -86,18 +86,16 @@ class UsbPortScanner:
                 if self.DEVICE_IDS[rs_devices]['pid'] == d.pid and self.DEVICE_IDS[rs_devices]['vid'] == d.vid:  # If a new device is one of ours
                     if rs_devices not in self._rs_devices or d.name not in self._rs_devices[rs_devices]:
                         try:
-                            if rs_devices not in self._rs_devices:  # First of its kind so add a new device type
-                                self._rs_devices.update({rs_devices: {d.name: serial.Serial(d.name, BAUD)}})
-                            else:  # device type exists, add a new item on a new com port
-                                self._rs_devices[rs_devices].update({d.name: serial.Serial(d.name, BAUD)})
-                            self._set_device_rtc(rs_devices, d.name)
+                            self._rs_devices.setdefault(rs_devices, {})[d.name] = serial.Serial(d.name, BAUD)
                         except SerialException as e:
                             print(f'Serial Exception in usb_connect: {e}')
-                        try:
-                            devices = ','.join(list(self._rs_devices[rs_devices].keys()))
-                            self._distribute_cb(rs_devices, 'ui', 'devices', devices)
-                        except KeyError:
-                            print("PORT ALREADY IN USE")
+                        else:
+                            self._set_device_rtc(rs_devices, d.name)
+                            try:
+                                devices = ','.join(self._rs_devices[rs_devices])
+                                self._distribute_cb(rs_devices, 'ui', 'devices', devices)
+                            except KeyError:
+                                print("PORT ALREADY IN USE")
 
     def _remove_devices(self, to_remove):
         if self._debug: print(f"{time_ns()} UsbPortScanner._remove_devices")
@@ -109,7 +107,8 @@ class UsbPortScanner:
         for rs_devices in ours_removed:
             for port in ours_removed[rs_devices]:
                 del self._rs_devices[rs_devices][port]
-                self._distribute_cb(rs_devices, 'ui', 'devices', ','.join(list(self._rs_devices[rs_devices].keys())))
+                devices = ','.join(self._rs_devices[rs_devices])
+                self._distribute_cb(rs_devices, 'ui', 'devices', devices)
 
     def _set_device_rtc(self, device, port):
         if self._debug: print(f"{time_ns()} UsbPortScanner._set_device_rtc")
