@@ -61,17 +61,8 @@ class HWRoot:
 
     def distribute_message(self, device, port, key, val):
         if self._debug: print(f"{time_ns()} HWRoot.distribute_messages: {device} {port} {key} {val}")
-
         if port == 'ui':
-            # If it is a wireless device and it is attached, then use the wired version of the device
-            if 'w' in device and 'COM' in val:
-                values_split = val.split(',')
-                for p in values_split:
-                    if 'COM' in p:
-                        self._handle_message_for_ui(device, port, key, p)
-            else:
-                self._handle_message_for_ui(device, port, key, val)
-
+            self._handle_message_for_ui(device, port, key, val)
         else:
             self._handle_message_for_all_hardware_communication(device, port, key, val)
 

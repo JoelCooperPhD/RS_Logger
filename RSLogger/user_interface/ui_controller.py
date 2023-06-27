@@ -76,7 +76,6 @@ class UIController:
 
             msg = self._q_2_ui.get()
             device, port, key, val = msg.split('>')
-
             if device in self._device_controllers.keys():
                 self._device_controllers[device].handle_command(port, key, val)
 

@@ -94,7 +94,8 @@ class UsbPortScanner:
                         except SerialException as e:
                             print(f'Serial Exception in usb_connect: {e}')
                         try:
-                            self._distribute_cb(rs_devices, 'ui', 'devices', ','.join(list(self._rs_devices[rs_devices].keys())))
+                            devices = ','.join(list(self._rs_devices[rs_devices].keys()))
+                            self._distribute_cb(rs_devices, 'ui', 'devices', devices)
                         except KeyError:
                             print("PORT ALREADY IN USE")
 

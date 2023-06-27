@@ -159,7 +159,6 @@ class WDRTUIController:
 
     def _update_stim_data(self, arg, unit_id):
         if self._running:
-            print(arg)
             block_ms, trial_n, rt, clicks, dev_utc, bty = arg.strip().split(',')
             if unit_id == self._active_tab:
                 if rt == "-1":
