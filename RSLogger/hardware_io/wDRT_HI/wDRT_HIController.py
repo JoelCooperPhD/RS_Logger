@@ -78,7 +78,7 @@ class wDRTController:
         try:
             header = None
             if not isfile(_path):
-                header = "Device ID, Label, Unix time in UTC, Milliseconds Since Record, Trial Number, Responses," \
+                header = "Device ID, Label, Unix time in UTC, Milliseconds Since Record, Trial Number, Responses, " \
                          "Reaction Time, Battery Percent, Device time in UTC"
             with open(_path, 'a') as writer:
                 if header:
