@@ -3,7 +3,6 @@ from tkinter.ttk import Frame, Notebook
 from tkinter import StringVar, BOTH
 from tkinter import Label as tkLabel
 from RSLogger.user_interface.wDRT_UI import wDRT_UIPlotter
-from queue import SimpleQueue
 
 
 class WDRTMainWindow:
@@ -52,7 +51,7 @@ class WDRTMainWindow:
         self.NB.add(self._tab_f['frame'], text=name)
 
     def _tab_add_plot(self, dev_id):
-        self._tab_f['plot'] = WDRT_UIPlotter.Plotter(self._tab_f['frame'])
+        self._tab_f['plot'] = wDRT_UIPlotter.Plotter(self._tab_f['frame'])
         self._tab_f['plot'].set_rt_and_state_lines(dev_id)
 
     def _tab_add_battery_bar(self, dev_id):

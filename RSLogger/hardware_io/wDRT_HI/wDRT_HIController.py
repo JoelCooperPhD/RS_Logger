@@ -1,17 +1,33 @@
-from asyncio import sleep
 from queue import SimpleQueue
 from serial import Serial
 from threading import Thread
-import re
 from time import time_ns
+from typing import Dict, Union, Optional
 
 from digi.xbee.devices import XBeeDevice, RemoteRaw802Device
-
+from os.path import isfile
 
 class wDRTController:
-    def __init__(self, q_out, debug=False):
+    DEVICE_COMMANDS: Dict[str, str] = {
+        "cfg"       : 'cfg>',
+        "set"       : 'set>',
+        "stm_on"    : 'dev>1',
+        "stm_off"   : 'dev>0',
+        "iso"       : 'dev>iso',
+        "bat"       : 'bat>',
+        "set_rtc"   : 'rtc>',
+
+        "init"      : 'exp>1',
+        "close"     : 'exp>0',
+        "start"     : 'trl>1',
+        "stop"      : 'trl>0'
+    }
+    
+    LOG_FILE_PATH_TEMPLATE = "wDRT.txt"
+    
+    def __init__(self, q_out: SimpleQueue, debug: bool = False):
         self._debug = debug
-        if self._debug: print("WDRT_HIController.__init__")
+        if self._debug: print(f'{time_ns()} wDRTController.__init__')
 
         self._q_2_ui: SimpleQueue = q_out
 
@@ -19,74 +35,85 @@ class wDRTController:
         self._file_path = ''
         self._cond_name = ''
 
-    # Queue Monitor
-    def parse_command(self, socket, key, val=None, xcvr=None):
-        # COMMANDS FOR wDRT
-        if   key == "get_cfg": self._send(socket, 'get_cfg>', xcvr)
-        elif key == "get_bat": self._send(socket, 'get_bat>', xcvr)
-        elif key == "stm_on" : self._send(socket, 'set_stm>1', xcvr)
-        elif key == "stm_off": self._send(socket, 'set_stm>0', xcvr)
-        elif key == "set_cfg": self._send(socket, f'set_cfg>{val}', xcvr)
-        elif key == "set_iso": self._send(socket, 'set_iso>', xcvr)
-        elif key == "vrb_on" : self._send(socket, 'set_vrb>1', xcvr)
-        elif key == "vrb_off": self._send(socket, 'set_vrb>0', xcvr)
+    ####################################################################################################################
+    # PARSE INCOMING COMMANDS
 
-        elif key == "set_rtc": self._send(socket, f'set_rtc>{val}', xcvr)
+    def parse_command(self, socket, key, val: Optional[str] = None, xcvr: Optional[XBeeDevice] = None) -> None:
+        if self._debug: print(f'{time_ns()} wDRTController.parse_command {key}, {val}, {xcvr}')
 
+        if isinstance(key, str):
+            self._handle_string_command(socket, key, val, xcvr)
+        elif isinstance(key, bytes) or isinstance(key, bytearray):
+            self._handle_key_bytes(socket, key, val)
 
-        # PARENT COMMANDS
-        elif key == "start"  : self._send(socket, 'dta_rcd>', xcvr)
-        elif key == "stop"   : self._send(socket, 'dta_pse>', xcvr)
+    def _handle_string_command(self, socket, key: str, val: Optional[str] = None,
+                               xcvr: Optional[XBeeDevice] = None) -> None:
+        if self._debug: print(f'{time_ns()} wDRTController._handle_string_command {socket} {key}, {val}, {xcvr}')
 
-        elif key == "fpath"  : self._set_file_path(socket, f"{val}/DRT.txt")
-
-        elif 'cond' in key   :
+        if key in self.DEVICE_COMMANDS:
+            self._send(socket, f'{self.DEVICE_COMMANDS[key]}{val}', xcvr)
+        elif 'cond' in key:
             self._cond_name = val.split(':')[0]
+        elif key == "fpath":
+            self._file_path = f"{val}/{self.LOG_FILE_PATH_TEMPLATE}"
 
-        elif 'dta' in key    : self._log_to_csv(socket, val)
+    def _handle_key_bytes(self, socket, key: bytes, val: Optional[str] = None) -> None:
+        if self._debug: print(f'{time_ns()} wDRTController._handle_key_bytes {key}, {socket}, {val}')
 
-    def _threaded_write(self, fpath, data):
+        device_id = socket.get_node_id() if isinstance(socket, RemoteRaw802Device) else (
+            socket.port if isinstance(socket, Serial) else None)
+
+        key = key.decode('utf-8').strip()
+
+        if device_id is not None and any(substring in key for substring in ['cfg', 'stm', 'bty', 'exp', 'trl', 'rt', 'clk']):
+            self._q_2_ui.put(f'wDRT>{device_id}>{key}')
+        elif key.startswith('dta>'):
+            k, s = key.split('>')
+            self._log_to_csv(device_id, f'{val},{s}\n')
+            self._q_2_ui.put(f'wDRT>{device_id}>{key}')
+
+    def _write(self, _path: str, _results: str) -> None:
+        if self._debug: print(f'{time_ns()} wDRTController._write {_path} {_results}')
+
         try:
-            with open(fpath, 'a') as outfile:
-                outfile.writelines(data)
-        except (PermissionError, OSError):
-            sleep(0.05)
-            self._threaded_write(fpath, data)
-            print("Permission Error, retrying")
+            header = None
+            if not isfile(_path):
+                header = "Device ID,Label,Unix time in UTC,Block Microseconds,Trial Number,Reaction Time Microseconds" \
+                         ",Response Count,Battery Percent,Device time in UTC"
+            with open(_path, 'a') as writer:
+                if header:
+                    writer.write(header + '\n')
+                writer.write(_results)
+        except (PermissionError, FileNotFoundError) as e:
+            if self._debug: print(f"Error when writing to file {_path}: {str(e)}")
 
-    def _log_to_csv(self, unit_id, data):
-        def _write(_path, _results):
-            try:
-                with open(_path, 'a') as writer:
-                    writer.write(_results + '\n')
-            except (PermissionError, FileNotFoundError):
-                print(f'path: {_path}, data: {_results}')
+    def _log_to_csv(self, unit_id, data: str) -> None:
+        if self._debug: print(f'{time_ns()} wDRTController._log_to_csv {unit_id} {data}')
 
         if self._file_path:
             if isinstance(unit_id, RemoteRaw802Device):
-                match = re.match(r"(\w+)\s*[_ ]?\s*(\d+)", unit_id.get_node_id())
-                unit_id = match.groups()[1]
+                unit_id = unit_id.get_node_id().split('_')[1]
             elif isinstance(unit_id, Serial):
                 unit_id: Serial
                 unit_id = unit_id.port
 
-            packet = f"DRT_{unit_id},{self._cond_name},{data}"
+            if 'wDRT' not in unit_id:
+                unit_id = f'wDRT_{unit_id}'
+            packet = f"{unit_id},{self._cond_name},{data}"
             file_path = f"{self._file_path}"
-            t = Thread(target=_write, args=(file_path, packet))
+            t = Thread(target=self._write, args=(file_path, packet))
             t.start()
 
-    def _set_file_path(self, unit_id, path):
-        self._file_path = f"{path}"
-        headers = "Device_Unit,Label,Data_Receive_sec.ms, Block_ms, Trial, Reaction Time, Responses, UTC, Battery"
-        try:
-            with open(path, 'a') as writer:
-                writer.write(headers + '\n')
-        except (PermissionError, FileNotFoundError):
-            if self._debug: print(f'{time_ns()} WDRT_HIController {path}, {headers}')
+    ####################################################################################################################
+    # SEND RESULTS TO DEVICE OVER SERIAL AND XBEE TRANSCEIVER
 
-    def _send(self, socket, cmd, xcvr: XBeeDevice = None):
-        if xcvr:
-            socket: RemoteRaw802Device
+    def _send(self, socket: Union[RemoteRaw802Device, Serial], cmd: str, xcvr: Optional[XBeeDevice] = None) -> None:
+        if self._debug: print(f'{time_ns()} wDRTController._send {socket} {cmd} {xcvr}')
+
+        if isinstance(socket, Serial):
+            try:
+                socket.write(str.encode(f'{cmd}\n'))
+            except PermissionError as e:
+                if self._debug: print(f" WDRTController._send ERROR: {e}")
+        elif xcvr:
             xcvr.send_data(socket, cmd)
-        else:
-            socket.write(str.encode(f'{cmd}\n'))

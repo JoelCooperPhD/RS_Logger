@@ -25,10 +25,10 @@ class MMC:
         """
         self._debug = debug
         if self._debug: print(f'{ticks_us()} MMC.__init__')
-
+        
         self.mmc = MMCard()
         self.mmc_present = False
-
+        
         self.filename = None
 
         # Check if the USB device is in mass storage device mode and power on the memory card if available
@@ -47,7 +47,7 @@ class MMC:
         Coroutine that mounts the memory card.
         """
         if self._debug: print(f'{ticks_us()} MMC.mount_mmc')
-
+        
         while True:
             if self.mmc.info():
                 break
@@ -55,7 +55,7 @@ class MMC:
         try:
             os.mount(self.mmc, '/mmc')
             self.mmc_present = True
-
+            
         except Exception as e:
             print(f'MMC Error: {e}')
             # from utilities import mmc_format
@@ -69,7 +69,7 @@ class MMC:
             header (str): The header text to write to the file.
         """
         if self._debug: print(f'{ticks_us()} MMC.init')
-
+        
         if self.mmc_present:
             max_version = "0"
             rtc = self.rtc.datetime()
@@ -96,7 +96,7 @@ class MMC:
             data (str): The data to write to the file.
         """
         if self._debug: print(f'{ticks_us()} MMC.write:{data}')
-
+        
         if self.mmc_present:
             if self.filename:
                 with open(self.filename, 'a') as outfile:

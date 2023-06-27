@@ -15,7 +15,7 @@ class sDRTController:
         self._results = dict()
         self._cond_name = ""
         
-    def parse_command(self, serial_device, key, val=None):
+    def parse_command(self, serial_device, key, val=None, xcvr=None):
         if   key == 'init'         : pass
         elif key == 'close'        : pass
         elif key == 'start'        : self._send(serial_device, 'exp_start')

@@ -11,7 +11,7 @@ class Plotter:
     def __init__(self, frame):
         # Chart
         self._fig = Figure(figsize=(4, 2), dpi=100)
-        self._fig.suptitle("Detection Response Task - DRT")
+        self._fig.suptitle("wDRT - Wireless Detection Response Task")
         self._canvas = FigureCanvasTkAgg(self._fig, master=frame)
         self._canvas.get_tk_widget().grid(row=0, column=0, padx=2, pady=2, sticky='NEWS', rowspan=20)
 

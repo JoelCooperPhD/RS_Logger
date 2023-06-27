@@ -13,7 +13,7 @@ class WDRTUIController:
         # Experiment
         self._running = False
 
-        # sDRT_UI
+        # wDRT_UI
         self._view = wDRT_UIView.WDRTMainWindow(win)
         self._view.NB.bind("<<NotebookTabChanged>>", self._tab_changed_cb)
         self._view.register_stim_on_cb(self._stim_on_button_cb)
@@ -42,6 +42,7 @@ class WDRTUIController:
             self._update_stim_state(val, com)
         elif key == 'dta'    : self._update_stim_data(val, com)
         elif key == 'bty'    : self._update_battery_soc(val, com)
+        elif key == 'trl'    : self._update_trial_number(val, com)
         elif key == 'rt'     : self._update_rt(val, com)
         elif key == 'clk'    : self._update_clicks(val, com)
 
@@ -66,7 +67,8 @@ class WDRTUIController:
             for id_ in to_add:
                 if id_ not in self.devices:
                     self.devices[id_] = self._view.build_tab(id_)
-                    self._q_2_hi.put(f'sDRT,all>stop>1')
+                    self._q_2_hi.put(f'wDRT>all>stop>')
+                    self._q_2_hi.put(f'wDRT>all>close>')
 
         to_remove = set(self.devices) - set(units)
         if to_remove:
@@ -88,7 +90,10 @@ class WDRTUIController:
 
     # sDRT_UI Parent
     def _log_init(self, arg):
-        pass
+        for unit_id in self.devices:
+            self.devices[unit_id]['rt'].set(-1)
+            self.devices[unit_id]['trl_n'].set(0)
+            self.devices[unit_id]['clicks'].set(0)
 
     def _log_close(self, arg):
         pass
@@ -112,7 +117,6 @@ class WDRTUIController:
         if self.devices:
             try:
                 # Clean up old tab and device
-                self._q_2_hi.put(f"wDRT,{self._active_tab}>vrb_off>")
                 if self._running:
                     self.devices[self._active_tab]['plot'].run = False
                     self.devices[self._active_tab]['plot'].clear_all()
@@ -120,8 +124,8 @@ class WDRTUIController:
                 # Start new tab and device
                 self._active_tab = self._view.NB.tab(self._view.NB.select(), "text")
 
-                self._q_2_hi.put(f"wDRT,{self._active_tab}>vrb_on>")
-                self._q_2_hi.put(f"wDRT,{self._active_tab}>get_bat>")
+                self._q_2_hi.put(f"wDRT>{self._active_tab}>bat>")
+
                 if self._running:
                     self.devices[self._active_tab]['plot'].run = True
                     self.devices[self._active_tab]['plot'].clear_all()
@@ -129,14 +133,14 @@ class WDRTUIController:
                 print(f"vController _tab_changed_cb: {e}")
 
     def _stim_on_button_cb(self):
-        self._q_2_hi.put(f"wDRT,{self._active_tab}>stm_on>")
+        self._q_2_hi.put(f"wDRT>{self._active_tab}>stm_on>")
 
     def _stim_off_button_cb(self):
-        self._q_2_hi.put(f"wDRT,{self._active_tab}>stm_off>")
+        self._q_2_hi.put(f"wDRT>{self._active_tab}>stm_off>")
 
     def _configure_button_cb(self):
         self._cnf_win.show(self._active_tab)
-        self._q_2_hi.put(f"wDRT,{self._active_tab}>get_cfg>")
+        self._q_2_hi.put(f"wDRT>{self._active_tab}>cfg>")
 
     def _rescan_network_cb(self):
         for c in self._view.NB.winfo_children():
@@ -145,7 +149,7 @@ class WDRTUIController:
             except TclError:
                 pass
         self.devices.clear()
-        self._q_2_hi.put(f"wDRT,{self._active_tab}>net_scn>")
+        self._q_2_hi.put(f"wDRT>{self._active_tab}>net_scn>")
         self._view.hide()
 
     # Plotter
@@ -155,7 +159,7 @@ class WDRTUIController:
 
     def _update_stim_data(self, arg, unit_id):
         if self._running:
-            block_ms, ts, trial_n, rt, clicks, dev_utc, bty = arg.strip().split(',')
+            block_ms, trial_n, rt, clicks, dev_utc, bty = arg.strip().split(',')
             if unit_id == self._active_tab:
                 if rt == "-1":
                     self.devices[unit_id]['plot'].rt_update(unit_id, -.0001)
@@ -170,6 +174,9 @@ class WDRTUIController:
                 rt = round((int(rt) / 1000000), 2)
                 self.devices[unit_id]['rt'].set(rt)
                 self.devices[unit_id]['plot'].rt_update(unit_id, rt)
+
+    def _update_trial_number(self, trl_n, unit_id):
+        self.devices[unit_id]['trl_n'].set(trl_n)
 
     def _update_clicks(self, arg, unit_id):
         if self._running:
@@ -186,7 +193,10 @@ class WDRTUIController:
                 color = 'white'
                 if p >= i + 1:
                     color = 'black' if p > 2 else 'red'
-                self.devices[unit_id][f'b_{i}'].config(bg=color)
+                try:
+                    self.devices[unit_id][f'b_{i}'].config(bg=color)
+                except Exception as e:
+                    print(e)
 
     def _stop_plotter(self):
         self.devices[self._active_tab]['plot'].run = False
@@ -197,10 +207,10 @@ class WDRTUIController:
     # Configuration Window
     # ---- Registered Callbacks
     def _custom_button_cb(self, msg):
-        self._q_2_hi.put(f"wDRT,{self._active_tab}>set_cfg>{msg}")
+        self._q_2_hi.put(f"wDRT>{self._active_tab}>set>{msg}")
 
     def _iso_button_cb(self):
-        self._q_2_hi.put(f"wDRT,{self._active_tab}>set_iso>")
+        self._q_2_hi.put(f"wDRT>{self._active_tab}>iso>")
 
     # ---- msg from wDRT unit
     def _update_configuration(self, args):

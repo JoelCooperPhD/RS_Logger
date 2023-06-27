@@ -15,7 +15,7 @@ class sVOGController:
         self._clicks = '0'
         self._cond_name = ''
 
-    def parse_command(self, serial_device, key, val=None):
+    def parse_command(self, serial_device, key, val=None, xcvr=None):
 
         if   key == 'init'            : self._send(serial_device, '>do_expStart|<<')
         elif key == 'close'           : self._send(serial_device, '>do_expStop|<<')

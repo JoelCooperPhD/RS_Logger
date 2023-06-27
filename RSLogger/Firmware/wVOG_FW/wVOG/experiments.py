@@ -20,9 +20,6 @@ class BaseVOG:
         self._cfg = config
         self._broadcast = broadcast
 
-        # XB
-        self._xb = xb.XB()
-
         # Lenses
         self._lens_is_clear = False
         self._time_since_last_change = 0

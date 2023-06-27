@@ -42,7 +42,8 @@ class Configurator:
         Args:
             cfgs (str or dict): A string or dictionary containing the new configuration settings.
         """
-        if self._debug: print(f'{ticks_us()} Configurator.update got:{cfgs}')
+        # if self._debug:
+        print(f'{ticks_us()} Configurator.update got:{cfgs}')
         
         if isinstance(cfgs, str):
             try:

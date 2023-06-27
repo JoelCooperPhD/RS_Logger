@@ -69,7 +69,7 @@ class WDRTConfigWin:
         if self._debug: print(f"{time_ns()} WDRT_UIConfig._filter_entry")
         if val.isnumeric():
             val = int(val)
-            if val < lower or val > upper:
+            if int(val) < int(lower) or int(val) > int(upper):
                 val = default_value
         else:
             return default_value
@@ -109,7 +109,8 @@ class WDRTConfigWin:
     # Custom upload
     def _custom_clicked(self):
         if self._debug: print(f"{time_ns()} WDRT_UIConfig._custom_clicked")
-        low = self._filter_entry(self._var['lowerISI'].get(), 3000, 0, 65535)
+        high = self._var['upperISI'].get()
+        low = self._filter_entry(self._var['lowerISI'].get(), 3000, 0, high)
         high = self._filter_entry(self._var['upperISI'].get(), 5000, low, 65535)
         intensity = ceil(self._filter_entry(self._var['intensity'].get(), 100, 0, 100))
         duration = self._filter_entry(self._var['stimDur'].get(), 1000, 0, 65535)

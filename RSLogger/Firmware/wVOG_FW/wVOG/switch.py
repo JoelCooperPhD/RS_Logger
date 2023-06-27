@@ -78,4 +78,3 @@ if __name__ == "__main__":
     switch = DebouncedSwitch(debounce_ms=20, debug=True)
     switch._open_close_cb = lambda a, b, c, d: print(f"Switch state: {a}, Time: {b}, Down: {c}, Up: {d}")
     asyncio.run(switch.update())
-

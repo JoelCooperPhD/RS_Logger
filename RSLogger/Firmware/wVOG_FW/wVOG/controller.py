@@ -39,8 +39,8 @@ class WirelessVOG:
         self.xb.register_incoming_message_cb(self.parse_cmd)
 
         # MMC Save - The flash module stuck to the bottom of the unit
-        self.headers = 'Device ID, Label, Unix time in UTC, Trial Number, Shutter Open, Shutter Closed, Shutter Total,' \
-                         'Transition 0 1 or X, Battery SOC, Device Unix time in UTC\n'
+        self.headers = 'Device ID,Label,Unix time in UTC,Trial Number,Shutter Open,Shutter Closed,Shutter Total,' \
+                         'Transition 0 1 or X,Battery SOC,Device Unix time in UTC\n'
         self.mmc = mmc.MMC()
 
         # Realtime Clock
@@ -124,7 +124,7 @@ class WirelessVOG:
         
         cfg_str = self.cfg.get_config_str()
         
-        self.broadcast(f'cfg>{cfg_str}\n')
+        self.broadcast(f'cfg>{cfg_str}')
 
     def update_config(self, val):
         """
@@ -153,7 +153,7 @@ class WirelessVOG:
                 self.cfg.update(kv)
             cfg_str = self.cfg.get_config_str()
             
-            self.broadcast(f'cfg>{cfg_str}\n')
+            self.broadcast(f'cfg>{cfg_str}')
             
     def update_rtc(self, dt):
         """
@@ -166,8 +166,7 @@ class WirelessVOG:
             self.rtc.datetime(rtc_tuple)
 
         r = self.rtc.datetime()
-        
-        self.broadcast("rtc>, {[str(v) for v in r]}\n")
+        self.broadcast(f"rtc>{(',').join([str(v) for v in r])}")
 
     def get_battery(self):
         """
@@ -196,10 +195,10 @@ class WirelessVOG:
         if self._debug: print(f'{ticks_us()} WirlessVOG.broadcast got:{msg}')
         
         if msg.startswith('dta>'):
-            msg = f"{msg},{self.battery.percent()},{time() + 946684800}\n"
-            self.mmc.write(msg)
+            msg = f'{msg},{self.battery.percent()},{time() + 946684800}\n'
+            m = f"{self.xb.name_NI},,,{msg.strip('dta>')}"
+            self.mmc.write(m)
         else:
-            msg = f"{msg} \n"
+            msg = f"{msg}\n"
         asyncio.create_task(self.xb.transmit(msg))
         USB_VCP().write(msg)
-
