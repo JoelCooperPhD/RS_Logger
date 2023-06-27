@@ -111,10 +111,6 @@ class UsbPortScanner:
                 self._distribute_cb(rs_devices, 'ui', 'devices', ','.join(list(self._rs_devices[rs_devices].keys())))
 
     def _set_device_rtc(self, device, port):
-        """
-        Sets the Real Time Clock (RTC) of all connected devices
-        and notifies the distribute callback function.
-        """
         if self._debug: print(f"{time_ns()} UsbPortScanner._set_device_rtc")
         tt = gmtime()
         val = f'{tt[0]},{tt[1]},{tt[2]},{tt[6]},{tt[3]},{tt[4]},{tt[5]},123'

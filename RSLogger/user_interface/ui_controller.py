@@ -98,7 +98,8 @@ class UIController:
         for controller in self._device_controllers:
             self._device_controllers[controller].handle_control_command(key, val)
 
-    def check_version(self):
+    @staticmethod
+    def check_version():
         try:
             version = urllib.request.urlopen("https://raw.githubusercontent.com/redscientific/RS_Logger/master/version.txt")
             version = str(version.read().decode('utf-8'))
