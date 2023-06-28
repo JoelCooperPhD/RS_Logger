@@ -163,14 +163,15 @@ class BaseDRT:
         
     def _send_results(self):
         if self._debug: print("{} drt._trial_over_cb".format(ticks_us()))
-        if self._reaction_time != -1:
-            self._reaction_time = round(self._reaction_time/1000)
-        block_run_ms = ticks_diff(ticks_us(), self._block_start_us)
-        results = f"dta>{round(block_run_ms/1000)},{self._trial_number},{self._response_n},{self._reaction_time}"
-        if self._broadcast:
-            self._broadcast(results)
-        else:
-             print(results)
+        if self._trial_number >0:
+            if self._reaction_time != -1:
+                self._reaction_time = round(self._reaction_time/1000)
+            block_run_ms = ticks_diff(ticks_us(), self._block_start_us)
+            results = f"dta>{round(block_run_ms/1000)},{self._trial_number},{self._response_n},{self._reaction_time}"
+            if self._broadcast:
+                self._broadcast(results)
+            else:
+                 print(results)
         self._memory_check()
         
     def _verify_config(self):

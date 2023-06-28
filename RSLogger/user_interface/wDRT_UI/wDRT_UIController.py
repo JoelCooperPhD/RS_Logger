@@ -1,5 +1,8 @@
 from queue import SimpleQueue
 from tkinter import Tk, TclError
+
+import numpy as np
+
 from RSLogger.user_interface.wDRT_UI import wDRT_UIView, wDRT_UIConfig
 
 
@@ -95,19 +98,24 @@ class WDRTUIController:
             self.devices[unit_id]['trl_n'].set(0)
             self.devices[unit_id]['clicks'].set(0)
 
+            self.devices[unit_id]['plot'].run = True
+            self.devices[unit_id]['plot'].clear_all()
+            self.devices[unit_id]['plot'].state_update(unit_id, -1)
+
     def _log_close(self, arg):
-        pass
+        for unit_id in self.devices:
+            self.devices[unit_id]['plot'].run = False
+            self.devices[unit_id]['plot'].state_update(unit_id, -1)
 
     def _data_record(self, arg):
         self._running = True
-        if self._active_tab:
-            self.devices[self._active_tab]['plot'].run = True
-            self.devices[self._active_tab]['plot'].clear_all()
+        for unit_id in self.devices:
+            self.devices[unit_id]['plot'].state_update(unit_id, 0)
 
     def _data_pause(self, arg):
         self._running = False
-        if self._active_tab and self.devices:
-            self.devices[self._active_tab]['plot'].run = False
+        for unit_id in self.devices:
+            self.devices[unit_id]['plot'].state_update(unit_id, np.nan)
 
     def _update_file_path(self, arg):
         pass
@@ -115,22 +123,7 @@ class WDRTUIController:
     # Registered Callbacks with wDRT sDRT_UI
     def _tab_changed_cb(self, e):
         if self.devices:
-            try:
-                # Clean up old tab and device
-                if self._running:
-                    self.devices[self._active_tab]['plot'].run = False
-                    self.devices[self._active_tab]['plot'].clear_all()
-
-                # Start new tab and device
-                self._active_tab = self._view.NB.tab(self._view.NB.select(), "text")
-
-                self._q_2_hi.put(f"wDRT>{self._active_tab}>bat>")
-
-                if self._running:
-                    self.devices[self._active_tab]['plot'].run = True
-                    self.devices[self._active_tab]['plot'].clear_all()
-            except Exception as e:
-                print(f"vController _tab_changed_cb: {e}")
+            self._q_2_hi.put(f"wDRT>{self._active_tab}>bat>")
 
     def _stim_on_button_cb(self):
         self._q_2_hi.put(f"wDRT>{self._active_tab}>stm_on>")
@@ -159,14 +152,13 @@ class WDRTUIController:
 
     def _update_stim_data(self, arg, unit_id):
         if self._running:
-            block_ms, trial_n, rt, clicks, dev_utc, bty = arg.strip().split(',')
-            if unit_id == self._active_tab:
-                if rt == "-1":
-                    self.devices[unit_id]['plot'].rt_update(unit_id, -.0001)
-                self.devices[unit_id]['rt'].set(-1)
-                self.devices[unit_id]['trl_n'].set(trial_n)
-                self.devices[unit_id]['clicks'].set(0)
-                self._update_battery_soc(bty, unit_id)
+            block_ms, trial_n, clicks, rt, bty, device_utc = arg.strip().split(',')
+            if rt == "-1":
+                self.devices[unit_id]['plot'].rt_update(unit_id, -.0001)
+            self.devices[unit_id]['rt'].set(-1)
+            self.devices[unit_id]['trl_n'].set(trial_n)
+            self.devices[unit_id]['clicks'].set(0)
+            self._update_battery_soc(bty, unit_id)
 
     def _update_rt(self, rt, unit_id):
         if self._running:
