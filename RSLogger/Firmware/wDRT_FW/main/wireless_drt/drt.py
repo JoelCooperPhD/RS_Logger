@@ -103,9 +103,9 @@ class BaseDRT:
         if self._debug:
             print(f"{ticks_us()} BaseDRT._init_trials")
         self._trial_number = 0
-        self._trial_running = True
         self._stimulus.pulse()
         await sleep_ms(randrange(int(self.configurator.config['ISIL']), int(self.configurator.config['ISIH'])))
+        self._trial_running = True
         self._block_start_us = ticks_us()
 
     def _end_trials(self):
@@ -230,4 +230,3 @@ async def _run_test():
 
 if __name__ == '__main__':
     run(_run_test())
-
