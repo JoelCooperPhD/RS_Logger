@@ -2,10 +2,14 @@ import asyncio
 from threading import Thread
 from queue import SimpleQueue
 from os.path import isfile
+from time import time_ns
 
 
 class sDRTController:
-    def __init__(self, q_2_ui):
+    def __init__(self, q_2_ui, debug=False):
+        self._debug = debug
+        if self._debug: print(f"{time_ns()} sDRTController.__init__")
+
         self._q_2_ui: SimpleQueue = q_2_ui
 
         self._file_path = None
@@ -16,6 +20,8 @@ class sDRTController:
         self._cond_name = ""
         
     def parse_command(self, serial_device, key, val=None, xcvr=None):
+        if self._debug: print(f"{time_ns()} sDRTController.parse_command {serial_device} {key} {val}")
+
         if   key == 'init'         : pass
         elif key == 'close'        : pass
         elif key == 'start'        : self._send(serial_device, 'exp_start')
@@ -40,6 +46,7 @@ class sDRTController:
         elif key == 'cond'         : self._cond_name = val
 
         # Data from device
+
         elif isinstance(key, bytes):
             key = key.decode('utf-8')
             if   'clk' in key : self._handle_clicks_device_data(serial_device.port, key)
@@ -49,32 +56,46 @@ class sDRTController:
             elif 'cfg' in key : self._handle_config_device_data(serial_device.port, key)
 
     def _stimulus_toggle(self, serial_device, val):
+        if self._debug: print(f"{time_ns()} sDRTController._stimulus_toggle {serial_device} {val}")
+
         if val == 'on'   : self._send(serial_device, 'stim_on')
         elif val == 'off': self._send(serial_device, 'stim_off')
 
     def _handle_trial_device_data(self, port, key, val):
+        if self._debug: print(f"{time_ns()} sDRTController._handle_trial_device_data {port} {key} {val}")
+
         k, v = key.strip().split('>')
         v = f'{val},{v}'
         self._results[port] = v
         self._q_2_ui.put(f'sDRT>{port}>{k}>{v}')
 
     def _handle_clicks_device_data(self, port, key):
+        if self._debug: print(f"{time_ns()} sDRTController._handle_clicks_device_data {port} {key}")
+
         k, v = key.strip().split('>')
         self._clicks[port] = v
         self._q_2_ui.put(f'sDRT>{port}>{k}>{v}')
 
     def _handle_end_device_data(self, port):
+        if self._debug: print(f"{time_ns()} sDRTController._handle_end_device_data {port}")
+
         self._log_results(port)
 
     def _handle_stimulus_device_callback(self, port, key):
+        if self._debug: print(f"{time_ns()} sDRTController._handle_stimulus_device_callback {port} {key}")
+
         k, v = key.strip().split('>')
         self._q_2_ui.put(f'sDRT>{port}>{k}>{v}')
 
     def _handle_config_device_data(self, port, key):
+        if self._debug: print(f"{time_ns()} sDRTController._handle_config_device_data {port} {key}")
+
         k, v = key.strip().split('>')
         self._q_2_ui.put(f'sDRT>{port}>{k}>{v}')
 
     async def set_iso(self, serial):
+        if self._debug: print(f"{time_ns()} sDRTController.set_iso {serial}")
+
         self._send(serial, 'set_lowerISI', 3000)
         await asyncio.sleep(.05)
         self._send(serial, 'set_upperISI', 5000)
@@ -84,9 +105,11 @@ class sDRTController:
         self._send(serial, 'set_intensity', 255)
 
     def _log_results(self, com):
+        if self._debug: print(f"{time_ns()} sDRTController._log_results: COM: {com} -- File Path:{self._file_path}")
+
         if self._file_path:
             d = self._results[com].split(',')
-            if d[2] == '-1':
+            if d[3] == '-1':
                 self._clicks[com] = 0
 
             data = f'{d[0]},{d[1]},{d[2]},{self._clicks[com]},{d[3]}'
@@ -104,14 +127,14 @@ class sDRTController:
                         if header: writer.write(header + '\n')
                         writer.write(_results + '\n')
                 except (PermissionError, FileNotFoundError) as e:
-                    print(f'sDRT_HIController._log_results: {e}')
+                    if self._debug: print(f'{time_ns()} {self.file_()[:-3]}.{self.class_()}.{self.method_()}: {e}')
 
             file_path = f"{self._file_path}/sDRT.txt"
             t = Thread(target=_write, args=(file_path, packet))
             t.start()
 
-    @staticmethod
-    def _send(serial_conn, cmd, val=None):
+    def _send(self, serial_conn, cmd, val=None):
+        if self._debug: print(f"{time_ns()} sDRTController._send {serial_conn} {cmd} {val}")
 
         def _send_2_com(_cmd):
             serial_conn.write(_cmd)

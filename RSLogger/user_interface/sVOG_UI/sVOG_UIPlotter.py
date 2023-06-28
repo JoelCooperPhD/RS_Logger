@@ -70,7 +70,6 @@ class Plotter:
         self._plt[1].set_yticks([0, 1])
         self._plt[1].set_yticklabels(["Opaque", "Clear"])
 
-
     def set_tsot_and_state_lines(self, unit_id):
         # RT LINE
 
@@ -222,19 +221,5 @@ class Plotter:
         self._state_xy.pop(unit_id)
         self._tst_array.pop(unit_id)
         self._unit_ids.remove(unit_id)
-
-    def hide_lines(self, unit_id, name=None):
-        if name == 'rt':
-            self._tst_xy[unit_id]['tsot'][0].set_visible(False)
-            self._tst_xy[unit_id]['tsct'][0].set_visible(False)
-        elif name == 'stim_state':
-            self._state_xy[unit_id][0].set_visible(False)
-
-    def show_lines(self, unit_id, name=None):
-        if name == 'rt':
-            self._tst_xy[unit_id]['tsot'][0].set_visible(True)
-            self._tst_xy[unit_id]['tsct'][0].set_visible(True)
-        elif name == 'stim_state':
-            self._state_xy[unit_id][0].set_visible(True)
 
 

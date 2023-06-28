@@ -66,13 +66,13 @@ class sVOGController:
             self._send(serial_conn, f'{msg}')
 
     def _log_results(self, com, data):
-        packet = f'vog_{com},{self._cond_name},{data}'
+        packet = f'sVOG_{com},{self._cond_name},{data}'
 
         def _write(_path, _results):
             try:
                 header = None
                 if not isfile(_path):
-                    header = 'Device ID, Label, Unix time in UTC, Trial Number,' \
+                    header = 'Device ID, Label, Unix time in UTC, Trial Number, ' \
                              'Shutter Open, Shutter Closed'
                 with open(_path, 'a') as writer:
                     if header: writer.write(header + '\n')

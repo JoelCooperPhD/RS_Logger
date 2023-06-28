@@ -36,10 +36,10 @@ class sVOGUIController:
 
         # Messages from drt hardware
         elif key == 'stm':
-            self._update_stimulus_plot(val)
+            self._update_stimulus_plot(val, com)
 
         elif key == 'data':
-            self._update_tsot_plot(val)
+            self._update_tsot_plot(val, com)
 
         # Plot Commands
         elif key == 'clear':
@@ -96,11 +96,10 @@ class sVOGUIController:
             port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
             self.devices[port]['plot'].state_update(port, np.nan)
 
-    def _data_stop(self, time_stamp=None):
+    def _data_stop(self):
         if self.devices:
-            port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
-            self.devices[port]['plot'].state_update(port, np.nan)
             for d in self.devices:
+                self.devices[d]['plot'].state_update(d, np.nan)
                 self.devices[d]['plot'].recording = False
 
     # Tab Events
@@ -128,25 +127,23 @@ class sVOGUIController:
                     self._UIView.NB.forget(self._UIView.NB.children[id_.lower()])
 
     # Messages from vog hardware
-    def _update_stimulus_plot(self, state):
-        port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
+    def _update_stimulus_plot(self, state, com):
         if self._running:
-            self.devices[port]['plot'].state_update(port, state)
+            self.devices[com]['plot'].state_update(com, state)
 
-    def _update_tsot_plot(self, arg):
-        port = self._UIView.NB.tab(self._UIView.NB.select(), "text")
+    def _update_tsot_plot(self, arg, com):
         if self._running:
             trial, opened, closed = arg.split(',')
             opened = int(opened)
             closed = int(closed)
 
-            self.devices[port]['trl_n'].set(trial)
-            self.devices[port]['tsot'].set(opened)
-            self.devices[port]['tsct'].set(closed)
+            self.devices[com]['trl_n'].set(trial)
+            self.devices[com]['tsot'].set(opened)
+            self.devices[com]['tsct'].set(closed)
 
-            self.devices[port]['plot'].tsot_update(port, opened)
+            self.devices[com]['plot'].tsot_update(com, opened)
 
-            self.devices[port]['plot'].tsct_update(port, closed)
+            self.devices[com]['plot'].tsct_update(com, closed)
 
     def _reset_results_text(self):
         for d in self.devices:
