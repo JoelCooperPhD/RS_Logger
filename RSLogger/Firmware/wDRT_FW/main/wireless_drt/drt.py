@@ -44,6 +44,9 @@ class BaseDRT:
         self._response_n = 0
         self._reaction_time = -1
 
+        # Experiment
+        self._exp_loop = None
+
         # Block
         self._block_running = False
         self._block_stopping = False
@@ -58,22 +61,17 @@ class BaseDRT:
         self._stop_utc = time() + 946684800
         self._trial_number = 0
 
-        # Experiment Loop
-        create_task(self._exp_loop())
-
     def handle_msg(self, key, value):
         if self._debug:
             print(f'{ticks_us()} BaseVOG.handle_exp_msg {action} {value}')
-        if key == "exp":
-            if value == "1":
-                self._init_exp()
-            elif value == "0":
-                self._end_exp()
         if key == "trl":
             if value == "1":
-                create_task(self._init_trials())
+                self._exp_loop = create_task(self._init_trials())
             elif value == "0":
-                self._end_trials()
+                if self._exp_loop:
+                    self._exp_loop.cancel()
+                    self._turn_stimulus_off()
+
         elif key == "dev":
             if value == "iso":
                 self._set_iso()
@@ -82,36 +80,28 @@ class BaseDRT:
             elif value == "0":
                 self._stimulus.off()
 
-    async def _exp_loop(self):
-        if self._debug:
-            print(f"{ticks_us()} BaseDRT._exp_loop")
-        while True:
-            if self._trial_running:
-                self._init_rt_probe()
-                await gather(self._stimulus_runner(), self._trial_runner())
-                self._send_results()
-                self._memory_check()
-            await sleep_ms(0)
-
-    def _init_exp(self):
-        pass
-
-    def _end_exp(self):
-        pass
-
     async def _init_trials(self):
         if self._debug:
-            print(f"{ticks_us()} BaseDRT._init_trials")
+            print(f"{ticks_us()} BaseDRT._exp_loop")
+
         self._trial_number = 0
         self._stimulus.pulse()
+
         await sleep_ms(randrange(int(self.configurator.config['ISIL']), int(self.configurator.config['ISIH'])))
-        self._trial_running = True
         self._block_start_us = ticks_us()
+
+        while True:
+            self._init_rt_probe()
+            await gather(self._stimulus_runner(), self._trial_runner())
+
+            self._send_results()
+            self._memory_check()
 
     def _end_trials(self):
         if self._debug:
             print(f"{ticks_us()} BaseDRT._end_trials")
-        self._trial_running = False
+        if self._block_running:
+            self._block_running = False
 
     def _init_rt_probe(self):
         if self._debug:
@@ -134,10 +124,7 @@ class BaseDRT:
         if self._debug:
             print(f"{ticks_us()} BaseDRT._trial_runner")
         self._trial_number += 1
-        if self._broadcast:
-            self._broadcast(f"trl>{self._trial_number}")
-        else:
-            print(f"trl>{self._trial_number}")
+        self._broadcast(f"trl>{self._trial_number}") if self._broadcast else print(f"trl>{self._trial_number}")
         await sleep_ms(self._rt_probe_duration)
 
     def _response_cb(self, clk_us):
@@ -181,9 +168,11 @@ class BaseDRT:
         if self._debug:
             print("{} BaseDRT._trial_over_cb".format(ticks_us()))
         if self._trial_number > 0:
+            block_run_ms = ticks_diff(ticks_us(), self._block_start_us)
+
             if self._reaction_time != -1:
                 self._reaction_time = round(self._reaction_time / 1000)
-            block_run_ms = ticks_diff(ticks_us(), self._block_start_us)
+
             results = f"dta>{round(block_run_ms / 1000)},{self._trial_number},{self._response_n},{self._reaction_time}"
             if self._broadcast:
                 self._broadcast(results)
