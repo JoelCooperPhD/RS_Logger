@@ -65,8 +65,7 @@ class HWRoot:
             await asyncio.sleep(0.001)
 
     def distribute_message(self, device, port, key, val):
-        # if self._debug:
-        print(f"{time_ns()} {self.file_()[:-3]}.{self.class_()}.{self.method_()}: {device} {port} {key} {val}")
+        if self._debug: print(f"{time_ns()} {self.file_()[:-3]}.{self.class_()}.{self.method_()}: {device} {port} {key} {val}")
 
         if port == 'ui':
             self._handle_message_for_ui(device, port, key, val)
@@ -84,13 +83,13 @@ class HWRoot:
             print(f"{time_ns()} {self.file_()[:-3]}.{self.class_()}.{self.method_()}")
 
         if device == 'all':
-            for dev, port_sockets in self.RS_devices.items():  # All devices
-                for port in port_sockets.keys():  # All ports of device
+            for dev, port_sockets in list(self.RS_devices.items()):  # All devices
+                for port in list(port_sockets.keys()):  # All ports of device
                     socket = self.RS_devices.get(dev, {}).get(port)
                     self._device_controllers[dev].parse_command(socket, key, val, self.XB.xcvr)
         else:
             if port == 'all':
-                for port in self.RS_devices[device]:
+                for port in list(self.RS_devices[device].keys()):
                     socket = self.RS_devices.get(device, {}).get(port)
                     self._device_controllers[device].parse_command(socket, key, val, self.XB.xcvr)
             else:

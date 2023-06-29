@@ -26,12 +26,14 @@ class RemoteConnectionManager:
         self._remote_devices = remote_devices
 
     async def run(self):
-        if self._debug: print(f"{time_ns()} RemoteConnectionManager.run")
+        if self._debug:
+            print(f"{time_ns()} RemoteConnectionManager.run")
         await asyncio.gather(self._scan_usb_ports())
 
     async def _scan_usb_ports(self):
         while True:
-            if self._debug: print(f"{time_ns()} RemoteConnectionManager._scan_usb_ports")
+            if self._debug:
+                print(f"{time_ns()} RemoteConnectionManager._scan_usb_ports")
             dongle = self._scan_for_dongle(await self._get_comports())
 
             if not dongle and self.xcvr:
@@ -43,12 +45,14 @@ class RemoteConnectionManager:
             await asyncio.sleep(.5)
 
     async def _get_comports(self):
-        if self._debug: print(f"{time_ns()} RemoteConnectionManager._get_comports")
+        if self._debug:
+            print(f"{time_ns()} RemoteConnectionManager._get_comports")
         loop = get_running_loop()
         return await loop.run_in_executor(None, comports)
 
     def _scan_for_dongle(self, comports):
-        if self._debug: print(f"{time_ns()} RemoteConnectionManager._scan_for_dongle")
+        if self._debug:
+            print(f"{time_ns()} RemoteConnectionManager._scan_for_dongle")
 
         # Scan to make sure that no other RS devices are attached, if so then the dongle won't be connected.
         for comport in comports:
@@ -68,7 +72,8 @@ class RemoteConnectionManager:
         return None
 
     def _close_dongle_connection(self):
-        if self._debug: print(f"{time_ns()} RemoteConnectionManager._close_dongle_connection")
+        if self._debug:
+            print(f"{time_ns()} RemoteConnectionManager._close_dongle_connection")
         if self.xcvr is not None:
             try:
                 self.xcvr.close()
@@ -78,7 +83,8 @@ class RemoteConnectionManager:
                 self.xcvr = None
 
     def _xb_initialize(self):
-        if self._debug: print(f"{time_ns()} RemoteConnectionManager._xb_initialize")
+        if self._debug:
+            print(f"{time_ns()} RemoteConnectionManager._xb_initialize")
         if not self.xcvr.is_open():
             self.xcvr.open()
             self.xcvr.add_data_received_callback(self._msg_received)
@@ -87,22 +93,28 @@ class RemoteConnectionManager:
             self.start_network_scan()
 
     def _msg_received(self, msg: XBeeMessage):
-        # if self._debug:
-        print(f"{time_ns()} RemoteConnectionManager._msg_received {msg.data}")
+        if self._debug:
+            print(f"{time_ns()} RemoteConnectionManager._msg_received {msg.data}")
 
         if self.xcvr:
-            id_raw = msg.remote_device.get_node_id()
-            id_clean = re.sub(r'[_\s]', '', id_raw)
-            dev, num = re.match(r"([a-z]+)([0-9]+)", id_clean, re.I).groups()
+            try:
+                id_raw = msg.remote_device.get_node_id()
+                id_clean = re.sub(r'[_\s]', '', id_raw)
+                dev, num = re.match(r"([a-z]+)([0-9]+)", id_clean, re.I).groups()
 
-            self._distribute(dev, id_raw, msg.data, msg.timestamp)
+                self._distribute(dev, id_raw, msg.data, msg.timestamp)
+            except TypeError as e:
+                if self._debug: print(f"{time_ns()} RemoteConnectionManager._msg_received ERROR {e}")
 
     def start_network_scan(self):
-        if self._debug: print(f"{time_ns()} RemoteConnectionManager.start_network_scan")
-        if not self._network:
+        if self._debug:
+            print(f"{time_ns()} RemoteConnectionManager.start_network_scan")
+
+        if not self._network and self.xcvr:
             self._network: XBeeNetwork = self.xcvr.get_network()
             self._network.add_discovery_process_finished_callback(self._add_devices)
-        self._network.start_discovery_process()
+        if self._network:
+            self._network.start_discovery_process()
 
     def stop_network_scan(self):
         if self._debug: print(f"{time_ns()} RemoteConnectionManager.stop_network_scan")
@@ -111,13 +123,16 @@ class RemoteConnectionManager:
         self._network = None
 
     def clear_network(self):
-        if self._debug: print(f"{time_ns()} RemoteConnectionManager.clear_network")
+        if self._debug:
+            print(f"{time_ns()} RemoteConnectionManager.clear_network")
         self.stop_network_scan()
         self.start_network_scan()
-        self._network.clear()
+        if self._network:
+            self._network.clear()
 
     def _add_devices(self, e: NetworkDiscoveryStatus):
-        if self._debug: print(f"{time_ns()} RemoteConnectionManager._add_devices")
+        if self._debug:
+            print(f"{time_ns()} RemoteConnectionManager._add_devices")
         if e.value[1] == "Success":
             devices = self._network.get_devices()
             if devices:
@@ -127,22 +142,27 @@ class RemoteConnectionManager:
 
     def _discovery_complete_callback(self, discovered_devices):
         for device in discovered_devices:
-            if self._debug: print(f"{time_ns()} RemoteConnectionManager._discovery_complete_callback")
+            if self._debug:
+                print(f"{time_ns()} RemoteConnectionManager._discovery_complete_callback")
 
-            id_raw = device.get_node_id()
-            id_clean = re.sub(r'[_\s]', '', id_raw)
+            try:
+                id_raw = device.get_node_id()
+                id_clean = re.sub(r'[_\s]', '', id_raw)
 
-            dev_num = re.match(r"([a-z]+)([0-9]+)", id_clean, re.I)
-            dev, num = dev_num.groups()
+                dev_num = re.match(r"([a-z]+)([0-9]+)", id_clean, re.I)
+                dev, num = dev_num.groups()
 
-            self._remote_devices.setdefault(dev, {})[id_raw] = device
+                self._remote_devices.setdefault(dev, {})[id_raw] = device
 
-            device_d = ",".join(self._remote_devices[dev].keys())
-            self._distribute(dev, 'ui', 'devices', device_d)
-            self._set_rtc(dev)
+                device_d = ",".join(self._remote_devices[dev].keys())
+                self._distribute(dev, 'ui', 'devices', device_d)
+                self._set_rtc(dev)
+            except TypeError as e:
+                if self._debug: print(f"{time_ns()} RemoteConnectionManager._discover_complete_callback ERROR {e}")
 
     def _set_rtc(self, dev):
-        if self._debug: print(f" RemoteConnectionManager._set_rtc")
+        if self._debug:
+            print(f" RemoteConnectionManager._set_rtc")
         tt = gmtime()
         self._distribute(dev, 'all', 'set_rtc', f"{tt[0]},{tt[1]},{tt[2]},{tt[6]},{tt[3]},{tt[4]},{tt[5]},123")
 

@@ -7,7 +7,9 @@ from RSLogger.user_interface.wDRT_UI import wDRT_UIView, wDRT_UIConfig
 
 
 class WDRTUIController:
-    def __init__(self, win, q_out):
+    def __init__(self, win, q_out, debug=False):
+        self._debug = debug
+
         self._win: Tk = win
         self._q_2_hi: SimpleQueue = q_out
 
@@ -127,7 +129,7 @@ class WDRTUIController:
             if self.devices:
                 self._q_2_hi.put(f"wDRT>{self._active_tab}>bat>")
         except TclError as e:
-            print(e)
+            if self._debug: print(e)
 
     def _stim_on_button_cb(self):
         self._q_2_hi.put(f"wDRT>{self._active_tab}>stm_on>")

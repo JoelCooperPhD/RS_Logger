@@ -4,8 +4,11 @@ from threading import Thread
 from time import time_ns
 from typing import Dict, Union, Optional
 
-from digi.xbee.devices import XBeeDevice, RemoteRaw802Device
+from digi.xbee.devices import XBeeDevice, RemoteRaw802Device, TransmitException
 from os.path import isfile
+
+from serial import SerialTimeoutException
+
 
 class wDRTController:
     DEVICE_COMMANDS: Dict[str, str] = {
@@ -17,8 +20,6 @@ class wDRTController:
         "bat"       : 'bat>',
         "set_rtc"   : 'rtc>',
 
-        "init"      : 'exp>1',
-        "close"     : 'exp>0',
         "start"     : 'trl>1',
         "stop"      : 'trl>0'
     }
@@ -108,8 +109,7 @@ class wDRTController:
     # SEND RESULTS TO DEVICE OVER SERIAL AND XBEE TRANSCEIVER
 
     def _send(self, socket: Union[RemoteRaw802Device, Serial], cmd: str, xcvr: Optional[XBeeDevice] = None) -> None:
-        # if self._debug:
-        print(f'{time_ns()} wDRTController._send {socket} {cmd} {xcvr}')
+        if self._debug: print(f'{time_ns()} wDRTController._send {socket} {cmd} {xcvr}')
 
         if isinstance(socket, Serial):
             try:
@@ -117,4 +117,7 @@ class wDRTController:
             except PermissionError as e:
                 if self._debug: print(f" WDRTController._send ERROR: {e}")
         elif xcvr:
-            xcvr.send_data(socket, cmd)
+            try:
+                xcvr.send_data(socket, cmd)
+            except (TransmitException, SerialTimeoutException) as e:
+                print(f" {e} with {cmd} to {socket}")
