@@ -65,8 +65,8 @@ class HWRoot:
             await asyncio.sleep(0.001)
 
     def distribute_message(self, device, port, key, val):
-        if self._debug:
-            print(f"{time_ns()} {self.file_()[:-3]}.{self.class_()}.{self.method_()}: {device} {port} {key} {val}")
+        # if self._debug:
+        print(f"{time_ns()} {self.file_()[:-3]}.{self.class_()}.{self.method_()}: {device} {port} {key} {val}")
 
         if port == 'ui':
             self._handle_message_for_ui(device, port, key, val)

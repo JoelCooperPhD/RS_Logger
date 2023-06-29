@@ -87,7 +87,8 @@ class RemoteConnectionManager:
             self.start_network_scan()
 
     def _msg_received(self, msg: XBeeMessage):
-        if self._debug: print(f"{time_ns()} RemoteConnectionManager._msg_received {msg.data}")
+        # if self._debug:
+        print(f"{time_ns()} RemoteConnectionManager._msg_received {msg.data}")
 
         if self.xcvr:
             id_raw = msg.remote_device.get_node_id()

@@ -122,8 +122,12 @@ class WDRTUIController:
 
     # Registered Callbacks with wDRT sDRT_UI
     def _tab_changed_cb(self, e):
-        if self.devices:
-            self._q_2_hi.put(f"wDRT>{self._active_tab}>bat>")
+        try:
+            self._active_tab = self._view.NB.tab(self._view.NB.select(), "text")
+            if self.devices:
+                self._q_2_hi.put(f"wDRT>{self._active_tab}>bat>")
+        except TclError as e:
+            print(e)
 
     def _stim_on_button_cb(self):
         self._q_2_hi.put(f"wDRT>{self._active_tab}>stm_on>")

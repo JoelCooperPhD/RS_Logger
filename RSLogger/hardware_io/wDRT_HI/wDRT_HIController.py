@@ -108,7 +108,8 @@ class wDRTController:
     # SEND RESULTS TO DEVICE OVER SERIAL AND XBEE TRANSCEIVER
 
     def _send(self, socket: Union[RemoteRaw802Device, Serial], cmd: str, xcvr: Optional[XBeeDevice] = None) -> None:
-        if self._debug: print(f'{time_ns()} wDRTController._send {socket} {cmd} {xcvr}')
+        # if self._debug:
+        print(f'{time_ns()} wDRTController._send {socket} {cmd} {xcvr}')
 
         if isinstance(socket, Serial):
             try:

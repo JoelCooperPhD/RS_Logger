@@ -168,7 +168,7 @@ class WVOGUIController:
 
                 # Start new tab and device
                 self._active_tab = self._view.NB.tab(self._view.NB.select(), "text")
-                if not 'COM' in self._active_tab:
+                if 'COM' not in self._active_tab:
                     self._q_2_hi.put(f"wVOG>{self._active_tab}>get_bat>")
                 if self._running:
                     self.devices[self._active_tab]['plot'].run = True

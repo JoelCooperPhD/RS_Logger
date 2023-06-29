@@ -56,7 +56,8 @@ class XB:
         
         while True:
             msg = await self._reader.read(-1)
-            if self._debug: print(f'{ticks_us()} XB._listen_for_new_messages {msg[3:4]}')
+            if self._debug:
+                print(f'{ticks_us()} XB._listen_for_new_messages {msg[3:4]}')
             if msg[3:4] == b'\x90':
                 self._API_0x90(msg)  # Receive Packet
             elif msg[3:4] == b'\x91':
