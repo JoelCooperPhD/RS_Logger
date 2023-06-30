@@ -76,18 +76,16 @@ class RSDeviceController:
                 self.device.handle_msg(cmd, val)
 
             # Configuration
-            elif cmd == 'cfg':
+            elif cmd == 'get_cfg':
                 self.get_full_configuration()
             elif cmd == 'set':
                 self.update_config(val)
 
-            elif cmd == 'rtc':
+            elif cmd == 'set_rtc':
                 self.update_rtc(val)
-            elif cmd == 'bat':
+            elif cmd == 'get_bat':
                 self.get_battery()
 
-            else:
-                self.broadcast("Unknown command")
         except ValueError as e:
             if self._debug: print(f'{ticks_us()} RSDeviceController.parse_cmd (e)')
             
@@ -126,7 +124,7 @@ class RSDeviceController:
             self.rtc.datetime(rtc_tuple)
 
         r = self.rtc.datetime()
-        # self.broadcast(f"rtc>{(',').join([str(v) for v in r])}")
+        self.broadcast(f"rtc>{(',').join([str(v) for v in r])}")
 
     def get_battery(self):
         """

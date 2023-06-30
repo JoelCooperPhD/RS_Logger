@@ -156,15 +156,14 @@ class RemoteConnectionManager:
 
                 device_d = ",".join(self._remote_devices[dev].keys())
                 self._distribute(dev, 'ui', 'devices', device_d)
-                self._set_rtc(dev)
+                self._set_rtc(dev, id_raw)
             except TypeError as e:
                 if self._debug: print(f"{time_ns()} RemoteConnectionManager._discover_complete_callback ERROR {e}")
 
-    def _set_rtc(self, dev):
-        if self._debug:
-            print(f" RemoteConnectionManager._set_rtc")
+    def _set_rtc(self, dev, id_raw):
+        if self._debug: print(f" RemoteConnectionManager._set_rtc {dev} {num}")
         tt = gmtime()
-        self._distribute(dev, 'all', 'set_rtc', f"{tt[0]},{tt[1]},{tt[2]},{tt[6]},{tt[3]},{tt[4]},{tt[5]},123")
+        self._distribute(dev, id_raw, 'set_rtc', f"{tt[0]},{tt[1]},{tt[2]},{tt[6]},{tt[3]},{tt[4]},{tt[5]},123")
 
 
 if __name__ == "__main__":

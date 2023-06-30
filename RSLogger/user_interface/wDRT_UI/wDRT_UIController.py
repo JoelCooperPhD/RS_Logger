@@ -72,8 +72,7 @@ class WDRTUIController:
             for id_ in to_add:
                 if id_ not in self.devices:
                     self.devices[id_] = self._view.build_tab(id_)
-                    self._q_2_hi.put(f'wDRT>all>stop>')
-                    self._q_2_hi.put(f'wDRT>all>close>')
+                    self._q_2_hi.put(f'wDRT>{id_}>stop>')
 
         to_remove = set(self.devices) - set(units)
         if to_remove:
@@ -127,7 +126,7 @@ class WDRTUIController:
         try:
             self._active_tab = self._view.NB.tab(self._view.NB.select(), "text")
             if self.devices:
-                self._q_2_hi.put(f"wDRT>{self._active_tab}>bat>")
+                self._q_2_hi.put(f"wDRT>{self._active_tab}>get_bat>")
         except TclError as e:
             if self._debug: print(e)
 
@@ -139,7 +138,7 @@ class WDRTUIController:
 
     def _configure_button_cb(self):
         self._cnf_win.show(self._active_tab)
-        self._q_2_hi.put(f"wDRT>{self._active_tab}>cfg>")
+        self._q_2_hi.put(f"wDRT>{self._active_tab}>get_cfg>")
 
     def _rescan_network_cb(self):
         for c in self._view.NB.winfo_children():

@@ -12,13 +12,13 @@ from serial import SerialTimeoutException
 
 class wDRTController:
     DEVICE_COMMANDS: Dict[str, str] = {
-        "cfg"       : 'cfg>',
+        "get_cfg"   : 'get_cfg>',
         "set"       : 'set>',
         "stm_on"    : 'dev>1',
         "stm_off"   : 'dev>0',
         "iso"       : 'dev>iso',
-        "bat"       : 'bat>',
-        "set_rtc"   : 'rtc>',
+        "get_bat"   : 'get_bat>',
+        "set_rtc"   : 'set_rtc>',
 
         "start"     : 'trl>1',
         "stop"      : 'trl>0'
