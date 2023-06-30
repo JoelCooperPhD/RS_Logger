@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "RSLogger"
-#define MyAppVersion "1.2.2"
+#define MyAppVersion "1.3"
 #define MyAppPublisher "Red Scientific, Inc."
 #define MyAppURL "https://www.redscientific.com/"
 #define MyAppExeName "RS_Logger.exe"

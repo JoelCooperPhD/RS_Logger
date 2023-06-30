@@ -3,6 +3,7 @@ import os
 import micropython
 from uasyncio import create_task, sleep
 from pyb import usb_mode
+from time import ticks_us
 
 micropython.alloc_emergency_exception_buf(100)
 
@@ -18,12 +19,17 @@ class MMC:
         rtc (RTC): An instance of the RTC class used to get the current date and time.
     """
 
-    def __init__(self):
+    def __init__(self, debug=False):
         """
         Initializes the MMC class and checks if the memory card is present.
         """
+        self._debug = debug
+        if self._debug: print(f'{ticks_us()} MMC.__init__')
+
         self.mmc = MMCard()
         self.mmc_present = False
+
+        self.filename = None
 
         # Check if the USB device is in mass storage device mode and power on the memory card if available
         if 'MSC' in usb_mode():
@@ -31,18 +37,17 @@ class MMC:
 
             # Check if the memory card is present
             if self.mmc.info():
-                self.filename = None
                 self.rtc = RTC()
-
                 # Start a coroutine to mount the memory card
                 create_task(self.mount_mmc())
-
                 self.mmc_present = True
 
     async def mount_mmc(self):
         """
         Coroutine that mounts the memory card.
         """
+        if self._debug: print(f'{ticks_us()} MMC.mount_mmc')
+
         while True:
             if self.mmc.info():
                 break
@@ -50,7 +55,7 @@ class MMC:
         try:
             os.mount(self.mmc, '/mmc')
             self.mmc_present = True
-            
+
         except Exception as e:
             print(f'MMC Error: {e}')
             # from utilities import mmc_format
@@ -63,6 +68,8 @@ class MMC:
         Args:
             header (str): The header text to write to the file.
         """
+        if self._debug: print(f'{ticks_us()} MMC.init')
+
         if self.mmc_present:
             max_version = "0"
             rtc = self.rtc.datetime()
@@ -88,6 +95,12 @@ class MMC:
         Args:
             data (str): The data to write to the file.
         """
+        if self._debug: print(f'{ticks_us()} MMC.write:{data}')
+
         if self.mmc_present:
-            with open(self.filename, 'a') as outfile:
-                outfile.write(data)
+            if self.filename:
+                with open(self.filename, 'a') as outfile:
+                    outfile.write(data)
+            else:
+                print(f'filename is None')
+

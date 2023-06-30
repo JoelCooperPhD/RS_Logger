@@ -1,21 +1,21 @@
-import queue
 import urllib.request
-from urllib.error import URLError
 import webbrowser
+import inspect
+
+from urllib.error import URLError
 from tkinter import Tk, BOTH, messagebox
 from tkinter.ttk import Frame
 from os import path
 
+from time import time_ns
 from queue import SimpleQueue
-
 from main import __version__
 
 # User Interface
-from RSLogger.user_interface.SFT_UI import SFT_UIController
-from RSLogger.user_interface.sDRT_UI import DRT_UIController
-from RSLogger.user_interface.sVOG_UI import VOG_UIController
-from RSLogger.user_interface.wDRT_UI import WDRT_UIController
-from RSLogger.user_interface.wVOG_UI import WVOG_UIController
+from RSLogger.user_interface.sDRT_UI import sDRT_UIController
+from RSLogger.user_interface.sVOG_UI import sVOG_UIController
+from RSLogger.user_interface.wDRT_UI import wDRT_UIController
+from RSLogger.user_interface.wVOG_UI import wVOG_UIController
 
 # Widgets
 from RSLogger.user_interface.Logger.controls import ExpControls
@@ -26,7 +26,11 @@ from RSLogger.user_interface.Logger.usb_cameras.cam_ui import CameraWidget
 
 
 class UIController:
-    def __init__(self, queues):
+    def __init__(self, queues, debug=False):
+        self._debug = debug
+        if self._debug:
+            print(f"{time_ns()} {self.file_()[:-3]}.{self.class_()}.{self.method_()}")
+
         self._q_2_ui: SimpleQueue = queues['q_2_ui']
         self._q_2_hi: SimpleQueue = queues['q_2_hi']
 
@@ -56,11 +60,10 @@ class UIController:
         # Devices
         self._device_controllers = {
             # 'sft': SFT_UIController.SFTUIController(self.win, queues['ui_controller'], queues['ui_sft']),
-            'sDRT': DRT_UIController.DRTUIController(self.win, queues['q_2_hi']),
-
-            'wDRT': WDRT_UIController.WDRTUIController(self.win, queues['q_2_hi']),
-            'wVOG': WVOG_UIController.WVOGUIController(self.win, queues['q_2_hi']),
-            'sVOG': VOG_UIController.VOGUIController(self.win, queues['q_2_hi'])
+            'sDRT': sDRT_UIController.sDRTUIController(self.win, queues['q_2_hi']),
+            'wDRT': wDRT_UIController.WDRTUIController(self.win, queues['q_2_hi']),
+            'wVOG': wVOG_UIController.WVOGUIController(self.win, queues['q_2_hi']),
+            'sVOG': sVOG_UIController.sVOGUIController(self.win, queues['q_2_hi'])
         }
 
         self._q_2_ui_messages_listener()
@@ -73,19 +76,25 @@ class UIController:
         self.win.mainloop()
 
     def _q_2_ui_messages_listener(self):
+        if self._debug:
+            print(f"{time_ns()} {self.file_()[:-3]}.{self.class_()}.{self.method_()}")
+
         while not self._q_2_ui.empty():
 
             msg = self._q_2_ui.get()
-
-            device_port, key, val = msg.split('>')
-            device, port = device_port.split(',')
-
-            if device in self._device_controllers.keys():
-                self._device_controllers[device].handle_command(port, key, val)
+            try:
+                device, port, key, val = msg.split('>')
+                if device in self._device_controllers.keys():
+                    self._device_controllers[device].handle_command(port, key, val)
+            except ValueError as e:
+                pass
 
         self.win.after(10, self._q_2_ui_messages_listener)
 
     def _control_handler(self, key, val):
+        if self._debug:
+            print(f"{time_ns()} {self.file_()[:-3]}.{self.class_()}.{self.method_()}")
+
         for widget in self._widgets:
             if key == 'fpath':
                 self._widgets[widget].set_file_path(val)
@@ -102,11 +111,14 @@ class UIController:
             self._device_controllers[controller].handle_control_command(key, val)
 
     def check_version(self):
+        if self._debug:
+            print(f"{time_ns()} {self.file_()[:-3]}.{self.class_()}.{self.method_()}")
+
         try:
             version = urllib.request.urlopen("https://raw.githubusercontent.com/redscientific/RS_Logger/master/version.txt")
             version = str(version.read().decode('utf-8'))
             version = version.strip()
-            if version != __version__:
+            if version > __version__:
                 ans = messagebox.askquestion(
                     title="Notification",
                     message=f"You are running RSLogger version {__version__}\n\n"
@@ -119,6 +131,15 @@ class UIController:
             messagebox.showwarning(title="No Internet Connection!",
                                    message="Your software may be out of date.\n\n"
                                            "Please go to redscientific.com to check for updates.")
+
+    def file_(self):
+        return path.basename(__file__)
+
+    def class_(self):
+        return self.__class__.__name__
+
+    def method_(self):
+        return  inspect.currentframe().f_back.f_code.co_name
 
 
 

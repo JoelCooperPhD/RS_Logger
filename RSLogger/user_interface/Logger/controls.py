@@ -102,7 +102,7 @@ class ExpControls:
                     message=message_)
             if ans == 'yes' or file_count == 0:
                 self._file_path = file_path
-                self._q_out.put(f'all,all>fpath>{file_path}')
+                self._q_out.put(f'all>all>fpath>{file_path}')
                 self._ctrl_cb('fpath', file_path)
             else:
                 self._file_path = None
@@ -116,22 +116,22 @@ class ExpControls:
             self._ask_file_dialog()
             if self._file_path:
                 self._ctrl_cb('init', timestamp)
-                self._q_out.put(f'all,all>init>')
+                self._q_out.put(f'all>all>init>')
         else:
             self._ctrl_cb('close', timestamp)
-            self._q_out.put(f'all,all>close>')
+            self._q_out.put(f'all>all>close>')
 
     def _record_button_cb(self):
         timestamp = time()
         if not self._record_running:
             self._ctrl_cb('start', timestamp)
-            self._q_out.put(f'all,all>start>')
+            self._q_out.put(f'all>all>start>')
         else:
             self._ctrl_cb('stop', timestamp)
-            self._q_out.put(f'all,all>stop>')
+            self._q_out.put(f'all>all>stop>')
 
     def _block_cb(self, a, b, c):
-        self._q_out.put(f'all,all>cond>{self.var_cond_name.get()}')
+        self._q_out.put(f'all>all>cond>{self.var_cond_name.get()}')
 
     def _log_controls(self, state, timestamp):
         def _write(_path, _results):

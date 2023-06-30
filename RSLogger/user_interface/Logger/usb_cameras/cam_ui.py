@@ -177,35 +177,40 @@ class CameraWidget:
         If there is a change then it reaches out to the camera controller to notify it.
         If a camera is unplugged, it is removed
         """
-        if self._process_running:
-            wmi = win32com.client.GetObject("winmgmts:")
-            usb_items = wmi.InstancesOf("Win32_USBHub")
-            usb_num_delta = self._prior_cam_count - len(usb_items)
-            self._prior_cam_count = len(usb_items)
+        try:
+            if self._process_running:
+                wmi = win32com.client.GetObject("winmgmts:")
+                usb_items = wmi.InstancesOf("Win32_USBHub")
+                usb_num_delta = self._prior_cam_count - len(usb_items)
+                self._prior_cam_count = len(usb_items)
 
-            if usb_num_delta != 0:
-                time.sleep(1)
-                available_cams = self._identify_available_cameras()
+                if usb_num_delta != 0:
+                    time.sleep(1)
+                    available_cams = self._identify_available_cameras()
 
-                # Update camera dictionary with current cameras
-                new_cams = set(available_cams)
-                old_cams = set(list(self._attached_cameras.keys()))
-                for i in (new_cams - old_cams):
-                    self._attached_cameras[i] = {'use': 0, 'res': 'Low', 'FPS': '10'}
-                for i in (old_cams - new_cams):
-                    self._attached_cameras.pop(i)
-                    self._cb_cam_selected()
+                    # Update camera dictionary with current cameras
+                    new_cams = set(available_cams)
+                    old_cams = set(list(self._attached_cameras.keys()))
+                    for i in (new_cams - old_cams):
+                        self._attached_cameras[i] = {'use': 0, 'res': 'Low', 'FPS': '10'}
+                    for i in (old_cams - new_cams):
+                        self._attached_cameras.pop(i)
+                        self._cb_cam_selected()
 
-                # Update SpinBox with correct camera information
-                if len(available_cams) > 0:
-                    self._selected_camera.set(available_cams[0])
-                    self._cam_sb.config(value=available_cams[::-1])
-                    self._cb_cam_selected()
+                    # Update SpinBox with correct camera information
+                    if len(available_cams) > 0:
+                        self._selected_camera.set(available_cams[0])
+                        self._cam_sb.config(value=available_cams[::-1])
+                        self._cb_cam_selected()
 
-                else:
-                    self._selected_camera.set('Scanning...')
+                    else:
+                        self._selected_camera.set('Scanning...')
+        except Exception as e:
+            print(e)
 
-            self._win.after(500, self._update_connected_cameras)
+        self._win.after(500, self._update_connected_cameras)
+
+
 
 
     @staticmethod

@@ -1,12 +1,12 @@
-from wDRT import wdrt
 from uasyncio import run
 
-serial = pyb.USB_VCP()
+from main import controller
+from main.wireless_drt import drt
 
-def run_wdrt():
-    wdrt_ = wdrt.wDRT(serial)
-    run(wdrt_.update())
+def run_device():
+    controller_ = controller.RSDeviceController(drt.BaseDRT)
+    run(controller_.run_controller())
 
 
 if __name__ is '__main__':
-    run_wdrt()
+    run_device()

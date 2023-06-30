@@ -47,12 +47,12 @@ class TimerTest:
         await asyncio.sleep(1)
         state = ab.toggle()
         precision = 1
-        passed = abs(state[1] - 1000) <= precision
+        passed = abs(state[2] - 1000) <= precision
         print(f"ABTimeAccumulator test 1: {'PASSED' if passed else 'FAILED'} - State after 1 second: {state}")
 
         await asyncio.sleep(2)
         state = ab.toggle()
-        passed = abs(state[1] - 3000) <= precision
+        passed = abs(state[2] - 3000) <= precision
         print(f"ABTimeAccumulator test 2: {'PASSED' if passed else 'FAILED'} - State after 2 more seconds: {state}")
 
         await asyncio.sleep(3)
