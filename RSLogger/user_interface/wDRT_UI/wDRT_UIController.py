@@ -103,10 +103,22 @@ class WDRTUIController:
             self.devices[unit_id]['plot'].clear_all()
             self.devices[unit_id]['plot'].state_update(unit_id, -1)
 
+            self.devices[unit_id]['on'].configure(state='disabled')
+            self.devices[unit_id]['off'].configure(state='disabled')
+            self.devices[unit_id]['configure'].configure(state='disabled')
+            if 'refresh' in self.devices[unit_id]:
+                self.devices[unit_id]['refresh'].configure(state='disabled')
+
     def _log_close(self, arg):
         for unit_id in self.devices:
             self.devices[unit_id]['plot'].run = False
             self.devices[unit_id]['plot'].state_update(unit_id, -1)
+
+            self.devices[unit_id]['on'].configure(state='normal')
+            self.devices[unit_id]['off'].configure(state='normal')
+            self.devices[unit_id]['configure'].configure(state='normal')
+            if 'refresh' in self.devices[unit_id]:
+                self.devices[unit_id]['refresh'].configure(state='normal')
 
     def _data_record(self, arg):
         self._running = True
