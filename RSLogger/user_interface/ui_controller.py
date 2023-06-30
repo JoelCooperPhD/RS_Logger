@@ -82,9 +82,12 @@ class UIController:
         while not self._q_2_ui.empty():
 
             msg = self._q_2_ui.get()
-            device, port, key, val = msg.split('>')
-            if device in self._device_controllers.keys():
-                self._device_controllers[device].handle_command(port, key, val)
+            try:
+                device, port, key, val = msg.split('>')
+                if device in self._device_controllers.keys():
+                    self._device_controllers[device].handle_command(port, key, val)
+            except ValueError as e:
+                pass
 
         self.win.after(10, self._q_2_ui_messages_listener)
 

@@ -163,7 +163,7 @@ class VOGConfigWin:
         for setting in self._UISettings:
             vals += f'{recode_config(setting)}:{self._UISettings[setting].get()},'
         vals = vals.rstrip(',')
-        self._q_out.put(f'wVOG>{self._active_tab}>set_cfg>{vals}')
+        self._q_out.put(f'wVOG>{self._active_tab}>set_cfg>{vals}\n')
         self._clear_fields()
 
     def _clear_fields(self):
