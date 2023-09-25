@@ -70,7 +70,7 @@ class RSDeviceController:
 
             # Experiment / Trial
             if cmd in ['dev', 'exp', 'trl']:
-                if cmd == 'exp' and val == '1':
+                if cmd == 'trl' and val == '1':
                     if self.mmc.mmc_present:
                         self.mmc.init(self.headers)
                 self.device.handle_msg(cmd, val)
