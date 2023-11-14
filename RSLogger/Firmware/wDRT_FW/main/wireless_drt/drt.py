@@ -32,7 +32,7 @@ class BaseDRT:
         self._verify_config()
 
         # Stimulus
-        self._stimulus = stimuli.Stimulus()
+        self._stimulus = stimuli.Stimulus(intensity=int(self.configurator.config['SPCT']))
         self._stimulus_on = False
         
         # Response
@@ -98,7 +98,7 @@ class BaseDRT:
             print(f"{ticks_us()} BaseDRT._end_trials")
         if self._block_running:
             self._block_running = False
-        
+
     def _init_rt_probe(self):
         if self._debug:
             print(f"{ticks_us()} BaseDRT._init_rt_probe")
