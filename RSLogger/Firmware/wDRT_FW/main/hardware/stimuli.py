@@ -59,14 +59,14 @@ class Stimulus:
         if self._debug: print('Stimulus.off')
         return ticks_us()
     
-    async def fade(self):
+    def fade(self):
         """
         Gradually decrease the intensity of the PWM from 100 to 0.
         """
         for i in range(100, -1, -1):
             self._stm.pulse_width_percent(i)
             if self._debug: print(f'Stimulus.fade intensity:{i}')
-            await sleep_ms(25)
+            sleep(.015)
     
     def pulse(self, times: int=6):
         """
@@ -92,4 +92,4 @@ if __name__ == '__main__':
         sleep(1)
         s.pulse()
         sleep(1)
-        run(s.fade())
+        s.fade()

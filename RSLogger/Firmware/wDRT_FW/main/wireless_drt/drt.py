@@ -32,7 +32,7 @@ class BaseDRT:
         self._verify_config()
 
         # Stimulus
-        self._stimulus = stimuli.Stimulus()
+        self._stimulus = stimuli.Stimulus(intensity=int(self.configurator.config['SPCT']))
         self._stimulus_on = False
         
         # Response
@@ -67,6 +67,7 @@ class BaseDRT:
                 self._exp_loop = create_task(self._init_trials())
             elif value == "0":
                 if self._exp_loop:
+                    self._stimulus.fade()
                     self._exp_loop.cancel()
                     self._turn_stimulus_off()
 
@@ -97,7 +98,7 @@ class BaseDRT:
             print(f"{ticks_us()} BaseDRT._end_trials")
         if self._block_running:
             self._block_running = False
-        
+
     def _init_rt_probe(self):
         if self._debug:
             print(f"{ticks_us()} BaseDRT._init_rt_probe")
@@ -124,16 +125,18 @@ class BaseDRT:
     def _response_cb(self, clk_us):
         if self._debug:
             print(f"{ticks_us()} BaseDRT._responded_cb")
-        if self._trial_number > 0 and not self._responded:
-            self._responded = True
+        
+        if self._trial_number > 0:
+            self._response_n += 1
+            self._broadcast(f"clk>{self._response_n}") if self._broadcast else print(f"clk>{self._response_n}")
             
-            self._reaction_time = ticks_diff(clk_us, self._rt_probe_start_us)
-            self._broadcast(f"rt>{self._reaction_time}") if self._broadcast else print(f"rt>{self._reaction_time}")
-
+            if not self._responded:
+                self._responded = True
                 
-        self._response_n += 1
-        self._broadcast(f"clk>{self._response_n}") if self._broadcast else print(f"clk>{self._response_n}")
+                self._reaction_time = ticks_diff(clk_us, self._rt_probe_start_us)
+                self._broadcast(f"rt>{self._reaction_time}") if self._broadcast else print(f"rt>{self._reaction_time}")
 
+        
 
         if self._stimulus_on:
             self._turn_stimulus_off()
