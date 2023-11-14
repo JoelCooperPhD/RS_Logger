@@ -2,7 +2,7 @@ from uasyncio import gather, sleep, create_task
 from pyb import RTC, USB_VCP, Pin, LED
 from time import time, ticks_us
 
-from main.hardware import  battery, mmc, stimuli, switch, xb
+from main.hardware import  battery, mmc, xb
 from main.utilities import config, timers
 
 
@@ -141,7 +141,8 @@ class RSDeviceController:
         if msg.startswith('dta>'):
             msg = f'{msg},{self.battery.percent()},{time() + 946684800}\n'
             m = f"{self.xb.name_NI},,,{msg.strip('dta>')}"
-            self.mmc.write(m)
+            if self.mmc.mmc_present:
+                self.mmc.write(m)
         else:
             msg = f"{msg}\n"
         create_task(self.xb.transmit(msg))
