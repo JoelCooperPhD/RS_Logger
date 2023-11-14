@@ -109,6 +109,8 @@ class RSDeviceController:
             kvs = val.split(',')
             for kv in kvs:
                 self.device.configurator.update(kv)
+                if 'SPCT' in kv:
+                    self.device._stimulus.intensity = int(kv.split(':')[1])
             cfg_str = self.device.configurator.get_config_str()
             
             self.broadcast(f'cfg>{cfg_str}')
