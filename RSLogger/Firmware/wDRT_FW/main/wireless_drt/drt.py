@@ -67,6 +67,7 @@ class BaseDRT:
                 self._exp_loop = create_task(self._init_trials())
             elif value == "0":
                 if self._exp_loop:
+                    self._stimulus.fade()
                     self._exp_loop.cancel()
                     self._turn_stimulus_off()
 
