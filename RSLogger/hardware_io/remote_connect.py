@@ -59,6 +59,8 @@ class RemoteConnectionManager:
             for device in self.DEVICE_IDS:
                 if comport.pid == self.DEVICE_IDS[device]['pid'] and comport.vid == self.DEVICE_IDS[device]['vid']:
                     self.xcvr = None
+                    # Notify UI that XBee is disconnected
+                    self._distribute('xbee', 'ui', 'conn_status', 'disconnected')
                     return 'Wired'
 
         for comport in comports:
@@ -66,9 +68,15 @@ class RemoteConnectionManager:
                 if not self.xcvr:
                     self.xcvr = XBeeDevice(comport.name, self.BAUD)
                     if self._debug: print(f"{time_ns()} RemoteConnectionManager._scan_for_dongle FOUND DONGLE")
+                    # Notify UI that XBee is connected with port name
+                    self._distribute('xbee', 'ui', 'conn_status', f'connected|{comport.name}')
                     return 'New'
                 else:
+                    # Still connected
                     return 'Existing'
+        # If we reach here, no dongle found - ensure UI shows disconnected
+        if self.xcvr:
+            self._distribute('xbee', 'ui', 'conn_status', 'disconnected')
         return None
 
     def _close_dongle_connection(self):
@@ -81,16 +89,27 @@ class RemoteConnectionManager:
                 print("Error while closing dongle: ", str(e))
             finally:
                 self.xcvr = None
+                # Notify UI that XBee is disconnected
+                self._distribute('xbee', 'ui', 'conn_status', 'disconnected')
 
     def _xb_initialize(self):
         if self._debug:
             print(f"{time_ns()} RemoteConnectionManager._xb_initialize")
         if not self.xcvr.is_open():
-            self.xcvr.open()
-            self.xcvr.add_data_received_callback(self._msg_received)
-            if self._debug: print(f"{time_ns()} RemoteConnectionManager.update {self.xcvr.is_open()}")
-
-            self.start_network_scan()
+            try:
+                self.xcvr.open()
+                self.xcvr.add_data_received_callback(self._msg_received)
+                if self._debug: print(f"{time_ns()} RemoteConnectionManager.update {self.xcvr.is_open()}")
+                
+                # Notify UI that XBee is connected with port name
+                port_name = self.xcvr.get_serial_port() if hasattr(self.xcvr, 'get_serial_port') else self.xcvr.serial_port.port
+                self._distribute('xbee', 'ui', 'conn_status', f'connected|{port_name}')
+                
+                self.start_network_scan()
+            except Exception as e:
+                print(f"Error initializing XBee: {str(e)}")
+                self.xcvr = None
+                self._distribute('xbee', 'ui', 'conn_status', 'disconnected')
 
     def _msg_received(self, msg: XBeeMessage):
         if self._debug:

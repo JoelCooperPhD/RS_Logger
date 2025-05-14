@@ -3,7 +3,7 @@ import webbrowser
 import inspect
 
 from urllib.error import URLError
-from tkinter import Tk, BOTH, messagebox
+from tkinter import Tk, BOTH, messagebox, Canvas, Label
 from tkinter.ttk import Frame
 from os import path
 
@@ -44,10 +44,31 @@ class UIController:
         path_to_icon = path.abspath(path.join(path.dirname(__file__), '../img/rs_icon.ico'))
         self.win.iconbitmap(path_to_icon)
 
-        # Widgets
+        # XBee connection status
+        self.xbee_connected = False
+        self.xbee_port = ""
+        
+        # Main widget frame - using grid for consistent layout
         self.widget_frame = Frame(self.win)
         self.widget_frame.pack(fill=BOTH)
         self.widget_frame.columnconfigure(4, weight=1)
+        
+        # Create separate frame for connection indicator to avoid mixing grid/pack
+        self.conn_frame_container = Frame(self.win)
+        self.conn_frame_container.pack(anchor='ne', padx=5, pady=2)
+        
+        # Create a better formatted connection label
+        Label(self.conn_frame_container, text="Wireless Dongle:", font=("Arial", 8)).pack(side='left')
+        
+        # Connection status indicator (circle)
+        self.conn_indicator = Canvas(self.conn_frame_container, width=10, height=10, bd=0, highlightthickness=0)
+        self.conn_indicator.pack(side='left', padx=(5, 2))
+        self.conn_circle = self.conn_indicator.create_oval(1, 1, 9, 9, fill="red", outline="")
+        
+        # Connection port label
+        self.conn_port_var = "NOT CONNECTED"
+        self.conn_port_label = Label(self.conn_frame_container, text=self.conn_port_var, font=("Arial", 8, "bold"))
+        self.conn_port_label.pack(side='left')
 
         self._widgets = {
             'controls': ExpControls(self.widget_frame, queues['q_2_hi'], self._control_handler),
@@ -84,12 +105,29 @@ class UIController:
             msg = self._q_2_ui.get()
             try:
                 device, port, key, val = msg.split('>')
-                if device in self._device_controllers.keys():
+                # Handle XBee connection status
+                if device == 'xbee' and key == 'conn_status':
+                    self._update_connection_indicator(val)
+                elif device in self._device_controllers.keys():
                     self._device_controllers[device].handle_command(port, key, val)
             except ValueError as e:
                 pass
 
         self.win.after(10, self._q_2_ui_messages_listener)
+        
+    def _update_connection_indicator(self, status_str):
+        """Update the XBee connection indicator based on status string."""
+        # Format: "connected|port_name" or "disconnected"
+        if status_str.startswith("connected|"):
+            self.xbee_connected = True
+            self.xbee_port = status_str.split("|")[1]
+            self.conn_indicator.itemconfig(self.conn_circle, fill="green")
+            self.conn_port_label.config(text=f"CONNECTED on {self.xbee_port}")
+        else:
+            self.xbee_connected = False
+            self.xbee_port = ""
+            self.conn_indicator.itemconfig(self.conn_circle, fill="red")
+            self.conn_port_label.config(text="NOT CONNECTED")
 
     def _control_handler(self, key, val):
         if self._debug:
