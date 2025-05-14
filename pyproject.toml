@@ -1,0 +1,12 @@
+[project]
+name = "rs-logger"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "digi-xbee>=1.5.0",
+    "pyserial>=3.5",
+    "pywin32>=310",
+    "serial>=0.0.97",
+]

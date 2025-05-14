@@ -91,6 +91,8 @@ class UsbPortScanner:
                             print(f'Serial Exception in usb_connect: {e}')
                         else:
                             self._set_device_rtc(rs_devices, d.name)
+                            # Request device configuration after setting RTC
+                            self._distribute_cb(rs_devices, d.name, 'get_cfg', '')
                             try:
                                 devices = ','.join(self._rs_devices[rs_devices])
                                 self._distribute_cb(rs_devices, 'ui', 'devices', devices)
